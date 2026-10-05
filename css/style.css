@@ -21,3 +21,23 @@ nav a {
 nav a:hover {
     color: #666;
 }
+
+.tanitim {
+    padding: 30px 20px;
+}
+
+.tanitim p {
+    margin-bottom: 25px;
+}
+
+.ilan-buton {
+    text-decoration: none;
+    background-color: #555;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.ilan-buton:hover {
+    background-color: #333;
+}
