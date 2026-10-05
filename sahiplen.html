@@ -1,0 +1,57 @@
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Hayvan Sahiplen</title>
+</head>
+<body>
+
+    <h1>Sahiplendirme Başvuru Formu</h1>
+
+    <form>
+        <label for="adsoyad">Ad Soyad:</label>
+        <input type="text" id="adsoyad" name="adsoyad" required>
+
+        <br><br>
+
+        <label for="email">E-posta:</label>
+        <input type="email" id="email" name="email" required>
+
+        <br><br>
+
+        <label for="telefon">Telefon:</label>
+        <input type="tel" id="telefon" name="telefon" required>
+
+        <br><br>
+
+        <label for="hayvan">Sahiplenmek İstediğiniz Hayvan:</label>
+        <select id="hayvan" name="hayvan">
+            <option value="kopek">Köpek</option>
+            <option value="kedi">Kedi</option>
+            <option value="diger">Diğer</option>
+        </select>
+
+        <br><br>
+
+        <label for="yasam">Yaşadığınız Yer:</label>
+        <select id="yasam" name="yasam">
+            <option value="apartman">Apartman</option>
+            <option value="mustakil">Müstakil Ev</option>
+            <option value="diger">Diğer</option>
+        </select>
+
+        <br><br>
+
+        <label for="mesaj">Ek Bilgi:</label>
+        <br>
+        <textarea id="mesaj" name="mesaj" rows="5" cols="40"></textarea>
+
+        <br><br>
+
+        <input type="submit" value="Başvuru Gönder">
+    </form>
+
+</body>
+</html>
+```
