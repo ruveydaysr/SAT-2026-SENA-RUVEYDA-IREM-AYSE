@@ -1,6 +1,9 @@
 <?php
 
+session_start();
 include("baglanti.php");
+
+$hata = "";
 
 if (isset($_POST["giris"])) {
 
@@ -13,9 +16,20 @@ if (isset($_POST["giris"])) {
     );
 
     if (mysqli_num_rows($sorgu) > 0) {
-        echo "Giriş başarılı.";
+
+        $uye = mysqli_fetch_assoc($sorgu);
+
+        $_SESSION["uye_id"] = $uye["id"];
+        $_SESSION["uye_adsoyad"] = $uye["ad_soyad"];
+        $_SESSION["uye_email"] = $uye["email"];
+
+        header("Location: index.php");
+        exit();
+
     } else {
-        echo "E-posta veya şifre yanlış.";
+
+        $hata = "E-posta veya şifre yanlış.";
+
     }
 }
 

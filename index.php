@@ -1,3 +1,7 @@
+<?php
+session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="tr">
 
@@ -14,17 +18,25 @@
         <h1>Hayvan Sahiplendirme</h1>
 
         <nav>
-            <a href="index.html">Ana Sayfa</a>
+            <a href="index.php">Ana Sayfa</a>
             <a href="ilanlar.html">İlanlar</a>
             <a href="ilan-ver.html">İlan Ver</a>
             <a href="hakkimizda.html">Hakkımızda</a>
             <a href="iletisim.html">İletişim</a>
-            <a href="giris.html">Giriş Yap</a>
+           <?php if (isset($_SESSION["uye_id"])) { ?>
+
+    <a href="profil.php">
+        <?php echo $_SESSION["uye_adsoyad"]; ?>
+    </a>
+
+    <a href="cikis.php">Çıkış Yap</a>
+
+<?php } else { ?>
+
+    <a href="giris.php">Giriş Yap</a>
+
+<?php } ?>
         
-    <a href="admin-panel.php">Ana Sayfa</a>
-    <a href="admin-panel.php">İlanlar</a>
-    <a href="index.html">Siteye Git</a>
-    <a href="admin-cikis.php">Çıkış Yap</a>
         </nav>
     </header>
 
