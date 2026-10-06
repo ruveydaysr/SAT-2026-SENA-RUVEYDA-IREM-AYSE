@@ -21,7 +21,7 @@ session_start();
             <a href="index.php">Ana Sayfa</a>
             <a href="ilanlar.html">İlanlar</a>
             <a href="ilan-ver.html">İlan Ver</a>
-            <a href="hakkimizda.html">Hakkımızda</a>
+    <a href="/SAT-2026-SENA-RUVEYDA-IREM-AYSE/hakkimizda.php">Hakkımızda</a>
             <a href="iletisim.html">İletişim</a>
            <?php if (isset($_SESSION["uye_id"])) { ?>
 
