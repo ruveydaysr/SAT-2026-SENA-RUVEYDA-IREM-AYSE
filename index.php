@@ -19,10 +19,10 @@ session_start();
 
         <nav>
             <a href="index.php">Ana Sayfa</a>
-            <a href="ilanlar.html">İlanlar</a>
-            <a href="ilan-ver.html">İlan Ver</a>
-    <a href="/SAT-2026-SENA-RUVEYDA-IREM-AYSE/hakkimizda.php">Hakkımızda</a>
-            <a href="http://localhost/hayvan/iletisim.php">İletişim</a>
+            <a href="ilanlar.php">İlanlar</a>
+            <a href="ilan-ver.php">İlan Ver</a>
+            <a href="hakkimizda.php">Hakkımızda</a>
+            <a href="iletisim.php">İletişim</a>
            <?php if (isset($_SESSION["uye_id"])) { ?>
 
     <a href="profil.php">
@@ -49,7 +49,7 @@ session_start();
         İlanları inceleyerek sana uygun yeni dostunu bulabilirsin.
     </p>
 
-    <a href="ilanlar.html" class="ilan-buton">İlanları İncele</a>
+    <a href="ilanlar.php" class="ilan-buton">İlanları İncele</a>
 </section>
    <section class="kategoriler">
     <h2>Hayvan Kategorileri</h2>

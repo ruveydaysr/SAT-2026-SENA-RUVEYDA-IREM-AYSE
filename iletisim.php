@@ -14,14 +14,14 @@
             <a href="index.php">Ana Sayfa</a>
             <a href="ilanlar.php">İlanlar</a>
             <a href="ilan-ver.php">İlan Ver</a>
-           <a href="/hayvan/hakkimizda.php">Hakkımızda</a>
-            <a href="http://localhost/hayvan/iletisim.php">İletişim</a>
+           <a href="hakkimizda.php">Hakkımızda</a>
+           <a href="iletisim.php">İletişim</a>
             <a href="giris.php">Giriş Yap</a>
         </nav>
     </header>
 
     <main>
-        <section class="iletisim">z
+        <section class="iletisim">
             <h2>Bizimle İletişime Geçin</h2>
             <p>Hayvan sahiplendirme sitesi hakkında soru, öneri veya görüşlerinizi aşağıdaki formu kullanarak bize iletebilirsiniz.</p>
 

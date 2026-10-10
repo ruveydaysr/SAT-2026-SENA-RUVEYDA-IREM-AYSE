@@ -1,4 +1,11 @@
+<?php
+session_start();
 
+if (!isset($_SESSION["uye_id"])) {
+    header("Location: giris.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>

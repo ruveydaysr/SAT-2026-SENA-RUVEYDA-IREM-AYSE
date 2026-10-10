@@ -12,11 +12,11 @@
     <h1>Hayvan Sahiplendirme Sistemi</h1>
 
     <nav>
-        <a href="index.html">Ana Sayfa</a>
-        <a href="ilanlar.html">Hayvan Ara</a>
+        <a href="index.php">Ana Sayfa</a>
+        <a href="ilanlar.php">Hayvan Ara</a>
         <a href="kayip.html">Kayıp Hayvanlar</a>
-        <a href="ilan-ekle.html">İlan Ver</a>
-        <a href="giris.html">Giriş Yap</a>
+        <a href="ilan-ver.php">İlan Ver</a>
+        <a href="giris.php">Giriş Yap</a>
     </nav>
 </header>
 
@@ -90,7 +90,7 @@
     </section>
 
     <p>
-        <a href="ilanlar.html">← İlanlara Geri Dön</a>
+        <a href="ilanlar.php">← İlanlara Geri Dön</a>
     </p>
 
 </main>
