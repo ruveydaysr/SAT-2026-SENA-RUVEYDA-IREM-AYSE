@@ -21,7 +21,7 @@
     </header>
 
     <main>
-        <section class="iletisim">
+        <section class="iletisim">z
             <h2>Bizimle İletişime Geçin</h2>
             <p>Hayvan sahiplendirme sitesi hakkında soru, öneri veya görüşlerinizi aşağıdaki formu kullanarak bize iletebilirsiniz.</p>
 
