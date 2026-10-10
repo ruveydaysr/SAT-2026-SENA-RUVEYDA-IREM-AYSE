@@ -22,7 +22,7 @@ session_start();
             <a href="ilanlar.html">İlanlar</a>
             <a href="ilan-ver.html">İlan Ver</a>
     <a href="/SAT-2026-SENA-RUVEYDA-IREM-AYSE/hakkimizda.php">Hakkımızda</a>
-            <a href="iletisim.html">İletişim</a>
+            <a href="http://localhost/hayvan/iletisim.php">İletişim</a>
            <?php if (isset($_SESSION["uye_id"])) { ?>
 
     <a href="profil.php">
@@ -67,11 +67,7 @@ session_start();
 </section>
     </main>
 
-    <footer>
-        <p>Hayvan Sahiplendirme Projesi</p>
-    </footer>
-
-    <script src="js/script.js"></script>
+    
 
 </body>
 </html>

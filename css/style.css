@@ -230,3 +230,44 @@ nav a:hover {
     background-color: #333;
     color: white;
 }
+.iletisim {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.form-grup {
+    margin-bottom: 15px;
+}
+
+.form-grup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-grup input,
+.form-grup textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.btn-gonder {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-gonder:hover {
+    background-color: #45a049;
+}
