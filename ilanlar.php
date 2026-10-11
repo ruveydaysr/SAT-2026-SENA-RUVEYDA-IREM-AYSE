@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hayvan İlanları</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">Hayvan Ara</a>
         <a href="kayip.html">Kayıp Hayvanlar</a>
-        <a href="ilan-ekle.html">İlan Ver</a>
+        <a href="ilan-ver.php">İlan Ver</a>
         <a href="giris.php">Giriş Yap</a>
     </nav>
 </header>
@@ -103,7 +103,7 @@
                 <p><strong>Yaş:</strong> 2 Yaş</p>
                 <p><strong>Cinsiyet:</strong> Erkek</p>
                 <p><strong>Şehir:</strong> Ankara</p>
-                <a href="ilan-detay.html" class="detay-buton">İlanı İncele</a>
+                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
             </div>
         </div>
 
@@ -114,7 +114,7 @@
                 <p><strong>Yaş:</strong> 1 Yaş</p>
                 <p><strong>Cinsiyet:</strong> Erkek</p>
                 <p><strong>Şehir:</strong> İstanbul</p>
-                <a href="ilan-detay.html" class="detay-buton">İlanı İncele</a>
+                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
             </div>
         </div>
 
@@ -125,7 +125,7 @@
                 <p><strong>Yaş:</strong> 6 Aylık</p>
                 <p><strong>Cinsiyet:</strong> Dişi</p>
                 <p><strong>Şehir:</strong> Kayseri</p>
-                <a href="ilan-detay.html" class="detay-buton">İlanı İncele</a>
+                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
             </div>
         </div>
 
@@ -136,7 +136,7 @@
                 <p><strong>Yaş:</strong> 5 Aylık</p>
                 <p><strong>Cinsiyet:</strong> Erkek</p>
                 <p><strong>Şehir:</strong> Yozgat</p>
-                <a href="ilan-detay.html" class="detay-buton">İlanı İncele</a>
+                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
             </div>
         </div>
 

@@ -26,7 +26,7 @@ session_start();
            <?php if (isset($_SESSION["uye_id"])) { ?>
 
     <a href="profil.php">
-        <?php echo $_SESSION["uye_adsoyad"]; ?>
+        <?php echo htmlspecialchars($_SESSION["uye_adsoyad"], ENT_QUOTES, 'UTF-8'); ?>
     </a>
 
     <a href="cikis.php">Çıkış Yap</a>

@@ -271,3 +271,61 @@ nav a:hover {
 .btn-gonder:hover {
     background-color: #45a049;
 }
+
+/* Üye giriş sayfası */
+
+.giris-kutusu {
+    background-color: #f2f2f2;
+    width: 350px;
+    margin: 80px auto;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.giris-kutusu input {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.giris-kutusu input[type="submit"] {
+    background-color: #555;
+    color: white;
+    cursor: pointer;
+}
+
+.giris-kutusu a {
+    color: #333;
+    text-decoration: none;
+}
+
+/* Üyelik kayıt sayfası */
+
+.kayit-kutusu {
+    background-color: #f2f2f2;
+    width: 350px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.kayit-kutusu input {
+    padding: 10px;
+    margin: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.kayit-kutusu input[type="submit"] {
+    background-color: #555;
+    color: white;
+    cursor: pointer;
+}
+
+.kayit-kutusu a {
+    color: #333;
+    text-decoration: none;
+}

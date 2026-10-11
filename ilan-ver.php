@@ -18,6 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $cinsiyet = trim($_POST["cinsiyet"] ?? "");
     $sehir = trim($_POST["sehir"] ?? "");
     $aciklama = trim($_POST["aciklama"] ?? "");
+    $uye_id = $_SESSION["uye_id"];
 
     if (
         $hayvan_adi === "" ||
@@ -33,21 +34,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
 
         $sql = "INSERT INTO ilanlar
-                (hayvan_adi, tur, yas, cinsiyet, sehir, aciklama, durum)
-                VALUES (?, ?, ?, ?, ?, ?, 'Bekliyor')";
+        (hayvan_adi, tur, yas, cinsiyet, sehir, aciklama, uye_id, durum)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Bekliyor')";
 
         $sorgu = mysqli_prepare($baglanti, $sql);
 
-        mysqli_stmt_bind_param(
-            $sorgu,
-            "ssisss",
-            $hayvan_adi,
-            $tur,
-            $yas,
-            $cinsiyet,
-            $sehir,
-            $aciklama
-        );
+      mysqli_stmt_bind_param(
+    $sorgu,
+    "ssisssi",
+    $hayvan_adi,
+    $tur,
+    $yas,
+    $cinsiyet,
+    $sehir,
+    $aciklama,
+    $uye_id
+);
+        
 
         if (mysqli_stmt_execute($sorgu)) {
             $mesaj = "İlanınız başarıyla kaydedildi. Yönetici onayı bekleniyor.";
@@ -63,7 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İlan Ver</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
