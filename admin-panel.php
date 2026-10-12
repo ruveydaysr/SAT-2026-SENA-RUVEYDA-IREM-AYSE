@@ -1,5 +1,5 @@
-<?php
 
+<?php
 session_start();
 
 if (!isset($_SESSION["admin"])) {
@@ -17,6 +17,7 @@ $sorgu = mysqli_query($baglanti, "SELECT * FROM ilanlar");
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Paneli</title>
 
     <style>
@@ -81,9 +82,10 @@ $sorgu = mysqli_query($baglanti, "SELECT * FROM ilanlar");
 </header>
 
 <nav>
-    <a href="admin-panel.php">Ana Sayfa</a>
-    <a href="admin-panel.php">İlanlar</a>
+    <a href="admin-panel.php">İlan Yönetimi</a>
+    <a href="admin-uyeler.php">Üye Yönetimi</a>
     <a href="index.php">Siteye Git</a>
+    <a href="admin-cikis.php">Çıkış Yap</a>
 </nav>
 
 <div class="icerik">
@@ -95,32 +97,35 @@ $sorgu = mysqli_query($baglanti, "SELECT * FROM ilanlar");
         <div class="kart">
 
             <h3>
-                <?php echo $ilan["hayvan_adi"]; ?>
+                <?php echo htmlspecialchars($ilan["hayvan_adi"], ENT_QUOTES, "UTF-8"); ?>
             </h3>
 
             <p>
-                Tür: <?php echo $ilan["tur"]; ?>
+                Tür:
+                <?php echo htmlspecialchars($ilan["tur"], ENT_QUOTES, "UTF-8"); ?>
             </p>
 
             <p>
-                Yaş: <?php echo $ilan["yas"]; ?>
+                Yaş:
+                <?php echo (int)$ilan["yas"]; ?>
             </p>
 
             <p>
-                Durum: <?php echo $ilan["durum"]; ?>
+                Durum:
+                <?php echo htmlspecialchars($ilan["durum"], ENT_QUOTES, "UTF-8"); ?>
             </p>
 
             <?php if ($ilan["durum"] == "Bekliyor") { ?>
 
                 <a class="onayla"
-                   href="onayla.php?id=<?php echo $ilan["id"]; ?>">
+                   href="onayla.php?id=<?php echo (int)$ilan["id"]; ?>">
                     Onayla
                 </a>
 
             <?php } ?>
 
             <a class="sil"
-               href="sil.php?id=<?php echo $ilan["id"]; ?>">
+               href="sil.php?id=<?php echo (int)$ilan["id"]; ?>">
                 Sil
             </a>
 
@@ -131,5 +136,4 @@ $sorgu = mysqli_query($baglanti, "SELECT * FROM ilanlar");
 </div>
 
 </body>
-
 </html>
