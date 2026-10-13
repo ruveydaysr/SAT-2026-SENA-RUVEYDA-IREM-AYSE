@@ -81,12 +81,15 @@ $sorgu = mysqli_query($baglanti, "SELECT * FROM ilanlar");
     <h2>Admin Paneli</h2>
 </header>
 
+
 <nav>
     <a href="admin-panel.php">İlan Yönetimi</a>
     <a href="admin-uyeler.php">Üye Yönetimi</a>
+    <a href="admin-mesajlar.php">Gelen Mesajlar</a>
     <a href="index.php">Siteye Git</a>
     <a href="admin-cikis.php">Çıkış Yap</a>
 </nav>
+
 
 <div class="icerik">
 
