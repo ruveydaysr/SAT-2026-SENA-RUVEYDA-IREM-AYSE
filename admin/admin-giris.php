@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-include("baglanti.php");
+include("../baglanti.php");
 
 $hata = "";
 

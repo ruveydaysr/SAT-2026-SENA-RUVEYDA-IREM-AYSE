@@ -1,0 +1,285 @@
+
+/* GENEL SAYFA */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f3f5f9;
+    color: #263238;
+}
+
+/* ÜST BAŞLIK */
+
+header {
+    background: linear-gradient(135deg, #174d38, #27845b);
+    color: white;
+    text-align: center;
+    padding: 28px 15px;
+}
+
+header h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: normal;
+}
+
+/* MENÜ */
+
+nav {
+    background-color: #193a2e;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 7px;
+    transition: 0.2s;
+}
+
+nav a:hover {
+    background-color: #32865f;
+}
+
+/* İÇERİK */
+
+.icerik {
+    width: 90%;
+    max-width: 1100px;
+    margin: 35px auto;
+}
+
+.icerik h2 {
+    margin-bottom: 25px;
+}
+
+/* İLAN KARTLARI */
+
+.kart {
+    background-color: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e9ed;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+}
+
+.kart h3 {
+    color: #21764f;
+    margin-top: 0;
+}
+
+.kart p {
+    line-height: 1.7;
+}
+
+/* İLAN DURUMLARI */
+
+.durum {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.durum.Bekliyor {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.durum.Onaylandı {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.durum.Reddedildi {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* BUTONLAR */
+
+.kart button {
+    min-width: 110px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.kart button:hover {
+    filter: brightness(0.92);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.kart button:active {
+    transform: translateY(0);
+}
+
+.kart button:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+/* BUTON RENKLERİ */
+
+.kart button.onayla {
+    background-color: #238b45;
+    color: white;
+}
+
+.kart button.reddet {
+    background-color: #e58b24;
+    color: white;
+}
+
+.kart button.sil {
+    background-color: #d93b3b;
+    color: white;
+}
+
+/* ONAYLA VE SİL BUTONLARI */
+
+.kart .islem-alani {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.kart .islem-alani form {
+    margin: 0;
+    width: auto;
+}
+
+/* REDDETME FORMU */
+
+.kart .ret-formu {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 18px;
+    background-color: #fff8ed;
+    border: 1px solid #f4dfb9;
+    border-radius: 10px;
+}
+
+.kart .ret-formu label {
+    font-weight: bold;
+    color: #795118;
+}
+
+.kart .ret-formu textarea {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    min-height: 100px;
+    padding: 12px;
+    border: 1px solid #cbd5df;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.kart .ret-formu textarea:focus {
+    outline: 2px solid #8cc6a4;
+    border-color: #27845b;
+}
+
+/* TABLOLAR */
+
+.icerik table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.icerik th,
+.icerik td {
+    padding: 14px;
+    border-bottom: 1px solid #e5e9ed;
+    text-align: left;
+}
+
+.icerik th {
+    background-color: #21764f;
+    color: white;
+}
+
+/* MOBİL UYUMLULUK */
+
+@media (max-width: 600px) {
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    nav {
+        gap: 5px;
+    }
+
+    nav a {
+        padding: 9px;
+        font-size: 13px;
+    }
+
+    .icerik {
+        width: 95%;
+        margin: 20px auto;
+    }
+
+    .kart {
+        padding: 16px;
+    }
+
+    .kart .islem-alani button {
+        min-width: 100px;
+    }
+
+    .kart .ret-formu textarea {
+        max-width: 100%;
+    }
+
+    .icerik {
+        overflow-x: auto;
+    }
+    
+.ilan-fotograf {
+    display: block;
+    width: 220px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+}
+
+}
