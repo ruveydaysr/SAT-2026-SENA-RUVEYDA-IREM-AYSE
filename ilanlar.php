@@ -1,14 +1,126 @@
+
+<?php
+include("baglanti.php");
+
+function guvenli($deger) {
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+}
+
+$tur = trim($_GET["tur"] ?? "");
+$sehir = trim($_GET["sehir"] ?? "");
+$yas = trim($_GET["yas"] ?? "");
+$cinsiyet = trim($_GET["cinsiyet"] ?? "");
+
+$kosullar = ["durum = 'Onaylandı'"];
+$parametreler = [];
+$tipler = "";
+
+if ($tur !== "") {
+    $kosullar[] = "tur = ?";
+    $parametreler[] = $tur;
+    $tipler .= "s";
+}
+
+if ($sehir !== "") {
+    $kosullar[] = "sehir = ?";
+    $parametreler[] = $sehir;
+    $tipler .= "s";
+}
+
+if ($cinsiyet !== "") {
+    $kosullar[] = "cinsiyet = ?";
+    $parametreler[] = $cinsiyet;
+    $tipler .= "s";
+}
+
+if ($yas === "yavru") {
+    $kosullar[] = "yas < 1";
+} elseif ($yas === "genc") {
+    $kosullar[] = "yas BETWEEN 1 AND 3";
+} elseif ($yas === "yetiskin") {
+    $kosullar[] = "yas > 3";
+}
+
+$sql = "SELECT * FROM ilanlar WHERE "
+    . implode(" AND ", $kosullar)
+    . " ORDER BY id DESC";
+
+$sorgu = mysqli_prepare($baglanti, $sql);
+
+if ($sorgu) {
+    if (!empty($parametreler)) {
+        mysqli_stmt_bind_param(
+            $sorgu,
+            $tipler,
+            ...$parametreler
+        );
+    }
+
+    mysqli_stmt_execute($sorgu);
+    $sonuc = mysqli_stmt_get_result($sorgu);
+} else {
+    $sonuc = false;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Hayvan İlanları</title>
+
     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .ilan-karti .ilan-fotograf {
+            width: 220px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .foto-yok {
+            width: 220px;
+            height: 180px;
+            background-color: #eeeeee;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777777;
+        }
+
+        .ilan-karti {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ilan-bilgi {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .ilan-bilgi p {
+            margin: 8px 0;
+        }
+
+        .ilan-bilgi .detay-buton {
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
 </head>
+
 <body>
 
 <header>
+
     <h1>Hayvan Sahiplendirme Sistemi</h1>
 
     <nav>
@@ -18,6 +130,7 @@
         <a href="ilan-ver.php">İlan Ver</a>
         <a href="giris.php">Giriş Yap</a>
     </nav>
+
 </header>
 
 <main>
@@ -28,117 +141,197 @@
     </section>
 
     <!-- FİLTRELEME ALANI -->
+
     <section class="filtre-alani">
 
         <h3>Hayvan Ara</h3>
 
-        <div class="filtreler">
+        <form action="ilanlar.php" method="GET">
 
-            <div>
-                <label for="tur">Hayvan Türü</label>
-                <select id="tur">
-                    <option value="">Tümü</option>
-                    <option value="kedi">Kedi</option>
-                    <option value="kopek">Köpek</option>
-                    <option value="kus">Kuş</option>
-                    <option value="tavsan">Tavşan</option>
-                    <option value="balik">Balık</option>
-                </select>
+            <div class="filtreler">
+
+                <div>
+                    <label for="tur">Hayvan Türü</label>
+
+                    <select id="tur" name="tur">
+                        <option value="">Tümü</option>
+
+                        <?php
+                        $turler = [
+                            "Kedi", "Köpek", "Kuş",
+                            "Tavşan", "Balık", "Diğer"
+                        ];
+
+                        foreach ($turler as $secenek):
+                        ?>
+                            <option
+                                value="<?php echo guvenli($secenek); ?>"
+                                <?php echo $tur === $secenek ? "selected" : ""; ?>
+                            >
+                                <?php echo guvenli($secenek); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="sehir">Şehir</label>
+
+                    <select id="sehir" name="sehir">
+                        <option value="">Tümü</option>
+
+                        <?php
+                        $sehirler = [
+                            "Yozgat", "Ankara",
+                            "İstanbul", "Kayseri"
+                        ];
+
+                        foreach ($sehirler as $secenek):
+                        ?>
+                            <option
+                                value="<?php echo guvenli($secenek); ?>"
+                                <?php echo $sehir === $secenek ? "selected" : ""; ?>
+                            >
+                                <?php echo guvenli($secenek); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="yas">Yaş</label>
+
+                    <select id="yas" name="yas">
+                        <option value="">Tümü</option>
+
+                        <option value="yavru"
+                            <?php echo $yas === "yavru" ? "selected" : ""; ?>>
+                            1 yaşından küçük
+                        </option>
+
+                        <option value="genc"
+                            <?php echo $yas === "genc" ? "selected" : ""; ?>>
+                            1 - 3 yaş
+                        </option>
+
+                        <option value="yetiskin"
+                            <?php echo $yas === "yetiskin" ? "selected" : ""; ?>>
+                            3 yaşından büyük
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="cinsiyet">Cinsiyet</label>
+
+                    <select id="cinsiyet" name="cinsiyet">
+                        <option value="">Tümü</option>
+
+                        <option value="Dişi"
+                            <?php echo $cinsiyet === "Dişi" ? "selected" : ""; ?>>
+                            Dişi
+                        </option>
+
+                        <option value="Erkek"
+                            <?php echo $cinsiyet === "Erkek" ? "selected" : ""; ?>>
+                            Erkek
+                        </option>
+                    </select>
+                </div>
+
+                <button type="submit">Filtrele</button>
+
             </div>
 
-            <div>
-                <label for="sehir">Şehir</label>
-                <select id="sehir">
-                    <option value="">Tümü</option>
-                    <option value="yozgat">Yozgat</option>
-                    <option value="ankara">Ankara</option>
-                    <option value="istanbul">İstanbul</option>
-                    <option value="kayseri">Kayseri</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="yas">Yaş</label>
-                <select id="yas">
-                    <option value="">Tümü</option>
-                    <option value="yavru">1 yaşından küçük</option>
-                    <option value="genc">1 - 3 yaş</option>
-                    <option value="yetiskin">3 yaş ve üzeri</option>
-                </select>
-            </div>
-
-            <div>
-                <label for="cinsiyet">Cinsiyet</label>
-                <select id="cinsiyet">
-                    <option value="">Tümü</option>
-                    <option value="disi">Dişi</option>
-                    <option value="erkek">Erkek</option>
-                </select>
-            </div>
-
-            <button type="button">Filtrele</button>
-
-        </div>
+        </form>
 
     </section>
 
     <!-- İLANLAR -->
+
     <section class="ilanlar">
 
-        <div class="ilan-karti">
-            <div class="ilan-bilgi">
-                <h3>Pamuk</h3>
-                <p><strong>Tür:</strong> Kedi</p>
-                <p><strong>Yaş:</strong> 8 Aylık</p>
-                <p><strong>Cinsiyet:</strong> Dişi</p>
-                <p><strong>Şehir:</strong> Yozgat</p>
-                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
-            </div>
-        </div>
+        <?php if ($sonuc && mysqli_num_rows($sonuc) > 0): ?>
 
-        <div class="ilan-karti">
-            <div class="ilan-bilgi">
-                <h3>Karabaş</h3>
-                <p><strong>Tür:</strong> Köpek</p>
-                <p><strong>Yaş:</strong> 2 Yaş</p>
-                <p><strong>Cinsiyet:</strong> Erkek</p>
-                <p><strong>Şehir:</strong> Ankara</p>
-                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
-            </div>
-        </div>
+            <?php while ($ilan = mysqli_fetch_assoc($sonuc)): ?>
 
-        <div class="ilan-karti">
-            <div class="ilan-bilgi">
-                <h3>Limon</h3>
-                <p><strong>Tür:</strong> Kuş</p>
-                <p><strong>Yaş:</strong> 1 Yaş</p>
-                <p><strong>Cinsiyet:</strong> Erkek</p>
-                <p><strong>Şehir:</strong> İstanbul</p>
-                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
-            </div>
-        </div>
+                <div class="ilan-karti">
 
-        <div class="ilan-karti">
-            <div class="ilan-bilgi">
-                <h3>Minnoş</h3>
-                <p><strong>Tür:</strong> Tavşan</p>
-                <p><strong>Yaş:</strong> 6 Aylık</p>
-                <p><strong>Cinsiyet:</strong> Dişi</p>
-                <p><strong>Şehir:</strong> Kayseri</p>
-                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
-            </div>
-        </div>
+                    <?php
+                    $fotograf = $ilan["fotograf"] ?? "";
+                    $dosya_adi = basename($fotograf);
 
-        <div class="ilan-karti">
-            <div class="ilan-bilgi">
-                <h3>Mavi</h3>
-                <p><strong>Tür:</strong> Balık</p>
-                <p><strong>Yaş:</strong> 5 Aylık</p>
-                <p><strong>Cinsiyet:</strong> Erkek</p>
-                <p><strong>Şehir:</strong> Yozgat</p>
-                <a href="ilan-detay.php" class="detay-buton">İlanı İncele</a>
-            </div>
-        </div>
+                    $gecerli_fotograf =
+                        $fotograf !== "" &&
+                        preg_match(
+                            '/^[a-f0-9]{32}\.(jpg|png|webp)$/',
+                            $dosya_adi
+                        ) &&
+                        is_file(
+                            __DIR__ . "/uploads/" . $dosya_adi
+                        );
+                    ?>
+
+                    <?php if ($gecerli_fotograf): ?>
+
+                        <img
+                            src="uploads/<?php echo guvenli($dosya_adi); ?>"
+                            alt="<?php echo guvenli($ilan["hayvan_adi"]); ?>"
+                            class="ilan-fotograf"
+                        >
+
+                    <?php else: ?>
+
+                        <div class="foto-yok">
+                            Fotoğraf Yok
+                        </div>
+
+                    <?php endif; ?>
+
+                    <div class="ilan-bilgi">
+
+                        <h3>
+                            <?php echo guvenli($ilan["hayvan_adi"]); ?>
+                        </h3>
+
+                        <p>
+                            <strong>Tür:</strong>
+                            <?php echo guvenli($ilan["tur"]); ?>
+                        </p>
+
+                        <p>
+                            <strong>Yaş:</strong>
+                            <?php echo (int)$ilan["yas"]; ?>
+                        </p>
+
+                        <p>
+                            <strong>Cinsiyet:</strong>
+                            <?php echo guvenli($ilan["cinsiyet"]); ?>
+                        </p>
+
+                        <p>
+                            <strong>Şehir:</strong>
+                            <?php echo guvenli($ilan["sehir"]); ?>
+                        </p>
+
+                        <a
+                            href="ilan-detay.php?id=<?php echo (int)$ilan["id"]; ?>"
+                            class="detay-buton"
+                        >
+                            İlanı İncele
+                        </a>
+
+                    </div>
+
+                </div>
+
+            <?php endwhile; ?>
+
+        <?php else: ?>
+
+            <p>Aradığınız kriterlere uygun onaylanmış ilan bulunmuyor.</p>
+
+        <?php endif; ?>
 
     </section>
 
@@ -150,3 +343,9 @@
 
 </body>
 </html>
+
+<?php
+if ($sorgu) {
+    mysqli_stmt_close($sorgu);
+}
+?>

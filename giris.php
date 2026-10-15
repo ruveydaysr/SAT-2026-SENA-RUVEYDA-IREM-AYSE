@@ -5,7 +5,36 @@ include("baglanti.php");
 
 $hata = "";
 
-if (isset($_POST["giris"])) {
+// Giriş sonrasında dönülecek sayfa
+$redirect = $_POST["redirect"] ?? $_GET["redirect"] ?? "";
+
+// Yalnızca kendi sitemizdeki sahiplenme sayfasına yönlendirme
+$hedef = "index.php";
+
+if ($redirect !== "") {
+    $parcalar = parse_url($redirect);
+
+    if (
+        $parcalar !== false &&
+        !isset($parcalar["scheme"]) &&
+        !isset($parcalar["host"]) &&
+        ($parcalar["path"] ?? "") === "sahiplen.php"
+    ) {
+        $parametreler = [];
+        parse_str($parcalar["query"] ?? "", $parametreler);
+
+        $ilan_id = filter_var(
+            $parametreler["ilan_id"] ?? null,
+            FILTER_VALIDATE_INT
+        );
+
+        if ($ilan_id !== false && $ilan_id !== null && $ilan_id > 0) {
+            $hedef = "sahiplen.php?ilan_id=" . $ilan_id;
+        }
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["giris"])) {
 
     $email = trim($_POST["email"] ?? "");
     $sifre = $_POST["sifre"] ?? "";
@@ -26,11 +55,13 @@ if (isset($_POST["giris"])) {
         // Yeni üyeler için şifre doğrulama
         $dogru = password_verify($sifre, $kayitli_sifre);
 
-        // Eski üyelerin düz metin şifreleri için geçiş desteği
-        if (!$dogru && password_get_info($kayitli_sifre)["algo"] === null) {
+        // Eski üyeler için geçiş desteği
+        if (
+            !$dogru &&
+            password_get_info($kayitli_sifre)["algo"] === null
+        ) {
             $dogru = hash_equals($kayitli_sifre, $sifre);
 
-            // Eski şifreyi güvenli biçime dönüştür
             if ($dogru) {
                 $yeni_hash = password_hash($sifre, PASSWORD_DEFAULT);
 
@@ -59,7 +90,7 @@ if (isset($_POST["giris"])) {
             $_SESSION["uye_adsoyad"] = $uye["ad_soyad"];
             $_SESSION["uye_email"] = $uye["email"];
 
-            header("Location: index.php");
+            header("Location: " . $hedef);
             exit();
 
         } else {
@@ -74,9 +105,9 @@ if (isset($_POST["giris"])) {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,34 +116,57 @@ if (isset($_POST["giris"])) {
 </head>
 
 <body>
-    <div class="giris-kutusu">
+
+<div class="giris-kutusu">
+
     <h1>Üye Girişi</h1>
-    <?php if ($hata != "") { ?>
-    <p style="color: red;">
-        <?php echo htmlspecialchars($hata, ENT_QUOTES, 'UTF-8'); ?>
-    </p>
-<?php } ?>
 
-    <form method="POST">
+    <?php if ($hata !== ""): ?>
+        <p style="color: red;">
+            <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
+        </p>
+    <?php endif; ?>
 
-        <label>E-posta:</label>
-        <input type="email" name="email" required>
+    <form action="giris.php" method="POST">
+
+        <input
+            type="hidden"
+            name="redirect"
+            value="<?php echo htmlspecialchars($hedef, ENT_QUOTES, "UTF-8"); ?>"
+        >
+
+        <label for="email">E-posta:</label>
+        <input
+            type="email"
+            id="email"
+            name="email"
+            required
+        >
 
         <br><br>
 
-        <label>Şifre:</label>
-        <input type="password" name="sifre" required>
+        <label for="sifre">Şifre:</label>
+        <input
+            type="password"
+            id="sifre"
+            name="sifre"
+            required
+        >
 
         <br><br>
 
-        <input type="submit" name="giris" value="Giriş Yap">
+        <input
+            type="submit"
+            name="giris"
+            value="Giriş Yap"
+        >
 
     </form>
 
     <p>Üye değil misiniz?</p>
     <a href="kayit.php">Kayıt Ol</a>
-    </div>
+
+</div>
 
 </body>
-
 </html>
