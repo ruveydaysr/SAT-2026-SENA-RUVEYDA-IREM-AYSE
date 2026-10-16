@@ -329,3 +329,96 @@ nav a:hover {
     color: #333;
     text-decoration: none;
 }
+/* İLAN VER SAYFASI */
+
+.ilan-sayfa {
+    width: 90%;
+    max-width: 700px;
+    margin: 40px auto;
+}
+
+.ilan-baslik {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.ilan-baslik h1 {
+    margin-bottom: 10px;
+}
+
+.ilan-baslik p {
+    color: #666;
+    font-size: 16px;
+}
+
+.ilan-form {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.ilan-form label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 7px;
+    font-weight: bold;
+}
+
+.ilan-form input,
+.ilan-form select,
+.ilan-form textarea {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 15px;
+}
+
+.ilan-form input:focus,
+.ilan-form select:focus,
+.ilan-form textarea:focus {
+    outline: none;
+    border-color: #555;
+}
+
+.ilan-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.ilan-form input[type="file"] {
+    background-color: #f8f8f8;
+}
+
+.ilan-form p {
+    color: #777;
+    font-size: 13px;
+}
+
+.ilan-gonder {
+    width: 100%;
+    margin-top: 25px;
+    padding: 13px;
+    border: none;
+    border-radius: 7px;
+    background-color: #555;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.ilan-gonder:hover {
+    background-color: #333;
+}
+
+.ilan-mesaj {
+    margin-bottom: 20px;
+    padding: 14px;
+    background-color: #f1f1f1;
+    border-left: 5px solid #555;
+    border-radius: 6px;
+    text-align: center;
+}

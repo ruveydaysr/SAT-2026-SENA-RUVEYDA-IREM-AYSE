@@ -167,13 +167,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
 
-<h1>Hayvan İlanı Ver</h1>
+<div class="ilan-sayfa">
 
-<?php if ($mesaj !== ""): ?>
-    <p><?php echo htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8"); ?></p>
-<?php endif; ?>
+    <div class="ilan-baslik">
+        <h1>🐾 Hayvan İlanı Ver</h1>
+        <p>Yeni bir ilan oluşturarak bir hayvanın yuva bulmasına yardımcı olun.</p>
+    </div>
 
-<form action="ilan-ver.php" method="POST" enctype="multipart/form-data">
+    <?php if ($mesaj !== ""): ?>
+        <div class="ilan-mesaj">
+            <?php echo htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8"); ?>
+        </div>
+    <?php endif; ?>
+
+    <form class="ilan-form" action="ilan-ver.php" method="POST" enctype="multipart/form-data">
 
     <label for="tur">Hayvan Türü:</label>
     <select id="tur" name="tur" required>
@@ -254,9 +261,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <br><br>
 
-    <button type="submit">İlan Ver</button>
+          <button type="submit" class="ilan-gonder">🐾 İlanı Yayınla</button>
 
-</form>
+    </form>
+
+</div>
 
 </body>
 </html>
