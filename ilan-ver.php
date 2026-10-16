@@ -155,108 +155,131 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="tr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İlan Ver</title>
+    <title>İlan Ver | Pati Yuvası</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="ilan-sayfasi">
 
-<h1>Hayvan İlanı Ver</h1>
+    <header class="ilan-ust">
+        <a href="index.php" class="ilan-logo">
+            <span class="logo-pati">🐾</span>
+            <span>
+                <strong>Pati Yuvası</strong>
+                <small>Her can dostuna bir yuva</small>
+            </span>
+        </a>
 
-<?php if ($mesaj !== ""): ?>
-    <p><?php echo htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8"); ?></p>
-<?php endif; ?>
+        <nav class="ilan-menu">
+            <a href="index.php">Ana Sayfa</a>
+            <a href="ilanlar.php">İlanlar</a>
+            <a href="ilan-ver.php" class="menu-aktif">İlan Ver</a>
+            <a href="hakkimizda.php">Hakkımızda</a>
+            <a href="iletisim.php">İletişim</a>
+            <a href="cikis.php">Çıkış Yap</a>
+        </nav>
+    </header>
 
-<form action="ilan-ver.php" method="POST" enctype="multipart/form-data">
+    <main class="ilan-icerik">
 
-    <label for="tur">Hayvan Türü:</label>
-    <select id="tur" name="tur" required>
-        <option value="">Hayvan türünü seçiniz</option>
-        <option value="Kedi">Kedi</option>
-        <option value="Köpek">Köpek</option>
-        <option value="Kuş">Kuş</option>
-        <option value="Tavşan">Tavşan</option>
-        <option value="Balık">Balık</option>
-        <option value="Diğer">Diğer</option>
-    </select>
+        <section class="ilan-tanitim">
+            <span class="ilan-etiket">PATİ YUVASI · YENİ İLAN</span>
+            <h1>Ona yeni bir <span>yuva</span> bulalım.</h1>
+            <p>Dostunuzun bilgilerini paylaşın ve onun sevgi dolu bir aileyle buluşmasına yardımcı olun.</p>
+        </section>
 
-    <br><br>
+        <section class="ilan-kart">
 
-    <label for="hayvan_adi">Hayvan Adı:</label>
-    <input
-        type="text"
-        id="hayvan_adi"
-        name="hayvan_adi"
-        placeholder="Hayvanın adını giriniz"
-        required
-    >
+            <div class="ilan-kart-baslik">
+                <div>
+                    <h2>Hayvan Bilgileri</h2>
+                    <p>İlan oluşturmak için aşağıdaki alanları doldurun.</p>
+                </div>
+                <span class="ilan-zorunlu">* Zorunlu alanlar</span>
+            </div>
 
-    <br><br>
+            <?php if ($mesaj !== ""): ?>
+                <div class="ilan-mesaj">
+                    <?php echo htmlspecialchars($mesaj, ENT_QUOTES, "UTF-8"); ?>
+                </div>
+            <?php endif; ?>
 
-    <label for="yas">Hayvanın Yaşı:</label>
-    <input
-        type="number"
-        id="yas"
-        name="yas"
-        placeholder="Yaşını giriniz"
-        min="0"
-        required
-    >
+            <form class="ilan-form" action="ilan-ver.php" method="POST" enctype="multipart/form-data">
 
-    <br><br>
+                <div class="ilan-form-grid">
 
-    <label for="cinsiyet">Cinsiyet:</label>
-    <select id="cinsiyet" name="cinsiyet" required>
-        <option value="">Seçiniz</option>
-        <option value="Dişi">Dişi</option>
-        <option value="Erkek">Erkek</option>
-    </select>
+                    <div class="ilan-grup">
+                        <label for="hayvan_adi">Hayvanın Adı *</label>
+                        <input type="text" id="hayvan_adi" name="hayvan_adi" placeholder="Örn. Boncuk" required>
+                    </div>
 
-    <br><br>
+                    <div class="ilan-grup">
+                        <label for="tur">Hayvan Türü *</label>
+                        <select id="tur" name="tur" required>
+                            <option value="">Tür seçiniz</option>
+                            <option value="Kedi">Kedi</option>
+                            <option value="Köpek">Köpek</option>
+                            <option value="Kuş">Kuş</option>
+                            <option value="Tavşan">Tavşan</option>
+                            <option value="Balık">Balık</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
 
-    <label for="sehir">Şehir:</label>
-    <input
-        type="text"
-        id="sehir"
-        name="sehir"
-        placeholder="Şehir giriniz"
-        required
-    >
+                    <div class="ilan-grup">
+                        <label for="yas">Hayvanın Yaşı *</label>
+                        <input type="number" id="yas" name="yas" min="0" placeholder="Yaşını giriniz" required>
+                    </div>
 
-    <br><br>
+                    <div class="ilan-grup">
+                        <label for="cinsiyet">Cinsiyet *</label>
+                        <select id="cinsiyet" name="cinsiyet" required>
+                            <option value="">Cinsiyet seçiniz</option>
+                            <option value="Dişi">Dişi</option>
+                            <option value="Erkek">Erkek</option>
+                        </select>
+                    </div>
 
-    <label for="aciklama">Açıklama:</label>
-    <textarea
-        id="aciklama"
-        name="aciklama"
-        rows="5"
-        placeholder="Hayvan hakkında bilgi veriniz"
-        required
-    ></textarea>
+                    <div class="ilan-grup ilan-tam">
+                        <label for="sehir">Bulunduğu Şehir *</label>
+                        <input type="text" id="sehir" name="sehir" placeholder="Örn. Ankara" required>
+                    </div>
 
-    <br><br>
+                    <div class="ilan-grup ilan-tam">
+                        <label for="aciklama">Açıklama *</label>
+                        <textarea id="aciklama" name="aciklama" rows="5" placeholder="Hayvanın özelliklerini ve karakterini anlatın." required></textarea>
+                    </div>
 
-    <label for="fotograf">Hayvan Fotoğrafı:</label>
-    <input
-        type="file"
-        id="fotograf"
-        name="fotograf"
-        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-    >
+                    <div class="ilan-grup ilan-tam">
+                        <label for="fotograf">Hayvan Fotoğrafı</label>
+                        <input type="file" id="fotograf" name="fotograf" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <small>JPG, PNG veya WEBP formatı · En fazla 5 MB</small>
+                    </div>
 
-    <p>JPG, PNG veya WEBP formatında, en fazla 5 MB fotoğraf yükleyebilirsiniz.</p>
+                </div>
 
-    <br><br>
+                <div class="ilan-form-alt">
+                    <p>Bilgileri kontrol ettikten sonra ilanınızı gönderebilirsiniz.</p>
+                    <button type="submit" class="ilan-gonder">🐾 İlanı Gönder →</button>
+                </div>
 
-    <button type="submit">İlan Ver</button>
+            </form>
+        </section>
 
-</form>
+        <p class="ilan-alt-yazi">♥ Her can dostu sevgi dolu bir yuvayı hak eder.</p>
+
+    </main>
+
+    <footer class="ilan-footer">
+        <p>© 2026 Pati Yuvası · Hayvan Sahiplendirme Platformu</p>
+    </footer>
 
 </body>
 </html>
