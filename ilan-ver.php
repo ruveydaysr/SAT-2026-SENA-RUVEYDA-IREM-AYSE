@@ -3,7 +3,29 @@
 session_start();
 
 if (!isset($_SESSION["uye_id"])) {
-    header("Location: giris.php");
+    ?>
+    
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Giriş Gerekli</title>
+    </head>
+
+    <body>
+
+        <h1>İlan Vermek İçin Giriş Yapmalısınız</h1>
+
+        <p>İlan vermek için giriş yapmalısınız.</p>
+
+        <a href="giris.php">
+            <button>Giriş Yap</button>
+        </a>
+
+    </body>
+    </html>
+
+    <?php
     exit();
 }
 
