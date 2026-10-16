@@ -32,6 +32,10 @@ if (isset($_POST["kayit"])) {
 
         if (mysqli_stmt_execute($sorgu)) {
             $mesaj = "Üyelik başarıyla oluşturuldu.";
+            
+header("Refresh: 2; url=giris.php");
+$mesaj = "Kaydınız başarıyla tamamlandı. Giriş sayfasına yönlendiriliyorsunuz...";
+
         } else {
             $mesaj = "Kayıt yapılamadı. E-posta adresi zaten kullanılıyor olabilir.";
         }

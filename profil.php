@@ -208,6 +208,18 @@ $basvurular = mysqli_stmt_get_result($sorgu2);
 
                     <?php endif; ?>
 
+<p>
+    <a href="ilan-duzenle.php?id=<?php echo (int)$ilan['id']; ?>">
+        Düzenle
+    </a>
+
+    &nbsp; | &nbsp;
+
+    <a href="ilan-sil.php?id=<?php echo (int)$ilan['id']; ?>">
+        Sil
+    </a>
+</p>
+
                 </div>
 
             <?php endwhile; ?>

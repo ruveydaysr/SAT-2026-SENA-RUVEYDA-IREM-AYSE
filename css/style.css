@@ -329,3 +329,44 @@ nav a:hover {
     color: #333;
     text-decoration: none;
 }
+
+/* İlan silme sayfası butonları */
+
+.sil-butonlari {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.sil-butonlari .btn-sil,
+.sil-butonlari .btn-vazgec {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    text-decoration: none;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.sil-butonlari .btn-sil {
+    background-color: #f5c6c6;
+    color: #702020;
+    border-color: #e6aaaa;
+}
+
+.sil-butonlari .btn-vazgec {
+    background-color: #eeeeee;
+    color: #333333;
+}
+
+.sil-butonlari .btn-sil:hover {
+    background-color: #eba9a9;
+}
+
+.sil-butonlari .btn-vazgec:hover {
+    background-color: #dddddd;
+}
