@@ -172,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <a href="index.php" class="ilan-logo">
             <span class="logo-pati">🐾</span>
             <span>
-                <strong>Pati Yuvası</strong>
+                <strong>Aris Pati Yuvası</strong>
                 <small>Her can dostuna bir yuva</small>
             </span>
         </a>
@@ -190,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <main class="ilan-icerik">
 
         <section class="ilan-tanitim">
-            <span class="ilan-etiket">PATİ YUVASI · YENİ İLAN</span>
+            <span class="ilan-etiket">ARİS PATİ YUVASI · YENİ İLAN</span>
             <h1>Ona yeni bir <span>yuva</span> bulalım.</h1>
             <p>Dostunuzun bilgilerini paylaşın ve onun sevgi dolu bir aileyle buluşmasına yardımcı olun.</p>
         </section>
