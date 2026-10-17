@@ -104,24 +104,122 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İlan Düzenle</title>
     <link rel="stylesheet" href="css/style.css">
+    
+<style>
+    body {
+        background-color: #f5f8f5;
+    }
+
+    .duzenle-baslik {
+        text-align: center;
+        margin: 45px auto 30px;
+    }
+
+    .duzenle-baslik h2 {
+        color: #184f3c;
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+
+    .duzenle-baslik p {
+        color: #71867a;
+    }
+
+    .duzenle-kutusu {
+        max-width: 800px;
+        margin: 0 auto 50px;
+        padding: 35px;
+        background-color: white;
+        border: 1px solid #dce8df;
+        border-radius: 16px;
+    }
+
+    .duzenle-kutusu label {
+        display: block;
+        color: #184f3c;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .duzenle-kutusu input,
+    .duzenle-kutusu select,
+    .duzenle-kutusu textarea {
+        width: 100%;
+        padding: 13px;
+        border: 1px solid #d3e0d6;
+        border-radius: 8px;
+        background-color: #f9fbf9;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    .duzenle-kutusu input:focus,
+    .duzenle-kutusu select:focus,
+    .duzenle-kutusu textarea:focus {
+        outline: none;
+        border-color: #347a53;
+    }
+
+    .duzenle-kutusu button {
+        background-color: #347a53;
+        color: white;
+        padding: 13px 22px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .duzenle-kutusu button:hover {
+        background-color: #245c3d;
+    }
+
+    .duzenle-kutusu .iptal-buton {
+        display: inline-block;
+        margin-left: 12px;
+        padding: 12px 20px;
+        color: #347a53;
+        text-decoration: none;
+    }
+
+    .duzenle-hata {
+        color: #c62828;
+        margin-bottom: 20px;
+    }
+</style>
+
 </head>
 
 <body>
 
-<header>
-    <h1>Hayvan Sahiplendirme</h1>
+<header class="ilan-ust">
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
 
-    <nav>
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">İlanlar</a>
+        <a href="ilan-ver.php">İlan Ver</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
         <a href="profil.php">Profilim</a>
         <a href="cikis.php">Çıkış Yap</a>
     </nav>
 </header>
 
 <main>
-
+<div class="duzenle-baslik">
     <h2>İlanımı Düzenle</h2>
+    <p>Dostumuzun bilgilerini buradan güncelleyebilirsiniz.</p>
+</div>
+
+<div class="duzenle-kutusu">
     
 <?php if ($hata !== ""): ?>
     <p style="color: red;">
@@ -182,10 +280,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
             Değişiklikleri Kaydet
         </button>
 
-        <a href="profil.php">İptal</a>
+       <a href="profil.php" class="iptal-buton">İptal</a>
 
     </form>
-
+</div>
 </main>
 
 </body>

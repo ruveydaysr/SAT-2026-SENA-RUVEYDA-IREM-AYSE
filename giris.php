@@ -115,58 +115,88 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["giris"])) {
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
 
-<div class="giris-kutusu">
+<body class="giris-sayfasi">
 
-    <h1>Üye Girişi</h1>
+    <header class="ilan-ust">
+        <a href="index.php" class="ilan-logo">
+            <span class="logo-pati">🐾</span>
+            <span>
+                <strong>Aris Pati Yuvası</strong>
+                <small>Her can dostuna bir yuva</small>
+            </span>
+        </a>
 
-    <?php if ($hata !== ""): ?>
-        <p style="color: red;">
-            <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
-        </p>
-    <?php endif; ?>
+        <nav class="ilan-menu">
+            <a href="index.php">Ana Sayfa</a>
+            <a href="ilanlar.php">İlanlar</a>
+            <a href="ilan-ver.php">İlan Ver</a>
+            <a href="hakkimizda.php">Hakkımızda</a>
+            <a href="iletisim.php">İletişim</a>
+        </nav>
+    </header>
 
-    <form action="giris.php" method="POST">
+    <main class="giris-alani">
 
-        <input
-            type="hidden"
-            name="redirect"
-            value="<?php echo htmlspecialchars($hedef, ENT_QUOTES, "UTF-8"); ?>"
-        >
+        <div class="giris-kart">
 
-        <label for="email">E-posta:</label>
-        <input
-            type="email"
-            id="email"
-            name="email"
-            required
-        >
+            <div class="giris-simge">🐾</div>
 
-        <br><br>
+            <h1>Tekrar Hoş Geldiniz!</h1>
+            <p class="giris-aciklama">
+                Aris Pati Yuvası hesabınıza giriş yapın.
+            </p>
 
-        <label for="sifre">Şifre:</label>
-        <input
-            type="password"
-            id="sifre"
-            name="sifre"
-            required
-        >
+            <?php if ($hata !== ""): ?>
+                <p class="giris-hata">
+                    <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
+                </p>
+            <?php endif; ?>
 
-        <br><br>
+            <form action="giris.php" method="POST">
 
-        <input
-            type="submit"
-            name="giris"
-            value="Giriş Yap"
-        >
+                <input
+                    type="hidden"
+                    name="redirect"
+                    value="<?php echo htmlspecialchars($hedef, ENT_QUOTES, "UTF-8"); ?>"
+                >
 
-    </form>
+                <label for="email">E-posta Adresi</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="E-posta adresinizi giriniz"
+                    required
+                >
 
-    <p>Üye değil misiniz?</p>
-    <a href="kayit.php">Kayıt Ol</a>
+                <label for="sifre">Şifre</label>
+                <input
+                    type="password"
+                    id="sifre"
+                    name="sifre"
+                    placeholder="Şifrenizi giriniz"
+                    required
+                >
 
-</div>
+                <button type="submit" name="giris" class="giris-buton">
+                    Giriş Yap
+                </button>
+
+            </form>
+
+            <p class="giris-kayit">
+                Henüz hesabınız yok mu?
+                <a href="kayit.php">Kayıt Ol</a>
+            </p>
+
+        </div>
+
+    </main>
+
+    <footer class="giris-alt">
+        © 2026 Aris Pati Yuvası · Her can dostu sevgi dolu bir yuvayı hak eder.
+    </footer>
 
 </body>
 </html>

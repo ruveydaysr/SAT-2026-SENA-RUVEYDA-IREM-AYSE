@@ -58,69 +58,127 @@ $basvurular = mysqli_stmt_get_result($sorgu2);
     <link rel="stylesheet" href="css/style.css">
 
     <style>
-        .profil-bolum {
-            margin: 30px 0;
-        }
+        
+.profil-bolum {
+    max-width: 950px;
+    margin: 35px auto;
+    padding: 30px;
+    background-color: white;
+    border: 1px solid #dce8df;
+    border-radius: 16px;
+}
 
-        .profil-kart {
-            background: white;
-            padding: 20px;
-            margin-bottom: 18px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+.profil-bolum h2 {
+    color: #184f3c;
+    margin-bottom: 25px;
+}
 
-        .profil-kart h3 {
-            margin-top: 0;
-        }
+.profil-bolum > p {
+    margin: 12px 0;
+    color: #425b50;
+}
 
-        .profil-kart p {
-            margin: 10px 0;
-        }
+.profil-kart {
+    background-color: #f6faf7;
+    border: 1px solid #dce8df;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 18px;
+}
 
-        .profil-fotograf {
-            width: 180px;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
+.profil-kart h3 {
+    color: #1c6045;
+    margin-top: 0;
+}
 
-        .profil-durum {
-            font-weight: bold;
-        }
+.profil-kart p {
+    margin: 12px 0;
+}
 
-        .profil-durum.bekliyor {
-            color: #e69500;
-        }
+.profil-fotograf {
+    width: 180px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
 
-        .profil-durum.onaylandi {
-            color: #2e7d32;
-        }
+.profil-kart a {
+    display: inline-block;
+    background-color: #347a53;
+    color: white;
+    padding: 9px 16px;
+    border-radius: 7px;
+    text-decoration: none;
+    margin-top: 8px;
+}
 
-        .profil-durum.reddedildi {
-            color: #d32f2f;
-        }
+.profil-kart a:hover {
+    background-color: #245c3d;
+}
 
-        .red-nedeni {
-            color: #d32f2f;
-        }
+.profil-durum {
+    font-weight: bold;
+}
+
+.profil-durum.bekliyor {
+    color: #e69500;
+}
+
+.profil-durum.onaylandi {
+    color: #2e7d32;
+}
+
+.profil-durum.reddedildi,
+.red-nedeni {
+    color: #d32f2f;
+}
+
+body {
+    background-color: #f5f8f5;
+}
+
+main {
+    padding: 25px;
+}
+
+@media (max-width: 600px) {
+    .profil-bolum {
+        padding: 18px;
+    }
+
+    main {
+        padding: 10px;
+    }
+}
+hr {
+    display: none;
+}
     </style>
 </head>
 
 <body>
 
-<header>
-    <h1>Hayvan Sahiplendirme</h1>
+<header class="ilan-ust">
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
 
-    <nav>
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
-        <a href="profil.php">Profilim</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
+        <a href="profil.php" class="aktif">Profilim</a>
         <a href="cikis.php">Çıkış Yap</a>
     </nav>
 </header>
+
 
 <main>
 

@@ -1,5 +1,5 @@
-
 <?php
+session_start();
 include("baglanti.php");
 
 function guvenli($deger) {
@@ -109,20 +109,37 @@ if ($ilan) {
         }
     </style>
 </head>
+<body class="ilan-sayfasi detay-sayfasi">
 
-<body>
+<header class="ilan-ust">
 
-<header>
-    <h1>Hayvan Sahiplendirme Sistemi</h1>
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
 
-    <nav>
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php">Hayvan Ara</a>
-        <a href="kayip.html">Kayıp Hayvanlar</a>
+        <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
-        <a href="giris.php">Giriş Yap</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
+
+        <?php if (isset($_SESSION["uye_id"])): ?>
+            <a href="profil.php">
+                <?php echo guvenli($_SESSION["uye_adsoyad"] ?? "Profilim"); ?>
+            </a>
+            <a href="cikis.php">Çıkış Yap</a>
+        <?php else: ?>
+            <a href="giris.php">Giriş Yap</a>
+        <?php endif; ?>
     </nav>
+
 </header>
+
 
 <main>
 

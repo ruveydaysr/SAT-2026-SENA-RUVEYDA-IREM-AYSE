@@ -12,36 +12,48 @@ session_start();
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="ilan-sayfasi">
 
-    <header>
-        <h1>Hayvan Sahiplendirme</h1>
+<header class="ilan-ust">
 
-        <nav>
-            <a href="index.php">Ana Sayfa</a>
-            
-            
-            
-            <a href="ilanlar.php">İlanlar</a>
-            <a href="ilan-ver.php">İlan Ver</a>
-            <a href="hakkimizda.php">Hakkımızda</a>
-            <a href="iletisim.php">İletişim</a>
-           <?php if (isset($_SESSION["uye_id"])) { ?>
-
-    <a href="profil.php">
-        <?php echo htmlspecialchars($_SESSION["uye_adsoyad"], ENT_QUOTES, 'UTF-8'); ?>
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
     </a>
 
-    <a href="cikis.php">Çıkış Yap</a>
+    <nav class="ilan-menu">
+        <a href="index.php">Ana Sayfa</a>
+        <a href="ilanlar.php">İlanlar</a>
+        <a href="ilan-ver.php">İlan Ver</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
 
-<?php } else { ?>
+        <?php if (isset($_SESSION["uye_id"])): ?>
 
-    <a href="giris.php">Giriş Yap</a>
+            <a href="profil.php">
+                <?php
+                echo htmlspecialchars(
+                    $_SESSION["uye_adsoyad"] ?? "Profilim",
+                    ENT_QUOTES,
+                    "UTF-8"
+                );
+                ?>
+            </a>
 
-<?php } ?>
-        
-        </nav>
-    </header>
+            <a href="cikis.php">Çıkış Yap</a>
+
+        <?php else: ?>
+
+            <a href="giris.php">Giriş Yap</a>
+
+        <?php endif; ?>
+    </nav>
+
+</header>
+
 
     <main>
         <section class="tanitim">
