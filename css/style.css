@@ -230,3 +230,469 @@ nav a:hover {
     background-color: #333;
     color: white;
 }
+.iletisim {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.form-grup {
+    margin-bottom: 15px;
+}
+
+.form-grup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-grup input,
+.form-grup textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.btn-gonder {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-gonder:hover {
+    background-color: #45a049;
+}
+
+/* Üye giriş sayfası */
+
+.giris-kutusu {
+    background-color: #f2f2f2;
+    width: 350px;
+    margin: 80px auto;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.giris-kutusu input {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.giris-kutusu input[type="submit"] {
+    background-color: #555;
+    color: white;
+    cursor: pointer;
+}
+
+.giris-kutusu a {
+    color: #333;
+    text-decoration: none;
+}
+
+/* Üyelik kayıt sayfası */
+
+.kayit-kutusu {
+    background-color: #f2f2f2;
+    width: 350px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.kayit-kutusu input {
+    padding: 10px;
+    margin: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.kayit-kutusu input[type="submit"] {
+    background-color: #555;
+    color: white;
+    cursor: pointer;
+}
+
+.kayit-kutusu a {
+    color: #333;
+    text-decoration: none;
+}
+
+
+/* İlan silme sayfası butonları */
+
+.sil-butonlari {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.sil-butonlari .btn-sil,
+.sil-butonlari .btn-vazgec {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    text-decoration: none;
+    text-align: center;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.sil-butonlari .btn-sil {
+    background-color: #f5c6c6;
+    color: #702020;
+    border-color: #e6aaaa;
+}
+
+.sil-butonlari .btn-vazgec {
+    background-color: #eeeeee;
+    color: #333333;
+}
+
+.sil-butonlari .btn-sil:hover {
+    background-color: #eba9a9;
+}
+
+.sil-butonlari .btn-vazgec:hover {
+    background-color: #dddddd;}
+
+/* ===== İLAN VER SAYFASI ===== */
+
+.ilan-sayfasi {
+    margin: 0;
+    background: #f4f7f4;
+    color: #293d30;
+    font-family: Arial, sans-serif;
+}
+
+/* Üst menü */
+.ilan-ust {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px 5%;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e9e3;
+}
+
+.ilan-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #2d6442;
+    text-decoration: none;
+}
+
+.logo-pati {
+    padding: 12px;
+    border-radius: 12px;
+    background: #e8f2e9;
+    font-size: 25px;
+}
+
+.ilan-logo strong,
+.ilan-logo small {
+    display: block;
+}
+
+.ilan-logo strong {
+    font-size: 21px;
+}
+
+.ilan-logo small {
+    margin-top: 5px;
+    color: #829087;
+    font-size: 12px;
+}
+
+.ilan-menu {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.ilan-menu a {
+    padding: 10px 12px;
+    border-radius: 7px;
+    color: #526258;
+    text-decoration: none;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.ilan-menu a:hover,
+.ilan-menu a.menu-aktif {
+    background: #e6f1e8;
+    color: #2d7045;
+}
+
+/* Başlık bölümü */
+.ilan-icerik {
+    width: 90%;
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.ilan-tanitim {
+    margin: 50px auto 35px;
+    text-align: center;
+}
+
+.ilan-etiket {
+    display: inline-block;
+    padding: 9px 15px;
+    border-radius: 30px;
+    background: #e5f1e7;
+    color: #39744c;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.ilan-tanitim h1 {
+    margin: 20px 0 12px;
+    color: #294333;
+    font-size: 38px;
+    line-height: 1.3;
+}
+
+.ilan-tanitim h1 span {
+    color: #4c8b60;
+}
+
+.ilan-tanitim p {
+    max-width: 580px;
+    margin: 0 auto;
+    color: #758278;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+/* Form kartı */
+.ilan-kart {
+    padding: 32px;
+    border: 1px solid #e3eae4;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(36, 65, 43, 0.08);
+}
+
+.ilan-kart-baslik {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 22px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #edf0ed;
+}
+
+.ilan-kart-baslik h2 {
+    margin: 0 0 8px;
+    color: #2d4434;
+    font-size: 23px;
+}
+
+.ilan-kart-baslik p {
+    margin: 0;
+    color: #839087;
+    font-size: 13px;
+}
+
+.ilan-zorunlu {
+    color: #829087;
+    font-size: 12px;
+}
+
+/* Form alanları */
+.ilan-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 20px;
+}
+
+.ilan-grup {
+    min-width: 0;
+}
+
+.ilan-grup.ilan-tam {
+    grid-column: 1 / -1;
+}
+
+.ilan-grup label {
+    display: block;
+    margin-bottom: 9px;
+    color: #34473a;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.ilan-grup input,
+.ilan-grup select,
+.ilan-grup textarea {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    border: 1px solid #d8e2da;
+    border-radius: 8px;
+    background: #fbfcfb;
+    color: #344439;
+    font-family: inherit;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.ilan-grup input:focus,
+.ilan-grup select:focus,
+.ilan-grup textarea:focus {
+    outline: none;
+    border-color: #609572;
+    box-shadow: 0 0 0 3px rgba(96, 149, 114, 0.12);
+    background: #ffffff;
+}
+
+.ilan-grup textarea {
+    min-height: 130px;
+    resize: vertical;
+    line-height: 1.7;
+}
+
+.ilan-grup input[type="file"] {
+    padding: 10px;
+    background: #f8faf8;
+}
+
+.ilan-grup small {
+    display: block;
+    margin-top: 8px;
+    color: #839087;
+    font-size: 12px;
+}
+
+/* Gönder butonu */
+.ilan-form-alt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #edf0ed;
+}
+
+.ilan-form-alt p {
+    max-width: 350px;
+    margin: 0;
+    color: #839087;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.ilan-gonder {
+    padding: 14px 23px;
+    border: none;
+    border-radius: 8px;
+    background: #39764d;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ilan-gonder:hover {
+    background: #285d3b;
+    transform: translateY(-1px);
+}
+
+/* Mesaj ve alt bölüm */
+.ilan-mesaj {
+    margin-bottom: 22px;
+    padding: 15px;
+    border-left: 4px solid #4c8b60;
+    border-radius: 7px;
+    background: #edf6ef;
+    color: #315f3d;
+    line-height: 1.6;
+}
+
+.ilan-alt-yazi {
+    margin: 28px 0 40px;
+    color: #7d8b80;
+    text-align: center;
+    font-size: 13px;
+}
+
+.ilan-footer {
+    padding: 22px 15px;
+    border-top: 1px solid #e2e9e3;
+    background: #ffffff;
+    color: #829087;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* Telefon uyumu */
+@media (max-width: 600px) {
+    .ilan-ust {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ilan-menu {
+        gap: 3px;
+    }
+
+    .ilan-menu a {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .ilan-tanitim h1 {
+        font-size: 29px;
+    }
+
+    .ilan-kart {
+        padding: 20px 16px;
+    }
+
+    .ilan-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ilan-grup.ilan-tam {
+        grid-column: auto;
+    }
+
+    .ilan-form-alt {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ilan-gonder {
+        width: 100%;
+    }
+
+}

@@ -19,14 +19,17 @@ session_start();
 
         <nav>
             <a href="index.php">Ana Sayfa</a>
-            <a href="ilanlar.html">İlanlar</a>
-            <a href="ilan-ver.html">İlan Ver</a>
+            
+            
+            
+            <a href="ilanlar.php">İlanlar</a>
+            <a href="ilan-ver.php">İlan Ver</a>
             <a href="hakkimizda.php">Hakkımızda</a>
-            <a href="iletisim.html">İletişim</a>
+            <a href="iletisim.php">İletişim</a>
            <?php if (isset($_SESSION["uye_id"])) { ?>
 
     <a href="profil.php">
-        <?php echo $_SESSION["uye_adsoyad"]; ?>
+        <?php echo htmlspecialchars($_SESSION["uye_adsoyad"], ENT_QUOTES, 'UTF-8'); ?>
     </a>
 
     <a href="cikis.php">Çıkış Yap</a>
@@ -49,7 +52,7 @@ session_start();
         İlanları inceleyerek sana uygun yeni dostunu bulabilirsin.
     </p>
 
-    <a href="ilanlar.html" class="ilan-buton">İlanları İncele</a>
+    <a href="ilanlar.php" class="ilan-buton">İlanları İncele</a>
 </section>
    <section class="kategoriler">
     <h2>Hayvan Kategorileri</h2>
@@ -67,11 +70,7 @@ session_start();
 </section>
     </main>
 
-    <footer>
-        <p>Hayvan Sahiplendirme Projesi</p>
-    </footer>
-
-    <script src="js/script.js"></script>
+    
 
 </body>
 </html>
