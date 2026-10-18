@@ -85,22 +85,101 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İlan Sil</title>
     <link rel="stylesheet" href="css/style.css">
+    
+<style>
+    body {
+        background-color: #f5f8f5;
+    }
+
+    .sil-kutusu {
+        max-width: 550px;
+        margin: 70px auto;
+        padding: 40px;
+        background-color: white;
+        border: 1px solid #dce8df;
+        border-radius: 16px;
+        text-align: center;
+    }
+
+    .sil-kutusu h2 {
+        color: #184f3c;
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+
+    .sil-kutusu p {
+        color: #526b5a;
+        line-height: 1.8;
+        margin-bottom: 25px;
+    }
+
+    .sil-butonlari {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 25px;
+    }
+
+    .btn-sil {
+        background-color: #b94b4b;
+        color: white;
+        padding: 12px 22px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .btn-sil:hover {
+        background-color: #963636;
+    }
+
+    .btn-vazgec {
+        display: inline-block;
+        background-color: #347a53;
+        color: white;
+        padding: 12px 22px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .btn-vazgec:hover {
+        background-color: #245c3d;
+    }
+    .sil-kutusu .btn-vazgec {
+    background-color: #347a53;
+    color: white;
+}
+</style>
+
 </head>
 
 <body>
 
-<header>
-    <h1>Hayvan Sahiplendirme</h1>
 
-    <nav>
+<header class="ilan-ust">
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
+
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
+        <a href="ilanlar.php">İlanlar</a>
+        <a href="ilan-ver.php">İlan Ver</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
         <a href="profil.php">Profilim</a>
         <a href="cikis.php">Çıkış Yap</a>
     </nav>
 </header>
 
 <main>
-
+<div class="sil-kutusu">
     <h2>İlan Silme Onayı</h2>
 
     <p>
@@ -131,9 +210,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="sil-butonlari">
     <button type="submit" class="btn-sil">Evet, İlanı Sil</button>
     <a href="profil.php" class="btn-vazgec">Vazgeç</a>
-</div>
+</form>
 
-    </form>
+</div>
 
 </main>
 

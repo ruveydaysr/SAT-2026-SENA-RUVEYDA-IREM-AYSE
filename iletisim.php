@@ -56,14 +56,94 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İletişim - Hayvan Sahiplendirme</title>
     <link rel="stylesheet" href="css/style.css">
+    
+<style>
+    body {
+        background-color: #f5f8f5;
+    }
+
+    .iletisim {
+        max-width: 650px;
+        margin: 60px auto;
+        padding: 40px;
+        background-color: white;
+        border: 1px solid #dce8df;
+        border-radius: 15px;
+    }
+
+    .iletisim h2 {
+        color: #184f3c;
+        text-align: center;
+        font-size: 28px;
+        margin-bottom: 25px;
+    }
+
+    .iletisim p {
+        color: #526b5a;
+        line-height: 1.8;
+        margin-bottom: 20px;
+    }
+
+    .iletisim-formu {
+        margin-top: 30px;
+    }
+
+    .iletisim .form-grup {
+        margin-bottom: 20px;
+    }
+
+    .iletisim .form-grup label {
+        display: block;
+        color: #184f3c;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .iletisim .form-grup input,
+    .iletisim .form-grup textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        border: 1px solid #cbded0;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 15px;
+    }
+
+    .iletisim .form-grup input[readonly] {
+        background-color: #f5f8f5;
+    }
+
+    .iletisim .btn-gonder {
+        background-color: #347a53;
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .iletisim .btn-gonder:hover {
+        background-color: #245c3d;
+    }
+</style>
+
 </head>
 
 <body>
 
-<header>
-    <h1>Hayvan Sahiplendirme</h1>
 
-    <nav>
+<header class="ilan-ust">
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
+
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
@@ -71,38 +151,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <a href="iletisim.php">İletişim</a>
 
         <?php if (isset($_SESSION["uye_id"])) { ?>
-
-            <a href="profil.php">
-                <?php
-                echo htmlspecialchars(
-                    $_SESSION["uye_adsoyad"],
-                    ENT_QUOTES,
-                    "UTF-8"
-                );
-                ?>
-            </a>
-
+            <a href="profil.php">Profilim</a>
             <a href="cikis.php">Çıkış Yap</a>
-
         <?php } else { ?>
-
             <a href="giris.php">Giriş Yap</a>
-
         <?php } ?>
     </nav>
 </header>
+
 
 <main>
 
     <section class="iletisim">
 
-        <h2>Bizimle İletişime Geçin</h2>
+<h2>Bir Mesajınız mı Var? 🐾</h2>
 
-        <p>
-            Hayvan sahiplendirme sitesi hakkında soru,
-            öneri veya görüşlerinizi aşağıdaki formu
-            kullanarak bize iletebilirsiniz.
-        </p>
+<p>
+    Aris Pati Yuvası olarak sizlerden haber almak bizi mutlu eder!
+    Minik dostlarımızla ilgili merak ettikleriniz,
+    önerileriniz veya bizimle paylaşmak istediğiniz
+    düşünceleriniz varsa buradayız.
+</p>
+
+<p>
+    Aşağıdaki formu doldurarak bize kolayca ulaşabilirsiniz.
+    Her mesajınız bizim için değerli. 💚
+</p>
+
 
         <?php if ($bildirim != "") { ?>
 

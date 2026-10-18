@@ -111,80 +111,135 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $ilan) {
     <title>Hayvan Sahiplen</title>
     <link rel="stylesheet" href="css/style.css">
 
-    <style>
-        .basvuru-alani {
-            max-width: 650px;
-            margin: 35px auto;
-            padding: 25px;
-            background: white;
-            border-radius: 12px;
-        }
+    
+<style>
+    body {
+        background-color: #f5f8f5;
+    }
 
-        .basvuru-alani label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
+    .basvuru-alani {
+        max-width: 650px;
+        margin: 60px auto;
+        padding: 40px;
+        background-color: white;
+        border: 1px solid #dce8df;
+        border-radius: 15px;
+    }
 
-        .basvuru-alani input,
-        .basvuru-alani select,
-        .basvuru-alani textarea {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
+    .basvuru-alani h1 {
+        color: #184f3c;
+        text-align: center;
+        font-size: 28px;
+        margin-bottom: 25px;
+    }
 
-        .basvuru-alani button {
-            margin-top: 20px;
-            padding: 12px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+    .basvuru-alani label {
+        display: block;
+        margin-top: 18px;
+        margin-bottom: 8px;
+        color: #184f3c;
+        font-weight: bold;
+    }
 
-        .basvuru-alani button:hover {
-            background: #388e3c;
-        }
+    .basvuru-alani input,
+    .basvuru-alani select,
+    .basvuru-alani textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        border: 1px solid #cbded0;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 15px;
+    }
 
-        .hayvan-ozet {
-            padding: 15px;
-            background: #f1f8f1;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
+    .basvuru-alani button {
+        margin-top: 25px;
+        padding: 12px 25px;
+        background-color: #347a53;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+    }
 
-        .basvuru-mesaj {
-            padding: 12px;
-            background: #eef5ee;
-            border-radius: 6px;
-        }
-    </style>
+    .basvuru-alani button:hover {
+        background-color: #245c3d;
+    }
+
+    .hayvan-ozet {
+        padding: 20px;
+        background-color: #f5f8f5;
+        border: 1px solid #dce8df;
+        border-radius: 10px;
+        margin: 25px 0;
+    }
+
+    .hayvan-ozet h2 {
+        color: #184f3c;
+        margin-bottom: 15px;
+    }
+
+    .hayvan-ozet p {
+        color: #526b5a;
+        margin-bottom: 10px;
+    }
+
+    .basvuru-mesaj {
+        padding: 15px;
+        background-color: #eef5ee;
+        color: #184f3c;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .basvuru-alani a {
+        color: #347a53;
+        text-decoration: none;
+    }
+
+    .basvuru-alani a:hover {
+        text-decoration: underline;
+    }
+</style>
+
 </head>
 
 <body>
 
-<header>
-    <h1>Hayvan Sahiplendirme Sistemi</h1>
+<header class="ilan-ust">
+    <a href="index.php" class="ilan-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
 
-    <nav>
+    <nav class="ilan-menu">
         <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php">Hayvan Ara</a>
-        <a href="kayip.html">Kayıp Hayvanlar</a>
+        <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
-        <a href="giris.php">Giriş Yap</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
+        <a href="profil.php">Profilim</a>
+        <a href="cikis.php">Çıkış Yap</a>
     </nav>
 </header>
 
 <main>
 
 <section class="basvuru-alani">
+<h1>Bir Cana Yuva Olmaya Hazır mısınız? 🐾</h1>
 
-    <h1>Sahiplendirme Başvuru Formu</h1>
+<p style="color: #526b5a; text-align: center; line-height: 1.8;">
+    Minik dostlarımızdan birine sevgi dolu bir yuva açmak
+    istemeniz bizi çok mutlu ediyor!
+    Başvurunuzu tamamlamak için aşağıdaki bilgileri
+    doldurmanız yeterli. 💚
+</p>
+
 
     <?php if (!$ilan): ?>
 
