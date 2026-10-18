@@ -1,36 +1,106 @@
-
 <?php
 session_start();
 
 if (!isset($_SESSION["uye_id"])) {
-    ?>
-    
-    <!DOCTYPE html>
-    <html lang="tr">
-    <head>
-        <meta charset="UTF-8">
-        <title>Giriş Gerekli</title>
-    </head>
+?>
+<!DOCTYPE html>
+<html lang="tr">
 
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İlan Ver | Pati Yuvası</title>
+    <link rel="stylesheet" href="css/style.css">
 
-        <h1>İlan Vermek İçin Giriş Yapmalısınız</h1>
+    <style>
+        .giris-gerekli-alani {
+            max-width: 850px;
+            margin: 60px auto;
+            padding: 40px 25px;
+            text-align: center;
+            background-color: white;
+            border: 1px solid #dce6d9;
+            border-radius: 16px;
+        }
 
-        <p>İlan vermek için giriş yapmalısınız.</p>
+        .giris-gerekli-alani h1 {
+            color: #35583b;
+            font-size: clamp(24px, 5vw, 34px);
+        }
 
-        <a href="giris.php">
-            <button>Giriş Yap</button>
+        .giris-gerekli-alani p {
+            color: #536354;
+            line-height: 1.7;
+        }
+
+        .giris-gerekli-buton {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 14px 28px;
+            background-color: #4a7652;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .giris-gerekli-buton:hover {
+            background-color: #35583b;
+        }
+
+        .giris-gerekli-buton:focus-visible {
+            outline: 3px solid #35583b;
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+
+<body class="ilan-sayfasi">
+
+    <header class="ilan-ust">
+        <a href="index.php" class="ilan-logo">
+            <span class="logo-pati">🐾</span>
+            <span>
+                <strong>Aris Pati Yuvası</strong>
+                <small>Her can dostuna bir yuva</small>
+            </span>
         </a>
 
-    </body>
-    </html>
+        <nav class="ilan-menu">
+            <a href="index.php">Ana Sayfa</a>
+            <a href="ilanlar.php">İlanlar</a>
+            <a href="ilan-ver.php" class="menu-aktif">İlan Ver</a>
+            <a href="hakkimizda.php">Hakkımızda</a>
+            <a href="iletisim.php">İletişim</a>
+            <a href="giris.php">Giriş Yap</a>
+        </nav>
+    </header>
 
-    <?php
+    <main>
+        <section class="tanitim giris-gerekli-alani">
+            <span aria-hidden="true">🐾</span>
+
+            <h1>İlan Vermek İçin Giriş Yapmalısınız</h1>
+
+            <p>
+                Bir can dostuna yuva bulmak için
+                önce hesabınıza giriş yapın.
+            </p>
+
+            <a href="giris.php" class="giris-gerekli-buton">
+                Giriş Yap
+            </a>
+        </section>
+    </main>
+
+</body>
+</html>
+
+<?php
     exit();
 }
 
 include("baglanti.php");
-
 $mesaj = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
