@@ -7,19 +7,71 @@ $hata = "";
 
 if (isset($_POST["giris"])) {
 
-    $kullanici_adi = $_POST["kullanici_adi"];
-    $sifre = $_POST["sifre"];
+    $kullanici_adi = trim($_POST["kullanici_adi"] ?? "");
+    $sifre = $_POST["sifre"] ?? "";
 
-    $sorgu = mysqli_query(
+    $sorgu = mysqli_prepare(
         $baglanti,
-        "SELECT * FROM admin 
-         WHERE kullanici_adi='$kullanici_adi' 
-         AND sifre='$sifre'"
+        "SELECT kullanici_adi, sifre
+         FROM admin
+         WHERE kullanici_adi = ?
+         LIMIT 1"
     );
 
-    if (mysqli_num_rows($sorgu) > 0) {
+    mysqli_stmt_bind_param($sorgu, "s", $kullanici_adi);
+    mysqli_stmt_execute($sorgu);
 
-        $_SESSION["admin"] = $kullanici_adi;
+    $sonuc = mysqli_stmt_get_result($sorgu);
+    $admin = mysqli_fetch_assoc($sonuc);
+
+    mysqli_stmt_close($sorgu);
+
+    $dogru = false;
+
+    if ($admin) {
+
+        $kayitli_sifre = $admin["sifre"];
+        $bilgi = password_get_info($kayitli_sifre);
+
+        if (!empty($bilgi["algo"])) {
+
+            $dogru = password_verify($sifre, $kayitli_sifre);
+
+        } else {
+
+            // Eski açık şifreyi doğrula ve hash olarak güncelle.
+            $dogru = hash_equals($kayitli_sifre, $sifre);
+
+            if ($dogru) {
+
+                $hash = password_hash($sifre, PASSWORD_DEFAULT);
+
+                $guncelle = mysqli_prepare(
+                    $baglanti,
+                    "UPDATE admin
+                     SET sifre = ?
+                     WHERE kullanici_adi = ? AND sifre = ?
+                     LIMIT 1"
+                );
+
+                mysqli_stmt_bind_param(
+                    $guncelle,
+                    "sss",
+                    $hash,
+                    $admin["kullanici_adi"],
+                    $kayitli_sifre
+                );
+
+                mysqli_stmt_execute($guncelle);
+                mysqli_stmt_close($guncelle);
+            }
+        }
+    }
+
+    if ($dogru) {
+
+        session_regenerate_id(true);
+        $_SESSION["admin"] = $admin["kullanici_adi"];
 
         header("Location: admin-panel.php");
         exit();
@@ -27,7 +79,6 @@ if (isset($_POST["giris"])) {
     } else {
 
         $hata = "Kullanıcı adı veya şifre yanlış.";
-
     }
 }
 

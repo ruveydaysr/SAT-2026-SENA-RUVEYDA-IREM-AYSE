@@ -152,7 +152,6 @@ $uyeler = mysqli_query(
                             );
                             ?>
                         </td>
-
                         <td>
                             <?php
                             echo htmlspecialchars(
@@ -162,7 +161,6 @@ $uyeler = mysqli_query(
                             );
                             ?>
                         </td>
-
                     </tr>
 
                 <?php endwhile; ?>

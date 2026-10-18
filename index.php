@@ -43,7 +43,7 @@ session_start();
                 ?>
             </a>
 
-            <a href="cikis.php">Çıkış Yap</a>
+            <a href="cikis.php" onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');">Çıkış Yap</a>
 
         <?php else: ?>
 
