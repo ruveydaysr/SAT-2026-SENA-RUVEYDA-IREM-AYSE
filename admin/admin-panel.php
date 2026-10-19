@@ -22,49 +22,21 @@ $sorgu = mysqli_query(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Paneli</title>
-    <link rel="stylesheet" href="admin-style.css">
-
-    <style>
-        .admin-menu {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 12px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .admin-menu a {
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .admin-menu .cikis-buton {
-            margin-left: auto;
-            background-color: #c62828;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 6px;
-        }
-
-        .admin-menu .cikis-buton:hover {
-            background-color: #a61c1c;
-        }
-
-        @media (max-width: 600px) {
-            .admin-menu .cikis-buton {
-                margin-left: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="admin-style.css?v=3">
 </head>
 
 <body>
 
 <header>
-    <h1>🐾 Hayvan Sahiplendirme</h1>
+    <a href="../index.php" class="admin-logo">
+        <span class="logo-pati">🐾</span>
+
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
+
     <h2>Admin Paneli</h2>
 </header>
 
@@ -80,7 +52,10 @@ $sorgu = mysqli_query(
 
     <a href="admin-mesajlar.php">Gelen Mesajlar</a>
 
-    <a href="../index.php">Siteye Git</a>
+  <a href="../index.php"
+   onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');">
+    Siteye Git
+</a>
 
     <a
         href="admin-cikis.php"

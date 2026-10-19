@@ -91,99 +91,20 @@ $sonuc = mysqli_query($baglanti, $sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sahiplenme Başvuruları - Admin</title>
-    <link rel="stylesheet" href="admin-style.css">
-
-    <style>
-        .admin-menu {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 12px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .admin-menu a {
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .admin-menu .cikis-buton {
-            margin-left: auto;
-            background-color: #c62828;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 6px;
-        }
-
-        .admin-menu .cikis-buton:hover {
-            background-color: #a61c1c;
-        }
-
-        .basvuru-karti {
-            background: white;
-            padding: 22px;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .basvuru-karti h3 {
-            margin-top: 0;
-        }
-
-        .basvuru-karti p {
-            margin: 9px 0;
-        }
-
-        .basvuru-islemleri {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 18px;
-        }
-
-        .basvuru-islemleri button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-        }
-
-        .basvuru-onayla {
-            background-color: #4CAF50;
-        }
-
-        .basvuru-reddet {
-            background-color: #e53935;
-        }
-
-        .basvuru-durum {
-            font-weight: bold;
-        }
-
-        .basvuru-mesaj {
-            background: #e8f5e9;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .admin-menu .cikis-buton {
-                margin-left: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="admin-style.css?v=3">
 </head>
 
 <body>
 
 <header>
-    <h1>🐾 Hayvan Sahiplendirme</h1>
+    <a href="../index.php" class="admin-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
+
     <h2>Admin Paneli</h2>
 </header>
 
@@ -199,7 +120,10 @@ $sonuc = mysqli_query($baglanti, $sql);
 
     <a href="admin-mesajlar.php">Gelen Mesajlar</a>
 
-    <a href="../index.php">Siteye Git</a>
+   <a href="../index.php"
+   onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');">
+    Siteye Git
+</a>
 
     <a
         href="admin-cikis.php"

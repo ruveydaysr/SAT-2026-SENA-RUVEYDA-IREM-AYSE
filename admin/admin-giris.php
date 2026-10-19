@@ -88,87 +88,67 @@ if (isset($_POST["giris"])) {
 <html lang="tr">
 
 <head>
-
     <meta charset="UTF-8">
-    <title>Admin Girişi</title>
-
-    <style>
-
-        body {
-            font-family: Arial;
-            background-color: #f2f2f2;
-        }
-
-        .giris {
-            width: 350px;
-            background-color: white;
-            margin: 100px auto;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px;
-        }
-
-        button {
-            width: 95%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hata {
-            color: red;
-        }
-
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetici Girişi | Aris Pati Yuvası</title>
+    <link rel="stylesheet" href="admin-style.css?v=5">
 </head>
 
-<body>
+<body class="admin-giris-sayfasi">
+    <header class="giris-ust">
+    <a href="../index.php" class="admin-logo">
+        <span class="logo-pati">🐾</span>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>Her can dostuna bir yuva</small>
+        </span>
+    </a>
+
+    <nav aria-label="Site menüsü">
+        <a href="../index.php">Ana Sayfa</a>
+        <a href="../ilanlar.php">İlanlar</a>
+        <a href="../hakkimizda.php">Hakkımızda</a>
+        <a href="../iletisim.php">İletişim</a>
+    </nav>
+</header>
 
 <div class="giris">
-
     <h1>🐾</h1>
-
     <h2>Yönetici Girişi</h2>
 
-    <p>Hayvan Sahiplendirme Sistemi</p>
+    <p>Aris Pati Yuvası</p>
+    <p class="giris-aciklama">Her can dostuna bir yuva</p>
 
-    <?php
-    if ($hata != "") {
-        echo "<p class='hata'>$hata</p>";
-    }
-    ?>
+    <?php if ($hata !== ""): ?>
+        <p class="hata">
+            <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
+        </p>
+    <?php endif; ?>
 
     <form method="POST">
-
         <input
             type="text"
             name="kullanici_adi"
             placeholder="Kullanıcı Adı"
-            required>
+            aria-label="Kullanıcı Adı"
+            autocomplete="username"
+            required
+        >
 
         <input
             type="password"
             name="sifre"
             placeholder="Şifre"
-            required>
+            aria-label="Şifre"
+            autocomplete="current-password"
+            required
+        >
 
         <button type="submit" name="giris">
             Giriş Yap
         </button>
-
     </form>
-
 </div>
 
 </body>
-
 </html>
