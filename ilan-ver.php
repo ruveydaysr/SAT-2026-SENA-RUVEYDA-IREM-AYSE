@@ -284,11 +284,53 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <form class="ilan-form" action="ilan-ver.php" method="POST" enctype="multipart/form-data">
 
                 <div class="ilan-form-grid">
+<div class="ilan-grup ilan-tam">
+    <label for="sehir">Bulunduğu Şehir *</label>
 
-                    <div class="ilan-grup">
-                        <label for="hayvan_adi">Hayvanın Adı *</label>
-                        <input type="text" id="hayvan_adi" name="hayvan_adi" placeholder="Örn. Boncuk" required>
-                    </div>
+    <select id="sehir" name="sehir" required>
+        <option value="">Şehir seçiniz</option>
+
+        <?php
+        $sehirler = [
+            "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı",
+            "Aksaray", "Amasya", "Ankara", "Antalya",
+            "Ardahan", "Artvin", "Aydın", "Balıkesir",
+            "Bartın", "Batman", "Bayburt", "Bilecik",
+            "Bingöl", "Bitlis", "Bolu", "Burdur",
+            "Bursa", "Çanakkale", "Çankırı", "Çorum",
+            "Denizli", "Diyarbakır", "Düzce", "Edirne",
+            "Elazığ", "Erzincan", "Erzurum", "Eskişehir",
+            "Gaziantep", "Giresun", "Gümüşhane", "Hakkari",
+            "Hatay", "Iğdır", "Isparta", "İstanbul",
+            "İzmir", "Kahramanmaraş", "Karabük", "Karaman",
+            "Kars", "Kastamonu", "Kayseri", "Kırıkkale",
+            "Kırklareli", "Kırşehir", "Kilis", "Kocaeli",
+            "Konya", "Kütahya", "Malatya", "Manisa",
+            "Mardin", "Mersin", "Muğla", "Muş",
+            "Nevşehir", "Niğde", "Ordu", "Osmaniye",
+            "Rize", "Sakarya", "Samsun", "Siirt",
+            "Sinop", "Sivas", "Şanlıurfa", "Şırnak",
+            "Tekirdağ", "Tokat", "Trabzon", "Tunceli",
+            "Uşak", "Van", "Yalova", "Yozgat",
+            "Zonguldak"
+        ];
+
+        $secili_sehir = isset($_POST["sehir"]) && is_string($_POST["sehir"])
+            ? trim($_POST["sehir"])
+            : "";
+
+        foreach ($sehirler as $il):
+        ?>
+            <option
+                value="<?php echo htmlspecialchars($il, ENT_QUOTES, 'UTF-8'); ?>"
+                <?php echo $secili_sehir === $il ? "selected" : ""; ?>
+            >
+                <?php echo htmlspecialchars($il, ENT_QUOTES, "UTF-8"); ?>
+            </option>
+        <?php endforeach; ?>
+
+    </select>
+</div>
 
                     <div class="ilan-grup">
                         <label for="tur">Hayvan Türü *</label>

@@ -607,7 +607,110 @@ body.admin-giris-sayfasi > .giris {
         flex-direction: column;
     }
 
-    body.admin-giris-sayfasi > .giris {
+       body.admin-giris-sayfasi > .giris {
         margin: 30px auto;
+    }
+}
+
+/* İLAN YÖNETİMİ FİLTRELERİ */
+
+.ilan-filtre {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.ilan-filtre > div {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.ilan-filtre label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.ilan-filtre select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1dfd1;
+    border-radius: 7px;
+    background: #f8fbf8;
+    color: #205843;
+    font: inherit;
+}
+
+.ilan-filtre select:focus-visible {
+    outline: 2px solid #34794b;
+    outline-offset: 3px;
+}
+
+.filtre-temizle {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 7px;
+    background: #e7f2e9;
+    color: #205843;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.filtre-temizle:hover {
+    background: #d6e8da;
+}
+/* GENEL BAKIŞ */
+
+.istatistikler {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.istatistik-karti {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 28px;
+    border: 1px solid #dce6dc;
+    border-radius: 12px;
+    background: white;
+    color: #205843;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    box-shadow: 0 4px 16px rgba(30, 70, 45, 0.035);
+}
+
+.istatistik-karti:hover {
+    background: #f8fbf8;
+    border-color: #34794b;
+}
+
+.istatistik-karti span {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.istatistik-karti strong {
+    font-size: 44px;
+    color: #34794b;
+}
+
+.istatistik-karti small {
+    font-size: 13px;
+    color: #587362;
+}
+
+@media (max-width: 900px) {
+    .istatistikler {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .istatistikler {
+        grid-template-columns: 1fr;
     }
 }

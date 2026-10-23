@@ -74,48 +74,120 @@ if ($sorgu) {
     <title>Hayvan İlanları</title>
 
     <link rel="stylesheet" href="css/style.css">
+<style>
+    /* YAN YANA İKİ İLAN */
 
-    <style>
-        .ilan-karti .ilan-fotograf {
-            width: 220px;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 10px;
-            display: block;
+    body.ilan-sayfasi .ilanlar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 24px;
+        width: 100%;
+        margin: 28px 0;
+    }
+
+    body.ilan-sayfasi .ilanlar .ilan-karti {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        min-width: 0;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid #dce6dc;
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 4px 16px rgba(30, 70, 45, 0.04);
+    }
+
+    body.ilan-sayfasi .ilan-karti .ilan-fotograf,
+    body.ilan-sayfasi .ilan-karti .foto-yok {
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 220px;
+        margin: 0;
+        border-radius: 0;
+        object-fit: cover;
+        background: #eaf1eb;
+    }
+
+    body.ilan-sayfasi .ilan-karti .foto-yok {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #587362;
+        font-size: 18px;
+    }
+
+    body.ilan-sayfasi .ilan-karti .ilan-bilgi {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        padding: 22px;
+        overflow-wrap: anywhere;
+    }
+
+    body.ilan-sayfasi .ilan-bilgi h3 {
+        margin: 0 0 14px;
+        color: #205843;
+        font-size: 24px;
+    }
+
+    body.ilan-sayfasi .ilan-bilgi p {
+        margin: 5px 0;
+        color: #205843;
+        line-height: 1.5;
+    }
+
+    body.ilan-sayfasi .ilan-bilgi .detay-buton {
+        display: block;
+        margin: auto 0 0;
+        position: static;
+        width: auto;
+        padding: 12px 18px;
+        border-radius: 8px;
+        background: #34794b;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    body.ilan-sayfasi .ilan-bilgi p:last-of-type {
+        margin-bottom: 20px;
+    }
+
+    body.ilan-sayfasi .ilan-bilgi .detay-buton:hover {
+        background: #285f3a;
+    }
+
+    body.ilan-sayfasi .ilanlar > p {
+        grid-column: 1 / -1;
+        padding: 24px;
+        border: 1px solid #dce6dc;
+        border-radius: 12px;
+        background: white;
+        color: #205843;
+        text-align: center;
+    }
+
+    @media (max-width: 700px) {
+        body.ilan-sayfasi .ilanlar {
+            grid-template-columns: 1fr;
+            gap: 18px;
         }
 
-        .foto-yok {
-            width: 220px;
-            height: 180px;
-            background-color: #eeeeee;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #777777;
+        body.ilan-sayfasi .ilan-karti .ilan-bilgi {
+            padding: 18px;
         }
-
-        .ilan-karti {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .ilan-bilgi {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .ilan-bilgi p {
-            margin: 8px 0;
-        }
-
-        .ilan-bilgi .detay-buton {
-            display: inline-block;
-            margin-top: 10px;
-        }
-    </style>
+    }
+</style>
 </head>
 
 <body class="ilan-sayfasi">
