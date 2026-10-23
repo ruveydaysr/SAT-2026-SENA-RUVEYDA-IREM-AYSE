@@ -1,0 +1,391 @@
+/* Ana sayfa ve ana sayfa düzenleyicisi */
+
+.ay-sayfa {
+    margin: 0;
+    background: #f5f0e6;
+    color: #284b32;
+    font-family: Arial, sans-serif;
+}
+
+.ay-sayfa .ilan-ust {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 16px 5%;
+    background: #fffdf8;
+    color: #284b32;
+    text-align: left;
+}
+
+.ay-sayfa .ilan-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #284b32;
+    text-decoration: none;
+}
+
+.ay-sayfa .ilan-logo img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.ay-sayfa .ilan-logo strong,
+.ay-sayfa .ilan-logo small {
+    display: block;
+}
+
+.ay-sayfa .ilan-logo strong {
+    font-size: 20px;
+}
+
+.ay-sayfa .ilan-logo small {
+    margin-top: 5px;
+    color: #687361;
+    font-size: 11px;
+}
+
+.ay-sayfa .ilan-menu {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 0;
+}
+
+.ay-sayfa .ilan-menu a {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: transparent;
+    color: #284b32;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.ay-sayfa .ilan-menu a:hover {
+    background: #e6eddf;
+}
+
+.ay-sayfa main {
+    padding: 0;
+}
+
+/* Paylaşılan önizleme bileşenleri */
+
+.ay-kapsam,
+.ay-kapsam * {
+    box-sizing: border-box;
+}
+
+.ay-kapsam {
+    color: #284b32;
+    font-family: Arial, sans-serif;
+}
+
+.ay-duyuru {
+    padding: 13px 20px;
+    background: #284b32;
+    color: #fffdf8;
+    text-align: center;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ay-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 35px;
+    padding: 45px;
+    border: 1px solid #ded6c6;
+    border-radius: 22px;
+    background: #eee5d3;
+}
+
+.ay-hero.ay-gorselsiz {
+    grid-template-columns: 1fr;
+}
+
+.ay-hero h2 {
+    margin: 0 0 18px;
+    color: #284b32;
+    font-size: clamp(26px, 3vw, 42px);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.ay-hero p {
+    margin: 0 0 24px;
+    color: #53624d;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ay-buton {
+    display: inline-block;
+    padding: 13px 20px;
+    border-radius: 9px;
+    background: #426b46;
+    color: #fff;
+    text-decoration: none;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.ay-buton:hover {
+    background: #284b32;
+}
+
+.ay-kapak {
+    display: block;
+    width: 100%;
+    height: 320px;
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+.ay-bolum {
+    width: min(1180px, 92%);
+    margin: 32px auto;
+}
+
+.ay-bolum > h2 {
+    margin: 0 0 22px;
+    font-size: 25px;
+}
+
+.ay-kategoriler {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ay-kategori {
+    padding: 20px 12px;
+    border: 1px solid #ded6c6;
+    border-radius: 12px;
+    background: #fffdf8;
+    text-align: center;
+    font-weight: bold;
+}
+
+.ay-vitrin {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.ay-ilan {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #ded6c6;
+    border-radius: 13px;
+    background: #fffdf8;
+    color: #284b32;
+    text-decoration: none;
+}
+
+.ay-ilan:hover {
+    border-color: #426b46;
+}
+
+.ay-ilan img,
+.ay-foto-yok {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: #e6eddf;
+}
+
+.ay-foto-yok {
+    display: grid;
+    place-items: center;
+    font-size: 35px;
+}
+
+.ay-ilan-bilgi {
+    padding: 14px;
+}
+
+.ay-ilan h3 {
+    margin: 0 0 9px;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+}
+
+.ay-ilan p {
+    margin: 0;
+    color: #687361;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+/* Yönetim ekranı */
+
+.ay-yonetim-form {
+    display: grid;
+    gap: 20px;
+}
+
+.ay-yonetim-form .kart {
+    margin: 0;
+}
+
+.ay-alanlar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.ay-alan {
+    min-width: 0;
+}
+
+.ay-tam {
+    grid-column: 1 / -1;
+}
+
+.ay-yonetim-form label:not(.ay-secim) {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.ay-yonetim-form input[type="text"],
+.ay-yonetim-form input[type="file"],
+.ay-yonetim-form textarea,
+.ay-yonetim-form select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ded6c6;
+    border-radius: 8px;
+    background: #fffdf8;
+    color: #284b32;
+    font: inherit;
+}
+
+.ay-yonetim-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.ay-secim {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #ded6c6;
+    border-radius: 9px;
+    background: #f7f3ea;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.ay-secim input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: #426b46;
+}
+
+.ay-secimler {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ay-vitrin-secimleri {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.ay-not {
+    color: #687361;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.ay-kaydet {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.ay-onizleme {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #ded6c6;
+    border-radius: 16px;
+    background: #f5f0e6;
+}
+
+.ay-onizleme .ay-bolum {
+    width: calc(100% - 32px);
+    margin: 20px auto;
+}
+
+.ay-onizleme .ay-hero {
+    padding: 24px;
+    gap: 20px;
+}
+
+.ay-onizleme .ay-kapak {
+    height: 220px;
+}
+
+.ay-onizleme .ay-hero h2 {
+    font-size: 28px;
+}
+
+.ay-kapsam [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .ay-vitrin,
+    .ay-vitrin-secimleri {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ay-hero {
+        gap: 22px;
+        padding: 28px;
+    }
+}
+
+@media (max-width: 600px) {
+    .ay-hero,
+    .ay-alanlar,
+    .ay-secimler {
+        grid-template-columns: 1fr;
+    }
+
+    .ay-kategoriler,
+    .ay-vitrin {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ay-hero {
+        padding: 22px;
+    }
+
+    .ay-kapak {
+        height: 230px;
+    }
+
+    .ay-sayfa .ilan-ust {
+        padding: 14px 4%;
+    }
+}

@@ -865,4 +865,56 @@ body > header {
         font-size: 26px;
     }
 }
+.admin-logo {
+    max-width: 100%;
+}
+
+.admin-logo-resim {
+    display: block;
+    width: 340px;
+    max-width: 100%;
+    height: auto;
+}
+
+.giris-logo-resim {
+    display: block;
+    width: 290px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 24px;
+}
+
+@media (max-width: 600px) {
+    .admin-logo-resim {
+        width: 280px;
+    }
+}
+.admin-logo-resim {
+    width: 75px;
+    height: 75px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+body > header.admin-ust {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 5%;
+    text-align: left;
+}
+
+.admin-ust .admin-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-ust .admin-logo strong {
+    font-size: 19px;
+}
+
+.admin-ust .admin-logo small {
+    margin-top: 4px;
+    font-size: 11px;
+}
 }

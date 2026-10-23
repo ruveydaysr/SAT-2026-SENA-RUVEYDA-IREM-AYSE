@@ -113,7 +113,11 @@ if (isset($_POST["giris"])) {
 </header>
 
 <div class="giris">
-    <h1>🐾</h1>
+    <img
+    src="../images/aris-logo.png"
+    alt="Aris Pati Yuvası"
+    class="giris-logo-resim"
+>
     <h2>Yönetici Girişi</h2>
 
     <p>Aris Pati Yuvası</p>

@@ -44,23 +44,24 @@ $menu = [
 ];
 ?>
 
-<header>
+<header class="admin-ust">
     <a
         href="../index.php"
         class="admin-logo"
         onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
     >
-        <span class="logo-pati">🐾</span>
+        <img
+            src="../images/aris-logoo.png"
+            alt="Aris Pati Yuvası logosu"
+            style="display:block; width:48px; height:48px; max-width:48px; object-fit:contain; flex-shrink:0;"
+        >
 
         <span>
             <strong>Aris Pati Yuvası</strong>
             <small>Her can dostuna bir yuva</small>
         </span>
     </a>
-
-    <h2>Admin Paneli</h2>
 </header>
-
 <nav class="admin-menu" aria-label="Yönetim menüsü">
 
     <?php foreach ($menu as $dosya => $oge): ?>

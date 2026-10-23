@@ -26,7 +26,7 @@ $sql = "SELECT id, ad_soyad, email, telefon
         WHERE (? = ''
             OR LOCATE(?, ad_soyad) > 0
             OR LOCATE(?, email) > 0)
-        ORDER BY id DESC";
+        ORDER BY id ASC";
 
 $stmt = mysqli_prepare($baglanti, $sql);
 
