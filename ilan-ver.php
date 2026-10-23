@@ -104,7 +104,7 @@ include("baglanti.php");
 $mesaj = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
+$ilan_basligi = trim($_POST["ilan_basligi"] ?? "");
     $hayvan_adi = trim($_POST["hayvan_adi"] ?? "");
     $tur = trim($_POST["tur"] ?? "");
     $yas = filter_input(INPUT_POST, "yas", FILTER_VALIDATE_INT);
@@ -117,6 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $kaydedilen_dosya = null;
 
     if (
+        $ilan_basligi === "" ||
         $hayvan_adi === "" ||
         $tur === "" ||
         $yas === false ||
@@ -179,31 +180,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($mesaj === "") {
 
-            $sql = "INSERT INTO ilanlar
-                (hayvan_adi, tur, yas, cinsiyet, sehir, aciklama, uye_id, durum, fotograf)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'Bekliyor', ?)";
+           $sql = "INSERT INTO ilanlar
+        (ilan_basligi, hayvan_adi, tur, yas, cinsiyet, sehir, aciklama, uye_id, durum, fotograf)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Bekliyor', ?)";
 
-            $sorgu = mysqli_prepare($baglanti, $sql);
+$sorgu = mysqli_prepare($baglanti, $sql);
 
-            if ($sorgu) {
+if ($sorgu) {
+              mysqli_stmt_bind_param(
+    $sorgu,
+    "sssisssis",
+    $ilan_basligi,
+    $hayvan_adi,
+    $tur,
+    $yas,
+    $cinsiyet,
+    $sehir,
+    $aciklama,
+    $uye_id,
+    $fotograf
+);
 
-                mysqli_stmt_bind_param(
-                    $sorgu,
-                    "ssisssis",
-                    $hayvan_adi,
-                    $tur,
-                    $yas,
-                    $cinsiyet,
-                    $sehir,
-                    $aciklama,
-                    $uye_id,
-                    $fotograf
-                );
-
-                if (mysqli_stmt_execute($sorgu)) {
-                    $mesaj = "İlanınız başarıyla kaydedildi. Yönetici onayı bekleniyor.";
-                } else {
-                    $mesaj = "İlan kaydedilirken bir hata oluştu.";
+if (mysqli_stmt_execute($sorgu)) {
+    $mesaj = "İlanınız başarıyla kaydedildi. Yönetici onayı bekleniyor.";
+} else {
+    $mesaj = "İlan kaydedilirken bir hata oluştu.";
+}
 
                     if ($kaydedilen_dosya !== null) {
                         unlink($kaydedilen_dosya);
@@ -285,6 +287,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div class="ilan-form-grid">
 
+<div class="ilan-grup ilan-tam">
+    <label for="ilan_basligi">İlan Başlığı *</label>
+    <input type="text" id="ilan_basligi" name="ilan_basligi"
+           placeholder="Örn. Minik dostumuza sıcak yuva aranıyor"
+           maxlength="150" required>
+</div>
+
                     <div class="ilan-grup">
                         <label for="hayvan_adi">Hayvanın Adı *</label>
                         <input type="text" id="hayvan_adi" name="hayvan_adi" placeholder="Örn. Boncuk" required>
@@ -317,10 +326,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </select>
                     </div>
 
-                    <div class="ilan-grup ilan-tam">
-                        <label for="sehir">Bulunduğu Şehir *</label>
-                        <input type="text" id="sehir" name="sehir" placeholder="Örn. Ankara" required>
-                    </div>
+                   
+<div class="ilan-grup ilan-tam">
+    <label for="sehir">Bulunduğu Şehir *</label>
+    <select id="sehir" name="sehir" required>
+        <option value="">Şehir seçiniz</option>
+        <option value="Yozgat">Yozgat</option>
+        <option value="Ankara">Ankara</option>
+        <option value="Konya">Konya</option>
+        <option value="Kayseri">Kayseri</option>
+    </select>
+</div>
+
 
                     <div class="ilan-grup ilan-tam">
                         <label for="aciklama">Açıklama *</label>

@@ -309,10 +309,10 @@ if ($sorgu) {
                     <div class="ilan-bilgi">
 
                         <h3>
-                            <?php echo guvenli($ilan["hayvan_adi"]); ?>
-                        </h3>
-
-                        <p>
+                            
+    <h3><?php echo guvenli($ilan["ilan_basligi"] ?? "Hayvan Sahiplendirme İlanı"); ?></h3>
+        <p><?php echo guvenli($ilan["hayvan_adi"]); ?></p>
+           <p>
                             <strong>Tür:</strong>
                             <?php echo guvenli($ilan["tur"]); ?>
                         </p>
