@@ -6,7 +6,7 @@ if (!isset($_SESSION["admin"])) {
     exit();
 }
 
-require_once("../baglanti.php");
+require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
@@ -20,13 +20,14 @@ $kategoriler = [
 
 $izinli_durumlar = ["Bekliyor", "Onaylandı", "Reddedildi"];
 
-$kategori = isset($_GET["kategori"]) && is_string($_GET["kategori"])
-    ? trim($_GET["kategori"])
-    : "";
+$kategori = is_string($_GET["kategori"] ?? null)
+    ? trim($_GET["kategori"]) : "";
 
-$durum = isset($_GET["durum"]) && is_string($_GET["durum"])
-    ? $_GET["durum"]
-    : "";
+$durum = is_string($_GET["durum"] ?? null)
+    ? trim($_GET["durum"]) : "";
+
+$arama = is_string($_GET["arama"] ?? null)
+    ? trim($_GET["arama"]) : "";
 
 if (!in_array($kategori, $kategoriler, true)) {
     $kategori = "";
@@ -36,146 +37,279 @@ if (!in_array($durum, $izinli_durumlar, true)) {
     $durum = "";
 }
 
-$sql = "SELECT * FROM ilanlar
-        WHERE (? = '' OR tur = ?)
-        AND (? = '' OR durum = ?)
-        ORDER BY id DESC";
+// Filtreye uygun toplam ilan sayısı
+$kosul = "WHERE (? = '' OR tur = ?)
+          AND (? = '' OR durum = ?)
+          AND (? = '' OR LOCATE(?, hayvan_adi) > 0)";
 
-$stmt = mysqli_prepare($baglanti, $sql);
+$sayim = mysqli_prepare(
+    $baglanti,
+    "SELECT COUNT(*) AS toplam FROM ilanlar " . $kosul
+);
 
 mysqli_stmt_bind_param(
-    $stmt,
-    "ssss",
+    $sayim,
+    "ssssss",
     $kategori,
     $kategori,
     $durum,
-    $durum
+    $durum,
+    $arama,
+    $arama
+);
+
+mysqli_stmt_execute($sayim);
+$sayim_sonucu = mysqli_stmt_get_result($sayim);
+$toplam_ilan = (int)mysqli_fetch_assoc($sayim_sonucu)["toplam"];
+mysqli_stmt_close($sayim);
+
+// Sayfalama
+$sayfa_basi = 12;
+$toplam_sayfa = max(1, (int)ceil($toplam_ilan / $sayfa_basi));
+
+$sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
+$sayfa = min($toplam_sayfa, max(1, $sayfa ?: 1));
+
+$baslangic = ($sayfa - 1) * $sayfa_basi;
+
+$stmt = mysqli_prepare(
+    $baglanti,
+    "SELECT * FROM ilanlar " . $kosul . "
+     ORDER BY id DESC
+     LIMIT ? OFFSET ?"
+);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "ssssssii",
+    $kategori,
+    $kategori,
+    $durum,
+    $durum,
+    $arama,
+    $arama,
+    $sayfa_basi,
+    $baslangic
 );
 
 mysqli_stmt_execute($stmt);
-$sorgu = mysqli_stmt_get_result($stmt);
+$ilanlar = mysqli_stmt_get_result($stmt);
+
+// Sayfa bağlantılarında filtreleri koru
+function sayfa_linki($numara, $kategori, $durum, $arama)
+{
+    return "admin-panel.php?" . http_build_query([
+        "kategori" => $kategori,
+        "durum" => $durum,
+        "arama" => $arama,
+        "sayfa" => $numara
+    ], "", "&", PHP_QUERY_RFC3986);
+}
+
+$ilk_kayit = $toplam_ilan > 0 ? $baslangic + 1 : 0;
+$son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Paneli</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=9">
+    <title>İlan Yönetimi | Aris Pati Yuvası</title>
+
+    <link rel="stylesheet" href="admin-style.css?v=14">
 
     <style>
+        .ilan-filtre input[type="search"] {
+            width: 100%;
+            min-width: 0;
+            padding: 13px;
+            border: 1px solid #ded6c6;
+            border-radius: 8px;
+            background: #fffdf8;
+            color: #284b32;
+            font: inherit;
+        }
+
         .admin-ilan-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             align-items: start;
-            gap: 22px;
+            gap: 16px;
         }
 
         .admin-ilan-grid > .kart {
             min-width: 0;
             margin: 0;
-            padding: 20px;
+            padding: 12px;
+            border: 1px solid #ded6c6;
+            border-radius: 12px;
+            background: #fffdf8;
+            overflow: hidden;
         }
 
         .admin-ilan-grid .ilan-fotograf,
-        .admin-foto-yok {
-            display: block;
+        .admin-ilan-grid .admin-foto-yok {
             width: 100%;
-            height: 200px;
-            margin: 0 0 16px;
-            border-radius: 10px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            margin: 0 0 12px;
+            border-radius: 8px;
             object-fit: cover;
-            background: #eaf1eb;
         }
 
-        .admin-foto-yok {
+        .admin-ilan-grid .admin-foto-yok {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #587362;
-            font-size: 18px;
+            font-size: 14px;
+            text-align: center;
         }
 
         .admin-ilan-grid .kart h3 {
-            margin: 0 0 12px;
-            font-size: 23px;
+            margin: 0 0 10px;
+            font-size: 18px;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
         }
 
-        .admin-ilan-bilgileri {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 18px;
-            margin-bottom: 12px;
+        .admin-ilan-grid .admin-ilan-bilgileri {
+            display: grid;
+            gap: 5px;
+            margin-bottom: 10px;
         }
 
         .admin-ilan-grid .admin-ilan-bilgileri p {
             margin: 0;
+            font-size: 13px;
             line-height: 1.5;
         }
 
+        .admin-ilan-grid .durum {
+            max-width: 100%;
+            padding: 6px 9px;
+            font-size: 11px;
+        }
+
         .admin-ilan-grid .islem-alani {
-            gap: 10px;
-            margin: 16px 0 0;
-        }
-
-        .incele-buton {
-            display: inline-block;
-            padding: 11px 20px;
-            border-radius: 7px;
-            background: #e7f2e9;
-            color: #205843;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .incele-buton:hover {
-            background: #d6e8da;
-        }
-
-        .admin-ret {
-            margin-top: 16px;
-            border-top: 1px solid #dce6dc;
-            padding-top: 14px;
-        }
-
-        .admin-ret summary {
-            color: #a63c35;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .admin-ret .ret-formu {
-            border-top: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
             margin-top: 12px;
-            padding-top: 0;
         }
 
-        .admin-ret .ret-formu textarea {
-            min-height: 75px;
+        .admin-ilan-grid .islem-alani > a {
+            grid-column: 1 / -1;
         }
 
-        .admin-red-nedeni {
-            margin-top: 14px;
-            padding: 12px;
+        .admin-ilan-grid .islem-alani form {
+            min-width: 0;
+            margin: 0;
+        }
+
+        .admin-ilan-grid .islem-alani button,
+        .admin-ilan-grid .incele-buton,
+        .admin-ilan-grid .ret-formu button {
+            display: block;
+            width: 100%;
+            padding: 9px 5px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            text-align: center;
+            white-space: normal;
+        }
+
+        .admin-ilan-grid .admin-ret,
+        .admin-ilan-grid .admin-red-nedeni {
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        .admin-ilan-grid .ret-formu label {
+            font-size: 12px;
+        }
+
+        .admin-ilan-grid .ret-formu textarea {
+            min-height: 90px;
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        nav.ilan-sayfalama {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 28px 0 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
+
+        .ilan-sayfalama a,
+        .ilan-sayfalama span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 42px;
+            padding: 9px 12px;
+            border: 1px solid #ded6c6;
             border-radius: 8px;
-            background: #f9ecea;
-            color: #a63c35;
+            background: #fffdf8;
+            color: #284b32;
+            font-size: 14px;
+            text-decoration: none;
         }
 
-        .admin-red-nedeni summary {
-            cursor: pointer;
+        .ilan-sayfalama a:hover {
+            background: #e6eddf;
         }
 
-        .admin-red-nedeni p {
-            white-space: pre-wrap;
+        .ilan-sayfalama [aria-current="page"] {
+            border-color: #426b46;
+            background: #426b46;
+            color: #fff;
+            font-weight: bold;
         }
 
-        @media (max-width: 700px) {
+        .ilan-sayfalama .sayfa-nokta {
+            min-width: 20px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
+
+        @media (max-width: 1000px) {
             .admin-ilan-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .admin-ilan-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .admin-ilan-grid > .kart {
+                padding: 9px;
+            }
+
+            .admin-ilan-grid .kart h3 {
+                font-size: 15px;
+            }
+
+            .admin-ilan-grid .admin-ilan-bilgileri p {
+                font-size: 12px;
+            }
+
+            .admin-ilan-grid .islem-alani button,
+            .admin-ilan-grid .incele-buton {
+                font-size: 11px;
             }
         }
     </style>
@@ -183,56 +317,37 @@ $sorgu = mysqli_stmt_get_result($stmt);
 
 <body>
 
-<header>
-    <a
-        href="../index.php"
-        class="admin-logo"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        <span class="logo-pati">🐾</span>
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-
-    <h2>Admin Paneli</h2>
-</header>
-
-<nav class="admin-menu">
-    <a href="admin-anasayfa.php">Ana Sayfa Yönetimi</a>
-    <a href="admin-genel-bakis.php">Genel Bakış</a>
-    <a href="admin-panel.php" aria-current="page">İlan Yönetimi</a>
-    <a href="admin-basvurular.php">Sahiplenme Başvuruları</a>
-    <a href="admin-uyeler.php">Üye Yönetimi</a>
-    <a href="admin-mesajlar.php">Gelen Mesajlar</a>
-
-    <a
-        href="../index.php"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        Siteye Git
-    </a>
-
-    <a
-        href="admin-cikis.php"
-        class="cikis-buton"
-        onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-    >
-        Çıkış Yap
-    </a>
-</nav>
+<?php require __DIR__ . "/admin-menu.php"; ?>
 
 <main class="icerik">
 
     <h2>İlan Yönetimi</h2>
 
-    <div class="kart">
-        <form method="GET" action="admin-panel.php" class="ilan-filtre">
+    <?php if (isset($_SESSION["ilan_bildirimi"])): ?>
+        <div class="kayit-bildirimi" role="status">
+            <?php
+            echo guvenli($_SESSION["ilan_bildirimi"]);
+            unset($_SESSION["ilan_bildirimi"]);
+            ?>
+        </div>
+    <?php endif; ?>
+
+    <section class="kart">
+
+        <form action="admin-panel.php" method="GET" class="ilan-filtre">
+            <div>
+                <label for="arama">Hayvan Adı</label>
+                <input
+                    type="search"
+                    id="arama"
+                    name="arama"
+                    placeholder="Hayvan adı yazınız..."
+                    value="<?php echo guvenli($arama); ?>"
+                >
+            </div>
 
             <div>
                 <label for="kategori">Kategori</label>
-
                 <select id="kategori" name="kategori">
                     <option value="">Tüm Kategoriler</option>
 
@@ -249,7 +364,6 @@ $sorgu = mysqli_stmt_get_result($stmt);
 
             <div>
                 <label for="durum">İlan Durumu</label>
-
                 <select id="durum" name="durum">
                     <option value="">Tüm Durumlar</option>
 
@@ -270,23 +384,29 @@ $sorgu = mysqli_stmt_get_result($stmt);
 
         <p>
             Bulunan ilan sayısı:
-            <strong><?php echo mysqli_num_rows($sorgu); ?></strong>
-        </p>
-    </div>
+            <strong><?php echo $toplam_ilan; ?></strong>
 
-    <?php if (mysqli_num_rows($sorgu) === 0): ?>
+            <?php if ($toplam_ilan > 0): ?>
+                — <?php echo $ilk_kayit; ?>–<?php echo $son_kayit; ?>
+                arası gösteriliyor.
+            <?php endif; ?>
+        </p>
+
+    </section>
+
+    <?php if ($toplam_ilan === 0): ?>
         <div class="kart">
-            <p>Seçtiğiniz filtrelere uygun ilan bulunamadı.</p>
+            <p>Aramanıza ve seçtiğiniz filtrelere uygun ilan bulunamadı.</p>
         </div>
     <?php endif; ?>
 
     <div class="admin-ilan-grid">
 
-        <?php while ($ilan = mysqli_fetch_assoc($sorgu)): ?>
+        <?php while ($ilan = mysqli_fetch_assoc($ilanlar)): ?>
 
             <?php
             $ilan_id = (int)$ilan["id"];
-            $ilan_durumu = $ilan["durum"] ?? "";
+            $ilan_durumu = (string)($ilan["durum"] ?? "");
 
             $dosya_adi = basename(
                 (string)($ilan["fotograf"] ?? "")
@@ -322,7 +442,7 @@ $sorgu = mysqli_stmt_get_result($stmt);
                     </p>
                     <p>
                         <strong>Yaş:</strong>
-                        <?php echo (int)($ilan["yas"] ?? 0); ?>
+                        <?php echo guvenli($ilan["yas"] ?? ""); ?>
                     </p>
                     <p>
                         <strong>Şehir:</strong>
@@ -345,7 +465,6 @@ $sorgu = mysqli_stmt_get_result($stmt);
                 <?php endif; ?>
 
                 <div class="islem-alani">
-
                     <a
                         href="../ilan-detay.php?id=<?php echo $ilan_id; ?>"
                         class="incele-buton"
@@ -361,15 +480,8 @@ $sorgu = mysqli_stmt_get_result($stmt);
                             method="POST"
                             onsubmit="return confirm('Bu ilanı onaylamak istediğinize emin misiniz?');"
                         >
-                            <input
-                                type="hidden"
-                                name="id"
-                                value="<?php echo $ilan_id; ?>"
-                            >
-
-                            <button type="submit" class="onayla">
-                                Onayla
-                            </button>
+                            <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
+                            <button type="submit" class="onayla">Onayla</button>
                         </form>
                     <?php endif; ?>
 
@@ -378,15 +490,9 @@ $sorgu = mysqli_stmt_get_result($stmt);
                         method="POST"
                         onsubmit="return confirm('Bu ilanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');"
                     >
-                        <input
-                            type="hidden"
-                            name="id"
-                            value="<?php echo $ilan_id; ?>"
-                        >
-
+                        <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
                         <button type="submit" class="sil">Sil</button>
                     </form>
-
                 </div>
 
                 <?php if ($ilan_durumu === "Bekliyor"): ?>
@@ -399,14 +505,10 @@ $sorgu = mysqli_stmt_get_result($stmt);
                             class="ret-formu"
                             onsubmit="return confirm('Bu ilanı reddetmek istediğinize emin misiniz?');"
                         >
-                            <input
-                                type="hidden"
-                                name="id"
-                                value="<?php echo $ilan_id; ?>"
-                            >
+                            <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
 
                             <label for="red-<?php echo $ilan_id; ?>">
-                                Reddetme Nedeni:
+                                Reddetme Nedeni
                             </label>
 
                             <textarea
@@ -416,9 +518,7 @@ $sorgu = mysqli_stmt_get_result($stmt);
                                 required
                             ></textarea>
 
-                            <button type="submit" class="reddet">
-                                Reddet
-                            </button>
+                            <button type="submit" class="reddet">Reddet</button>
                         </form>
                     </details>
                 <?php endif; ?>
@@ -428,6 +528,60 @@ $sorgu = mysqli_stmt_get_result($stmt);
         <?php endwhile; ?>
 
     </div>
+
+    <?php if ($toplam_sayfa > 1): ?>
+        <nav class="ilan-sayfalama" aria-label="İlan sayfaları">
+
+            <?php if ($sayfa > 1): ?>
+                <a href="<?php echo guvenli(sayfa_linki($sayfa - 1, $kategori, $durum, $arama)); ?>">
+                    ‹ Önceki
+                </a>
+            <?php endif; ?>
+
+            <?php
+            $numaralar = [1, $toplam_sayfa];
+
+            for (
+                $i = max(1, $sayfa - 2);
+                $i <= min($toplam_sayfa, $sayfa + 2);
+                $i++
+            ) {
+                $numaralar[] = $i;
+            }
+
+            $numaralar = array_unique($numaralar);
+            sort($numaralar);
+            $onceki = 0;
+            ?>
+
+            <?php foreach ($numaralar as $numara): ?>
+
+                <?php if ($onceki > 0 && $numara > $onceki + 1): ?>
+                    <span class="sayfa-nokta" aria-hidden="true">…</span>
+                <?php endif; ?>
+
+                <?php if ($numara === $sayfa): ?>
+                    <span aria-current="page">
+                        <?php echo $numara; ?>
+                    </span>
+                <?php else: ?>
+                    <a href="<?php echo guvenli(sayfa_linki($numara, $kategori, $durum, $arama)); ?>">
+                        <?php echo $numara; ?>
+                    </a>
+                <?php endif; ?>
+
+                <?php $onceki = $numara; ?>
+
+            <?php endforeach; ?>
+
+            <?php if ($sayfa < $toplam_sayfa): ?>
+                <a href="<?php echo guvenli(sayfa_linki($sayfa + 1, $kategori, $durum, $arama)); ?>">
+                    Sonraki ›
+                </a>
+            <?php endif; ?>
+
+        </nav>
+    <?php endif; ?>
 
 </main>
 

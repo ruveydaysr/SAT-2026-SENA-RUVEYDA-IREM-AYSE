@@ -6,7 +6,8 @@ if (!isset($_SESSION["admin"])) {
     exit();
 }
 
-include("../baglanti.php");
+require_once __DIR__ . "/../baglanti.php";
+
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: admin-panel.php");
     exit();
@@ -14,8 +15,9 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
 
-if ($id && $id > 0) {
+$bildirim = "Geçersiz ilan numarası.";
 
+if ($id && $id > 0) {
     $sql = "UPDATE ilanlar
             SET durum = 'Onaylandı',
                 red_nedeni = NULL
@@ -24,10 +26,19 @@ if ($id && $id > 0) {
     $sorgu = mysqli_prepare($baglanti, $sql);
 
     mysqli_stmt_bind_param($sorgu, "i", $id);
-    mysqli_stmt_execute($sorgu);
+
+    if (mysqli_stmt_execute($sorgu)) {
+        $bildirim = mysqli_stmt_affected_rows($sorgu) > 0
+            ? "İlan başarıyla onaylandı."
+            : "İlan bulunamadı veya zaten değerlendirilmiş.";
+    } else {
+        $bildirim = "İlan onaylanamadı.";
+    }
+
     mysqli_stmt_close($sorgu);
 }
 
-header("Location: admin-panel.php");
+$_SESSION["ilan_bildirimi"] = $bildirim;
+
+header("Location: admin-panel.php", true, 303);
 exit();
-?>

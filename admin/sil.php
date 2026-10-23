@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -7,7 +6,7 @@ if (!isset($_SESSION["admin"])) {
     exit();
 }
 
-include("../baglanti.php");
+require_once __DIR__ . "/../baglanti.php";
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: admin-panel.php");
@@ -16,20 +15,36 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
 
+$bildirim = "Geçersiz ilan numarası.";
+
 if ($id && $id > 0) {
+    try {
+        $sorgu = mysqli_prepare(
+            $baglanti,
+            "DELETE FROM ilanlar WHERE id = ?"
+        );
 
-    $sql = "DELETE FROM ilanlar WHERE id = ?";
+        if (!$sorgu) {
+            $bildirim = "Silme işlemi hazırlanamadı.";
+        } else {
+            mysqli_stmt_bind_param($sorgu, "i", $id);
 
-    $sorgu = mysqli_prepare($baglanti, $sql);
+            if (mysqli_stmt_execute($sorgu)) {
+                $bildirim = mysqli_stmt_affected_rows($sorgu) > 0
+                    ? "İlan başarıyla silindi."
+                    : "Silinecek ilan bulunamadı.";
+            } else {
+                $bildirim = "İlan silinemedi.";
+            }
 
-    mysqli_stmt_bind_param($sorgu, "i", $id);
-
-    mysqli_stmt_execute($sorgu);
-
-    mysqli_stmt_close($sorgu);
+            mysqli_stmt_close($sorgu);
+        }
+    } catch (mysqli_sql_exception $hata) {
+        $bildirim = "İlan silinemedi. İlişkili kayıtlar bulunuyor olabilir.";
+    }
 }
 
-header("Location: admin-panel.php");
-exit();
-?>
+$_SESSION["ilan_bildirimi"] = $bildirim;
 
+header("Location: admin-panel.php", true, 303);
+exit();

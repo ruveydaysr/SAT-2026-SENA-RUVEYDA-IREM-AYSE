@@ -96,92 +96,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ana Sayfa Yönetimi</title>
-    <link rel="stylesheet" href="admin-style.css?v=10">
-
-    <style>
-        .anasayfa-form label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .anasayfa-form input,
-        .anasayfa-form textarea {
-            box-sizing: border-box;
-            width: 100%;
-            margin-bottom: 22px;
-            padding: 13px;
-            border: 1px solid #d1dfd1;
-            border-radius: 8px;
-            background: #f8fbf8;
-            color: #205843;
-            font: inherit;
-        }
-
-        .anasayfa-form textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .kayit-bildirimi {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            background: #e7f2e9;
-            color: #205843;
-        }
-
-        .kayit-bildirimi.hata {
-            background: #f9ecea;
-            color: #a63c35;
-        }
-    </style>
+    <link rel="stylesheet" href="admin-style.css?v=13">
 </head>
 
 <body>
 
-<header>
-    <a
-        href="../index.php"
-        class="admin-logo"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        <span class="logo-pati">🐾</span>
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-    <h2>Admin Paneli</h2>
-</header>
-
-<nav class="admin-menu">
-    <a href="admin-genel-bakis.php">Genel Bakış</a>
-    <a href="admin-panel.php">İlan Yönetimi</a>
-    <a href="admin-anasayfa.php" aria-current="page">
-        Ana Sayfa Yönetimi
-    </a>
-    <a href="admin-basvurular.php">Sahiplenme Başvuruları</a>
-    <a href="admin-uyeler.php">Üye Yönetimi</a>
-    <a href="admin-mesajlar.php">Gelen Mesajlar</a>
-
-    <a
-        href="../index.php"
-        target="_blank"
-        rel="noopener noreferrer"
-    >
-        Ana Sayfayı Gör
-    </a>
-
-    <a
-        href="admin-cikis.php"
-        class="cikis-buton"
-        onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-    >
-        Çıkış Yap
-    </a>
-</nav>
-
+<?php require __DIR__ . "/admin-menu.php"; ?>
 <main class="icerik">
     <h2>Ana Sayfa Yönetimi</h2>
 
