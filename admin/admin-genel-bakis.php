@@ -34,59 +34,12 @@ $sayilar = mysqli_fetch_assoc($sonuc);
 
     <title>Genel Bakış | Admin Paneli</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=6">
+    <link rel="stylesheet" href="admin-style.css?v=13">
 </head>
 
 <body>
 
-<header>
-    <a
-        href="../index.php"
-        class="admin-logo"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        <span class="logo-pati">🐾</span>
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-
-    <h2>Admin Paneli</h2>
-</header>
-
-<nav class="admin-menu">
-    <a href="admin-anasayfa.php">Ana Sayfa Yönetimi</a>
-    <a href="admin-genel-bakis.php" aria-current="page">
-        Genel Bakış
-    </a>
-
-    <a href="admin-panel.php">İlan Yönetimi</a>
-
-    <a href="admin-basvurular.php">
-        Sahiplenme Başvuruları
-    </a>
-
-    <a href="admin-uyeler.php">Üye Yönetimi</a>
-
-    <a href="admin-mesajlar.php">Gelen Mesajlar</a>
-
-    <a
-        href="../index.php"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        Siteye Git
-    </a>
-
-    <a
-        href="admin-cikis.php"
-        class="cikis-buton"
-        onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-    >
-        Çıkış Yap
-    </a>
-</nav>
+<?php require __DIR__ . "/admin-menu.php"; ?>
 
 <main class="icerik">
 
