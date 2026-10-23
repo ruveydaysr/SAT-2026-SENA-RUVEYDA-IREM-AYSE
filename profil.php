@@ -46,6 +46,19 @@ mysqli_stmt_bind_param($sorgu2, "i", $uye_id);
 mysqli_stmt_execute($sorgu2);
 
 $basvurular = mysqli_stmt_get_result($sorgu2);
+// Kullanıcının favorilerine eklediği ilanlar
+$sql3 = "SELECT i.*
+         FROM favoriler AS f
+         INNER JOIN ilanlar AS i ON f.ilan_id = i.id
+         WHERE f.uye_id = ?
+         AND i.durum = 'Onaylandı'
+         ORDER BY f.id DESC";
+
+$sorgu3 = mysqli_prepare($baglanti, $sql3);
+mysqli_stmt_bind_param($sorgu3, "i", $uye_id);
+mysqli_stmt_execute($sorgu3);
+
+$favoriler = mysqli_stmt_get_result($sorgu3);
 ?>
 
 <!DOCTYPE html>
@@ -153,6 +166,21 @@ main {
 }
 hr {
     display: none;
+}
+    /* Favorilerden çıkar butonu */
+.favori-sil-buton {
+    background-color: #347a53;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.favori-sil-buton:hover {
+    background-color: #245c3d;
 }
     </style>
 </head>
@@ -361,7 +389,65 @@ hr {
         <?php endif; ?>
 
     </section>
+<section class="profil-bolum">
 
+    <h2>❤️ Favorilerim</h2>
+
+    <?php if (mysqli_num_rows($favoriler) > 0): ?>
+
+        <?php while ($favori = mysqli_fetch_assoc($favoriler)): ?>
+
+            <div class="profil-kart">
+
+                <h3>
+                    <?php echo guvenli($favori["ilan_basligi"] ?: "Hayvan Sahiplendirme İlanı"); ?>
+                </h3>
+
+                <p>
+                    <strong>Hayvan Adı:</strong>
+                    <?php echo guvenli($favori["hayvan_adi"]); ?>
+                </p>
+
+                <p>
+                    <strong>Tür:</strong>
+                    <?php echo guvenli($favori["tur"]); ?>
+                </p>
+
+                <p>
+                    <strong>Yaş:</strong>
+                    <?php echo (int)$favori["yas"]; ?>
+                </p>
+
+                <p>
+                    <strong>Şehir:</strong>
+                    <?php echo guvenli($favori["sehir"]); ?>
+                </p>
+
+                <a href="ilan-detay.php?id=<?php echo (int)$favori["id"]; ?>">
+                    İlanı İncele
+                </a>
+                <form action="favori-sil.php" method="POST">
+    <input
+        type="hidden"
+        name="ilan_id"
+        value="<?php echo (int)$favori["id"]; ?>"
+    >
+    <button type="submit" class="favori-sil-buton">
+    ♡ Favorilerden Çıkar
+</button>
+</form>
+
+            </div>
+
+        <?php endwhile; ?>
+
+    <?php else: ?>
+
+        <p>Henüz favorilerine eklediğin onaylı bir ilan bulunmuyor.</p>
+
+    <?php endif; ?>
+
+</section>
 </main>
 
 </body>
@@ -370,4 +456,5 @@ hr {
 <?php
 mysqli_stmt_close($sorgu);
 mysqli_stmt_close($sorgu2);
+mysqli_stmt_close($sorgu3);
 ?>
