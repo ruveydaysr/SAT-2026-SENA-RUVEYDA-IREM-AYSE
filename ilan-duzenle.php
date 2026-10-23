@@ -38,7 +38,7 @@ if (!$ilan) {
 $hata = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
-
+    $ilan_basligi = trim($_POST["ilan_basligi"] ?? "");
     $hayvan_adi = trim($_POST["hayvan_adi"] ?? "");
     $tur = trim($_POST["tur"] ?? "");
     $yas = filter_var($_POST["yas"] ?? "", FILTER_VALIDATE_INT);
@@ -57,8 +57,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
         $hata = "Lütfen tüm alanları doğru doldurunuz.";
     } else {
 
-        $sql = "UPDATE ilanlar
-                SET hayvan_adi = ?,
+       
+$sql = "UPDATE ilanlar
+                SET ilan_basligi = ?,
+                    hayvan_adi = ?,
                     tur = ?,
                     yas = ?,
                     cinsiyet = ?,
@@ -66,20 +68,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
                     aciklama = ?
                 WHERE id = ? AND uye_id = ?";
 
+
         $guncelle = mysqli_prepare($baglanti, $sql);
 
-        mysqli_stmt_bind_param(
-            $guncelle,
-            "ssisssii",
-            $hayvan_adi,
-            $tur,
-            $yas,
-            $cinsiyet,
-            $sehir,
-            $aciklama,
-            $ilan_id,
-            $uye_id
-        );
+       
+mysqli_stmt_bind_param(
+    $guncelle,
+    "sssisssii",
+    $ilan_basligi,
+    $hayvan_adi,
+    $tur,
+    $yas,
+    $cinsiyet,
+    $sehir,
+    $aciklama,
+    $ilan_id,
+    $uye_id
+);
+
 
         if (mysqli_stmt_execute($guncelle)) {
             mysqli_stmt_close($guncelle);
@@ -230,6 +236,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
     <form method="POST">
 
         <label>Hayvan Adı:</label>
+        
+<label>İlan Başlığı:</label>
+<input type="text" name="ilan_basligi"
+       value="<?php echo htmlspecialchars($ilan['ilan_basligi'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+       maxlength="150" required>
+
+<br><br>
+
         <input type="text" name="hayvan_adi"
                value="<?php echo htmlspecialchars($ilan['hayvan_adi'], ENT_QUOTES, 'UTF-8'); ?>"
                required>
@@ -237,9 +251,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
         <br><br>
 
         <label>Tür:</label>
-        <input type="text" name="tur"
-               value="<?php echo htmlspecialchars($ilan['tur'], ENT_QUOTES, 'UTF-8'); ?>"
-               required>
+<select name="tur" required>
+    <option value="">Tür seçiniz</option>
+    <option value="Kedi" <?php if ($ilan['tur'] === 'Kedi') echo 'selected'; ?>>Kedi</option>
+    <option value="Köpek" <?php if ($ilan['tur'] === 'Köpek') echo 'selected'; ?>>Köpek</option>
+    <option value="Kuş" <?php if ($ilan['tur'] === 'Kuş') echo 'selected'; ?>>Kuş</option>
+    <option value="Tavşan" <?php if ($ilan['tur'] === 'Tavşan') echo 'selected'; ?>>Tavşan</option>
+    <option value="Balık" <?php if ($ilan['tur'] === 'Balık') echo 'selected'; ?>>Balık</option>
+    <option value="Diğer" <?php if ($ilan['tur'] === 'Diğer') echo 'selected'; ?>>Diğer</option>
+</select>
+
 
         <br><br>
 
@@ -251,7 +272,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
         <br><br>
 
         <label>Cinsiyet:</label>
-        <select name="cinsiyet">
+        <select name="cinsiyet" required>
             <option value="Dişi" <?php if ($ilan['cinsiyet'] === 'Dişi') echo 'selected'; ?>>
                 Dişi
             </option>
@@ -263,10 +284,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
         <br><br>
 
         <label>Şehir:</label>
-        <input type="text" name="sehir"
-               value="<?php echo htmlspecialchars($ilan['sehir'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-               required>
+       
+<select name="sehir" required>
+    <option value="">Şehir seçiniz</option>
 
+    <option value="Yozgat" <?php if (($ilan['sehir'] ?? '') === 'Yozgat') echo 'selected'; ?>>Yozgat</option>
+
+    <option value="Ankara" <?php if (($ilan['sehir'] ?? '') === 'Ankara') echo 'selected'; ?>>Ankara</option>
+
+    <option value="Konya" <?php if (($ilan['sehir'] ?? '') === 'Konya') echo 'selected'; ?>>Konya</option>
+
+    <option value="Kayseri" <?php if (($ilan['sehir'] ?? '') === 'Kayseri') echo 'selected'; ?>>Kayseri</option>
+</select>
         <br><br>
 
         <label>Açıklama:</label>

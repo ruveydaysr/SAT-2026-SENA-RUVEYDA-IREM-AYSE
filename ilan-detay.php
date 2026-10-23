@@ -56,12 +56,16 @@ if ($ilan) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
-        <?php
-        echo $ilan
-            ? guvenli($ilan["hayvan_adi"]) . " - İlan Detayı"
-            : "İlan Bulunamadı";
-        ?>
-    </title>
+    <?php
+    echo $ilan
+        ? guvenli(
+            !empty($ilan["ilan_basligi"])
+                ? $ilan["ilan_basligi"]
+                : $ilan["hayvan_adi"]
+        ) . " - İlan Detayı"
+        : "İlan Bulunamadı";
+    ?>
+</title>
 
     <link rel="stylesheet" href="css/style.css">
 
@@ -309,15 +313,21 @@ if ($ilan) {
         </div>
 
         <div class="hayvan-bilgileri">
-            <h2><?php echo guvenli($ilan["hayvan_adi"]); ?></h2>
 
-            <?php if (!empty($ilan["ilan_basligi"])): ?>
-                <p>
-                    <strong>İlan Başlığı:</strong>
-                    <?php echo guvenli($ilan["ilan_basligi"]); ?>
-                </p>
-            <?php endif; ?>
+    <h2>
+        <?php
+        echo guvenli(
+            !empty($ilan["ilan_basligi"])
+                ? $ilan["ilan_basligi"]
+                : $ilan["hayvan_adi"]
+        );
+        ?>
+    </h2>
 
+    <p>
+        <strong>Hayvanın Adı:</strong>
+        <?php echo guvenli($ilan["hayvan_adi"]); ?>
+    </p>
             <p>
                 <strong>Tür:</strong>
                 <?php echo guvenli($ilan["tur"]); ?>
