@@ -12,6 +12,18 @@ $sehir = trim($_GET["sehir"] ?? "");
 $yas = trim($_GET["yas"] ?? "");
 $cinsiyet = trim($_GET["cinsiyet"] ?? "");
 
+// Sayfalama ayarları
+$ilan_sayisi = 6;
+
+$sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
+
+if (!$sayfa || $sayfa < 1) {
+    $sayfa = 1;
+}
+
+$baslangic = ($sayfa - 1) * $ilan_sayisi;
+
+
 $kosullar = ["durum = 'Onaylandı'"];
 $parametreler = [];
 $tipler = "";
@@ -42,9 +54,39 @@ if ($yas === "yavru") {
     $kosullar[] = "yas > 3";
 }
 
+// Filtrelere uygun toplam ilan sayısını bul
+$sayma_sql = "SELECT COUNT(*) AS toplam FROM ilanlar WHERE "
+    . implode(" AND ", $kosullar);
+
+$sayma_sorgu = mysqli_prepare($baglanti, $sayma_sql);
+
+$toplam_ilan = 0;
+
+if ($sayma_sorgu) {
+    if (!empty($parametreler)) {
+        mysqli_stmt_bind_param(
+            $sayma_sorgu,
+            $tipler,
+            ...$parametreler
+        );
+    }
+
+    mysqli_stmt_execute($sayma_sorgu);
+    $sayma_sonuc = mysqli_stmt_get_result($sayma_sorgu);
+    $toplam_ilan = (int) mysqli_fetch_assoc($sayma_sonuc)["toplam"];
+
+    mysqli_stmt_close($sayma_sorgu);
+}
+
+$toplam_sayfa = (int) ceil($toplam_ilan / $ilan_sayisi);
+
 $sql = "SELECT * FROM ilanlar WHERE "
     . implode(" AND ", $kosullar)
-    . " ORDER BY id DESC";
+    . " ORDER BY id DESC LIMIT ? OFFSET ?";
+
+$parametreler[] = $ilan_sayisi;
+$parametreler[] = $baslangic;
+$tipler .= "ii";
 
 $sorgu = mysqli_prepare($baglanti, $sql);
 
@@ -187,6 +229,38 @@ if ($sorgu) {
             padding: 18px;
         }
     }
+    
+/* SAYFALAMA TASARIMI */
+
+.sayfalama {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 30px 0 50px;
+}
+
+.sayfalama a {
+    display: inline-block;
+    padding: 10px 16px;
+    background-color: white;
+    color: #347a53;
+    border: 1px solid #cbded0;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.sayfalama a:hover {
+    background-color: #e6f1e8;
+}
+
+.sayfalama a.aktif {
+    background-color: #347a53;
+    color: white;
+    border-color: #347a53;
+}
+
 </style>
 </head>
 
@@ -424,6 +498,29 @@ if ($sorgu) {
         <?php endif; ?>
 
     </section>
+
+<?php if ($toplam_sayfa > 1): ?>
+
+    <div class="sayfalama">
+
+        <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
+
+            <?php
+            $filtreler = $_GET;
+            $filtreler["sayfa"] = $i;
+            $link = "ilanlar.php?" . http_build_query($filtreler);
+            ?>
+
+            <a href="<?php echo guvenli($link); ?>"
+               class="<?php echo $sayfa == $i ? 'aktif' : ''; ?>">
+                <?php echo $i; ?>
+            </a>
+
+        <?php endfor; ?>
+
+    </div>
+
+<?php endif; ?>
 
 </main>
 
