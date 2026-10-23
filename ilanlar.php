@@ -11,7 +11,15 @@ $tur = trim($_GET["tur"] ?? "");
 $sehir = trim($_GET["sehir"] ?? "");
 $yas = trim($_GET["yas"] ?? "");
 $cinsiyet = trim($_GET["cinsiyet"] ?? "");
+$arama = trim($_GET["arama"] ?? "");
+// İlan sıralama seçeneği
+$siralama = $_GET["siralama"] ?? "yeni";
 
+$izinli_siralamalar = ["yeni", "eski", "yas_artan", "yas_azalan"];
+
+if (!is_string($siralama) || !in_array($siralama, $izinli_siralamalar, true)) {
+    $siralama = "yeni";
+}
 // Sayfalama ayarları
 $ilan_sayisi = 6;
 
@@ -27,6 +35,11 @@ $baslangic = ($sayfa - 1) * $ilan_sayisi;
 $kosullar = ["durum = 'Onaylandı'"];
 $parametreler = [];
 $tipler = "";
+if ($arama !== "") {
+    $kosullar[] = "ilan_basligi LIKE ?";
+    $parametreler[] = "%" . $arama . "%";
+    $tipler .= "s";
+}
 
 if ($tur !== "") {
     $kosullar[] = "tur = ?";
@@ -79,10 +92,26 @@ if ($sayma_sorgu) {
 }
 
 $toplam_sayfa = (int) ceil($toplam_ilan / $ilan_sayisi);
+// Seçilen sıralama türüne göre ilanları sırala
+switch ($siralama) {
+    case "eski":
+        $siralama_sql = "id ASC";
+        break;
 
+    case "yas_artan":
+        $siralama_sql = "yas ASC, id DESC";
+        break;
+
+    case "yas_azalan":
+        $siralama_sql = "yas DESC, id DESC";
+        break;
+
+    default:
+        $siralama_sql = "id DESC";
+}
 $sql = "SELECT * FROM ilanlar WHERE "
     . implode(" AND ", $kosullar)
-    . " ORDER BY id DESC LIMIT ? OFFSET ?";
+    . " ORDER BY " . $siralama_sql . " LIMIT ? OFFSET ?";
 
 $parametreler[] = $ilan_sayisi;
 $parametreler[] = $baslangic;
@@ -260,7 +289,67 @@ if ($sorgu) {
     color: white;
     border-color: #347a53;
 }
+/* Hayvan adı arama kutusu */
+.filtreler input[type="text"] {
+    padding: 10px;
+    border: 1px solid #cbded0;
+    border-radius: 8px;
+    background-color: white;
+    color: #205843;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
 
+.filtreler input[type="text"]:focus {
+    outline: none;
+    border-color: #347a53;
+}
+/* Filtreleme alanı */
+body.ilan-sayfasi .filtreler {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+body.ilan-sayfasi .filtreler > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+body.ilan-sayfasi .filtreler select,
+body.ilan-sayfasi .filtreler input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #c8d9cc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    body.ilan-sayfasi .filtreler {
+        grid-template-columns: 1fr;
+    }
+}
+/* Favorilere ekle butonu */
+.favori-buton {
+    display: inline-block;
+    background-color: #347a53;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.favori-buton:hover {
+    background-color: #245c3d;
+}
 </style>
 </head>
 
@@ -311,9 +400,36 @@ if ($sorgu) {
         <h3>Hayvan Ara</h3>
 
         <form action="ilanlar.php" method="GET">
+        <div class="filtreler">
 
-            <div class="filtreler">
+    <div>
+        <label for="arama">İlan Başlığı</label>
+        <input
+            type="text"
+            id="arama"
+            name="arama"
+            placeholder="Örn: Yuva arayan yavru kedi"
+            value="<?php echo guvenli($arama); ?>"
+        >
+    </div>
 
+    <div>
+        <label for="siralama">Sıralama</label>
+    <select id="siralama" name="siralama">
+        <option value="yeni" <?php if ($siralama == "yeni") echo "selected"; ?>>
+            En Yeni
+        </option>
+        <option value="eski" <?php if ($siralama == "eski") echo "selected"; ?>>
+            En Eski
+        </option>
+        <option value="yas_artan" <?php if ($siralama == "yas_artan") echo "selected"; ?>>
+            Yaşı Küçükten Büyüğe
+        </option>
+        <option value="yas_azalan" <?php if ($siralama == "yas_azalan") echo "selected"; ?>>
+            Yaşı Büyükten Küçüğe
+        </option>
+    </select>
+</div>
                 <div>
                     <label for="tur">Hayvan Türü</label>
 
@@ -452,17 +568,20 @@ if ($sorgu) {
 
                     <?php endif; ?>
 
-                    <div class="ilan-bilgi">
+                   <div class="ilan-bilgi"> 
 
-                        <h3>
-                            
-    <h3><?php echo guvenli($ilan["ilan_basligi"] ?? "Hayvan Sahiplendirme İlanı"); ?></h3>
-        <p><?php echo guvenli($ilan["hayvan_adi"]); ?></p>
-           <p>
-                            <strong>Tür:</strong>
-                            <?php echo guvenli($ilan["tur"]); ?>
-                        </p>
+    <h3>
+        <?php echo guvenli($ilan["ilan_basligi"] ?: "Hayvan Sahiplendirme İlanı"); ?>
+    </h3>
+        <p>
+                <strong>Hayvan Adı:</strong>
+                <?php echo guvenli($ilan["hayvan_adi"]); ?>
+        </p>
 
+        <p>
+                <strong>Tür:</strong>
+                <?php echo guvenli($ilan["tur"]); ?>
+        </p>
                         <p>
                             <strong>Yaş:</strong>
                             <?php echo (int)$ilan["yas"]; ?>
@@ -484,7 +603,27 @@ if ($sorgu) {
                         >
                             İlanı İncele
                         </a>
+                    <?php if (isset($_SESSION["uye_id"])): ?>
 
+    <form action="favori-islem.php" method="POST">
+        <input
+            type="hidden"
+            name="ilan_id"
+            value="<?php echo (int)$ilan["id"]; ?>"
+        >
+
+        <button type="submit" class="favori-buton">
+            ♡ Favorilere Ekle
+        </button>
+    </form>
+
+<?php else: ?>
+
+    <a href="giris.php" class="favori-buton">
+        ♡ Favorilere Ekle
+    </a>
+
+<?php endif; ?>
                     </div>
 
                 </div>
@@ -501,25 +640,53 @@ if ($sorgu) {
 
 <?php if ($toplam_sayfa > 1): ?>
 
-    <div class="sayfalama">
+     <div class="sayfalama">
 
-        <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
+    <!-- Önceki sayfa -->
+    <?php if ($sayfa > 1): ?>
+        <?php
+        $filtreler = $_GET;
+        $filtreler["sayfa"] = $sayfa - 1;
+        $onceki_link = "ilanlar.php?" . http_build_query($filtreler);
+        ?>
 
-            <?php
-            $filtreler = $_GET;
-            $filtreler["sayfa"] = $i;
-            $link = "ilanlar.php?" . http_build_query($filtreler);
-            ?>
+        <a href="<?php echo guvenli($onceki_link); ?>">
+            « Önceki
+        </a>
+    <?php endif; ?>
 
-            <a href="<?php echo guvenli($link); ?>"
-               class="<?php echo $sayfa == $i ? 'aktif' : ''; ?>">
-                <?php echo $i; ?>
-            </a>
 
-        <?php endfor; ?>
+    <!-- Sayfa numaraları -->
+    <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
 
-    </div>
+        <?php
+        $filtreler = $_GET;
+        $filtreler["sayfa"] = $i;
+        $link = "ilanlar.php?" . http_build_query($filtreler);
+        ?>
 
+        <a href="<?php echo guvenli($link); ?>"
+           class="<?php echo $sayfa == $i ? 'aktif' : ''; ?>">
+            <?php echo $i; ?>
+        </a>
+
+    <?php endfor; ?>
+
+
+    <!-- Sonraki sayfa -->
+    <?php if ($sayfa < $toplam_sayfa): ?>
+        <?php
+        $filtreler = $_GET;
+        $filtreler["sayfa"] = $sayfa + 1;
+        $sonraki_link = "ilanlar.php?" . http_build_query($filtreler);
+        ?>
+
+        <a href="<?php echo guvenli($sonraki_link); ?>">
+            Sonraki »
+        </a>
+    <?php endif; ?>
+
+</div>
 <?php endif; ?>
 
 </main>
