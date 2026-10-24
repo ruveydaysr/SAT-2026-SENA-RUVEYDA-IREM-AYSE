@@ -42,8 +42,10 @@ $tarih_secenekleri = [
 $kategori = is_string($_GET["kategori"] ?? null)
     ? trim($_GET["kategori"]) : "";
 
+// İlk açılışta onaylanan ilanlar listelenir.
+// Boş değer seçilirse tüm durumlar gösterilir.
 $durum = is_string($_GET["durum"] ?? null)
-    ? trim($_GET["durum"]) : "";
+    ? trim($_GET["durum"]) : "Onaylandı";
 
 $tarih = is_string($_GET["tarih"] ?? null)
     ? $_GET["tarih"] : "";
@@ -52,15 +54,15 @@ if (!in_array($kategori, $kategoriler, true)) {
     $kategori = "";
 }
 
-if (!in_array($durum, $izinli_durumlar, true)) {
-    $durum = "";
+if ($durum !== "" && !in_array($durum, $izinli_durumlar, true)) {
+    $durum = "Onaylandı";
 }
 
 if (!array_key_exists($tarih, $tarih_secenekleri)) {
     $tarih = "";
 }
 
-// Tarihleri veritabanının kayıt oluştururken kullandığı saate göre hesapla.
+// Filtreleme hem sayımda hem ilan sorgusunda kullanılır.
 $kosul = "WHERE (? = '' OR tur = ?)
           AND (? = '' OR durum = ?)";
 
@@ -75,6 +77,7 @@ if ($tarih === "bugun") {
                 AND ilan_tarihi <= NOW()";
 }
 
+// Seçilen filtrelere uygun toplam ilan sayısı.
 $sayim = mysqli_prepare(
     $baglanti,
     "SELECT COUNT(*) AS toplam FROM ilanlar " . $kosul
@@ -94,7 +97,8 @@ $sayim_sonucu = mysqli_stmt_get_result($sayim);
 $toplam_ilan = (int)mysqli_fetch_assoc($sayim_sonucu)["toplam"];
 mysqli_stmt_close($sayim);
 
-$sayfa_basi = 12;
+// Her sayfada 10 ilan gösterilir.
+$sayfa_basi = 10;
 $toplam_sayfa = max(1, (int)ceil($toplam_ilan / $sayfa_basi));
 
 $sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
@@ -102,6 +106,7 @@ $sayfa = min($toplam_sayfa, max(1, $sayfa ?: 1));
 
 $baslangic = ($sayfa - 1) * $sayfa_basi;
 
+// Sadece geçerli sayfada gösterilecek ilanlar sorgulanır.
 $stmt = mysqli_prepare(
     $baglanti,
     "SELECT * FROM ilanlar " . $kosul . "
@@ -135,16 +140,56 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>İlan Yönetimi | Aris Pati Yuvası</title>
 
     <link rel="stylesheet" href="admin-style.css?v=14">
 
     <style>
+        .ilan-filtre {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 12px;
+        }
+
+        .ilan-filtre > div {
+            flex: 1 1 160px;
+        }
+
+        .ilan-filtre label {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .ilan-filtre select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ded6c6;
+            border-radius: 8px;
+            background: #fffdf8;
+            color: #284b32;
+        }
+
+        .ilan-filtre button,
+        .ilan-filtre .filtre-temizle {
+            padding: 10px 16px;
+            border: 1px solid #426b46;
+            border-radius: 8px;
+            background: #426b46;
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ilan-filtre .filtre-temizle {
+            background: #fffdf8;
+            color: #284b32;
+        }
+
         .admin-ilan-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -176,6 +221,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             display: flex;
             align-items: center;
             justify-content: center;
+            background: #eeeadd;
             font-size: 14px;
             text-align: center;
         }
@@ -187,22 +233,39 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             overflow-wrap: anywhere;
         }
 
-        .admin-ilan-grid .admin-ilan-bilgileri {
+        .admin-ilan-bilgileri {
             display: grid;
             gap: 5px;
             margin-bottom: 10px;
         }
 
-        .admin-ilan-grid .admin-ilan-bilgileri p {
+        .admin-ilan-bilgileri p {
             margin: 0;
             font-size: 13px;
             line-height: 1.5;
         }
 
         .admin-ilan-grid .durum {
+            display: inline-block;
             max-width: 100%;
             padding: 6px 9px;
+            border-radius: 6px;
             font-size: 11px;
+        }
+
+        .durum-onaylandi {
+            background: #e0efdf;
+            color: #285b30;
+        }
+
+        .durum-bekliyor {
+            background: #fff0c8;
+            color: #795a12;
+        }
+
+        .durum-reddedildi {
+            background: #f8dddd;
+            color: #922f2f;
         }
 
         .admin-ilan-grid .islem-alani {
@@ -225,6 +288,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
         .admin-ilan-grid .incele-buton,
         .admin-ilan-grid .ret-formu button {
             display: block;
+            box-sizing: border-box;
             width: 100%;
             padding: 9px 5px;
             border-radius: 6px;
@@ -238,13 +302,22 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
         .admin-ilan-grid .admin-red-nedeni {
             margin-top: 12px;
             font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .admin-ilan-grid summary {
+            cursor: pointer;
         }
 
         .admin-ilan-grid .ret-formu label {
+            display: block;
+            margin: 10px 0 6px;
             font-size: 12px;
         }
 
         .admin-ilan-grid .ret-formu textarea {
+            box-sizing: border-box;
+            width: 100%;
             min-height: 90px;
             padding: 8px;
             font-size: 13px;
@@ -269,6 +342,8 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             justify-content: center;
             min-width: 40px;
             min-height: 42px;
+            box-sizing: border-box;
+            margin: 0;
             padding: 9px 12px;
             border: 1px solid #ded6c6;
             border-radius: 8px;
@@ -285,7 +360,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
         .ilan-sayfalama [aria-current="page"] {
             border-color: #426b46;
             background: #426b46;
-            color: #fff;
+            color: white;
             font-weight: bold;
         }
 
@@ -304,7 +379,6 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
         @media (max-width: 600px) {
             .admin-ilan-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 10px;
             }
 
@@ -316,13 +390,19 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 font-size: 15px;
             }
 
-            .admin-ilan-grid .admin-ilan-bilgileri p {
+            .admin-ilan-bilgileri p {
                 font-size: 12px;
             }
 
             .admin-ilan-grid .islem-alani button,
             .admin-ilan-grid .incele-buton {
                 font-size: 11px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .admin-ilan-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -346,12 +426,10 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
     <?php endif; ?>
 
     <section class="kart">
-
         <form action="admin-panel.php" method="GET" class="ilan-filtre">
 
             <div>
                 <label for="kategori">Kategori</label>
-
                 <select id="kategori" name="kategori">
                     <option value="">Tüm Kategoriler</option>
 
@@ -368,9 +446,10 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
             <div>
                 <label for="durum">İlan Durumu</label>
-
                 <select id="durum" name="durum">
-                    <option value="">Tüm Durumlar</option>
+                    <option value="" <?php echo $durum === "" ? "selected" : ""; ?>>
+                        Tüm Durumlar
+                    </option>
 
                     <?php foreach ($izinli_durumlar as $secenek): ?>
                         <option
@@ -385,7 +464,6 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
             <div>
                 <label for="tarih">İlan Tarihi</label>
-
                 <select id="tarih" name="tarih">
                     <?php foreach ($tarih_secenekleri as $deger => $yazi): ?>
                         <option
@@ -400,7 +478,6 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
             <button type="submit">Filtrele</button>
             <a href="admin-panel.php" class="filtre-temizle">Temizle</a>
-
         </form>
 
         <p>
@@ -413,6 +490,9 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             <?php endif; ?>
         </p>
 
+        <p>
+            Sayfa <?php echo $sayfa; ?> / <?php echo $toplam_sayfa; ?>
+        </p>
     </section>
 
     <?php if ($toplam_ilan === 0): ?>
@@ -424,14 +504,19 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
     <div class="admin-ilan-grid">
 
         <?php while ($ilan = mysqli_fetch_assoc($ilanlar)): ?>
-
             <?php
             $ilan_id = (int)$ilan["id"];
             $ilan_durumu = (string)($ilan["durum"] ?? "");
 
-            $dosya_adi = basename(
-                (string)($ilan["fotograf"] ?? "")
-            );
+            $durum_siniflari = [
+                "Bekliyor" => "durum-bekliyor",
+                "Onaylandı" => "durum-onaylandi",
+                "Reddedildi" => "durum-reddedildi"
+            ];
+
+            $durum_sinifi = $durum_siniflari[$ilan_durumu] ?? "";
+
+            $dosya_adi = basename((string)($ilan["fotograf"] ?? ""));
 
             $gecerli_fotograf =
                 preg_match(
@@ -441,6 +526,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 && is_file(__DIR__ . "/../uploads/" . $dosya_adi);
 
             $ilan_tarihi = (string)($ilan["ilan_tarihi"] ?? "");
+
             $tarih_nesnesi = DateTimeImmutable::createFromFormat(
                 "!Y-m-d H:i:s",
                 $ilan_tarihi
@@ -491,7 +577,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                     </p>
                 </div>
 
-                <span class="durum <?php echo guvenli($ilan_durumu); ?>">
+                <span class="durum <?php echo guvenli($durum_sinifi); ?>">
                     <?php echo guvenli($ilan_durumu); ?>
                 </span>
 
@@ -506,7 +592,6 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 <?php endif; ?>
 
                 <div class="islem-alani">
-
                     <a
                         href="../ilan-detay.php?id=<?php echo $ilan_id; ?>"
                         class="incele-buton"
@@ -522,7 +607,11 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                             method="POST"
                             onsubmit="return confirm('Bu ilanı onaylamak istediğinize emin misiniz?');"
                         >
-                            <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="<?php echo $ilan_id; ?>"
+                            >
                             <button type="submit" class="onayla">Onayla</button>
                         </form>
                     <?php endif; ?>
@@ -532,10 +621,13 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                         method="POST"
                         onsubmit="return confirm('Bu ilanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');"
                     >
-                        <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
+                        <input
+                            type="hidden"
+                            name="id"
+                            value="<?php echo $ilan_id; ?>"
+                        >
                         <button type="submit" class="sil">Sil</button>
                     </form>
-
                 </div>
 
                 <?php if ($ilan_durumu === "Bekliyor"): ?>
@@ -548,7 +640,11 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                             class="ret-formu"
                             onsubmit="return confirm('Bu ilanı reddetmek istediğinize emin misiniz?');"
                         >
-                            <input type="hidden" name="id" value="<?php echo $ilan_id; ?>">
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="<?php echo $ilan_id; ?>"
+                            >
 
                             <label for="red-<?php echo $ilan_id; ?>">
                                 Reddetme Nedeni
@@ -567,7 +663,6 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 <?php endif; ?>
 
             </article>
-
         <?php endwhile; ?>
 
     </div>
