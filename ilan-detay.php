@@ -80,15 +80,14 @@ if ($ilan) {
 
         .hayvan-fotograf {
             max-width: 100%;
-        }
-
+        } 
         .hayvan-fotograf img {
-            width: 350px;
-            max-width: 100%;
-            height: 280px;
-            object-fit: cover;
-            border-radius: 12px;
-        }
+    width: 350px;
+    max-width: 100%;
+    height: 280px;
+    object-fit: contain;
+    border-radius: 12px;
+}
 
         .detay-foto-yok {
             width: 350px;
@@ -308,7 +307,19 @@ if ($ilan) {
                     alt="<?php echo guvenli($ilan["hayvan_adi"]); ?>"
                 >
             <?php else: ?>
-                <div class="detay-foto-yok">Fotoğraf Yok</div>
+              <?php if ($ilan["tur"] === "Kedi"): ?>
+    <img src="images/hayvanlar/kedi.jpg" alt="Temsili kedi fotoğrafı">
+    <p>Temsili fotoğraf</p>
+
+<?php elseif ($ilan["tur"] === "Köpek"): ?>
+    <img src="images/hayvanlar/kopek.jpg" alt="Temsili köpek fotoğrafı">
+    <p>Temsili fotoğraf</p>
+    <?php elseif ($ilan["tur"] === "Kuş"): ?>
+    <img src="images/hayvanlar/kus.jpg" alt="Temsili kuş fotoğrafı">
+    <p>Temsili fotoğraf</p>
+<?php else: ?>
+    <div class="detay-foto-yok">Fotoğraf Yok</div>
+<?php endif; ?>
             <?php endif; ?>
         </div>
 

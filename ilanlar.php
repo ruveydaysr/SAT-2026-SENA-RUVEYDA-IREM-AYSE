@@ -182,7 +182,7 @@ if ($sorgu) {
         height: 220px;
         margin: 0;
         border-radius: 0;
-        object-fit: cover;
+        object-fit: contain;
         background: #eaf1eb;
     }
 
@@ -561,10 +561,25 @@ body.ilan-sayfasi .filtreler input {
                         >
 
                     <?php else: ?>
+                <?php if ($ilan["tur"] === "Kedi"): ?>
+    <img src="images/hayvanlar/kedi.jpg"
+         alt="Temsili kedi fotoğrafı"
+         class="ilan-fotograf">
 
-                        <div class="foto-yok">
-                            Fotoğraf Yok
-                        </div>
+<?php elseif ($ilan["tur"] === "Köpek"): ?>
+    <img src="images/hayvanlar/kopek.jpg"
+         alt="Temsili köpek fotoğrafı"
+         class="ilan-fotograf">
+
+<?php elseif ($ilan["tur"] === "Kuş"): ?>
+    <img src="images/hayvanlar/kus.jpg"
+         alt="Temsili kuş fotoğrafı"
+         class="ilan-fotograf">
+
+<?php else: ?>
+    <div class="foto-yok">Fotoğraf Yok</div>
+<?php endif; ?>
+                    
 
                     <?php endif; ?>
 
