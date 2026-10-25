@@ -370,6 +370,15 @@ body.ilan-sayfasi .ilanlar {
         grid-template-columns: 1fr;
     }
 }
+/* İlan kartlarını ortala */
+body.ilan-sayfasi .ilanlar {
+    max-width: 1100px;
+    width: 100%;
+    margin: 30px auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
 </style>
 </head>
 
@@ -652,7 +661,7 @@ src="<?php echo guvenli(str_starts_with($fotograf, 'images/hayvanlar/') ? $fotog
                         </a>
                     <?php if (isset($_SESSION["uye_id"])): ?>
 
-    <form action="favori-islem.php" method="POST">
+    <form action="favori-islem.php" method="POST" class="favori-form">
         <input
             type="hidden"
             name="ilan_id"
@@ -704,7 +713,13 @@ src="<?php echo guvenli(str_starts_with($fotograf, 'images/hayvanlar/') ? $fotog
 
 
     <!-- Sayfa numaraları -->
-    <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
+    <?php
+$baslangic = max(1, $sayfa - 2);
+$bitis = min($toplam_sayfa, $baslangic + 4);
+$baslangic = max(1, $bitis - 4);
+?>
+
+<?php for ($i = $baslangic; $i <= $bitis; $i++): ?>
 
         <?php
         $filtreler = $_GET;
@@ -741,7 +756,38 @@ src="<?php echo guvenli(str_starts_with($fotograf, 'images/hayvanlar/') ? $fotog
 <footer>
     <p>Hayvan Sahiplendirme Sistemi - 2026</p>
 </footer>
+<script>
+document.querySelectorAll(".favori-form").forEach(function(form) {
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
 
+        const buton = form.querySelector("button");
+        buton.disabled = true;
+
+        try {
+            const cevap = await fetch("favori-islem.php", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new FormData(form)
+            });
+
+            const sonuc = await cevap.json();
+
+            if (cevap.ok && sonuc.basarili) {
+                buton.textContent = "♥ Favorilere Eklendi";
+            } else {
+                alert("İlan favorilere eklenemedi.");
+            }
+        } catch (hata) {
+            alert("Bir bağlantı hatası oluştu.");
+        } finally {
+            buton.disabled = false;
+        }
+    });
+});
+</script>
 </body>
 </html>
 

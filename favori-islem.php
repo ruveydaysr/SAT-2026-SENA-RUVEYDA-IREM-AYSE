@@ -45,6 +45,17 @@ $sorgu = mysqli_prepare(
 mysqli_stmt_bind_param($sorgu, "ii", $uye_id, $ilan_id);
 mysqli_stmt_execute($sorgu);
 mysqli_stmt_close($sorgu);
+if (
+    isset($_SERVER["HTTP_X_REQUESTED_WITH"]) &&
+    $_SERVER["HTTP_X_REQUESTED_WITH"] === "XMLHttpRequest"
+) {
+    header("Content-Type: application/json; charset=utf-8");
+    echo json_encode([
+        "basarili" => true,
+        "mesaj" => "İlan favorilere eklendi."
+    ]);
+    exit;
+}
 
 header("Location: ilanlar.php");
 exit;
