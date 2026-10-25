@@ -506,6 +506,16 @@ body.ilan-sayfasi .filtreler input {
 
                     <select id="cinsiyet" name="cinsiyet">
                         <option value="">Tümü</option>
+                        
+<p>
+    <strong>Karakteristik Özellikler:</strong>
+    <?php
+    echo guvenli(
+        $ilan["karakteristik_ozellikler"] ?? "Belirtilmemiş"
+    );
+    ?>
+</p>
+
 
                         <option value="Dişi"
                             <?php echo $cinsiyet === "Dişi" ? "selected" : ""; ?>>
