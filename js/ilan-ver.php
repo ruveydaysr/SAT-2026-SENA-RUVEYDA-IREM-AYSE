@@ -403,6 +403,7 @@ if ($uye_girisi) {
 
                     <div class="ilan-grup ilan-tam">
                         <label for="aciklama">Açıklama *</label>
+                        
                         <textarea
                             id="aciklama"
                             name="aciklama"
@@ -410,6 +411,18 @@ if ($uye_girisi) {
                             placeholder="Hayvanın özelliklerini ve karakterini anlatın."
                             required
                         ><?php echo guvenli(form_degeri("aciklama")); ?></textarea>
+                        <div class="ilan-grup ilan-tam karakteristik-alani">
+    <label>Hayvanın Karakteristik Özellikleri</label>
+    <p>Hayvanınıza uygun özellikleri seçiniz.</p>
+
+    <div class="karakteristik-secimler">
+        <label><input type="checkbox" name="karakteristik_ozellikler[]" value="Oyuncu"> Oyuncu</label>
+        <label><input type="checkbox" name="karakteristik_ozellikler[]" value="Sakin"> Sakin</label>
+        <label><input type="checkbox" name="karakteristik_ozellikler[]" value="Çocuklarla uyumlu"> Çocuklarla uyumlu</label>
+        <label><input type="checkbox" name="karakteristik_ozellikler[]" value="Diğer hayvanlarla uyumlu"> Diğer hayvanlarla uyumlu</label>
+        <label><input type="checkbox" name="karakteristik_ozellikler[]" value="Eğitilebilir"> Eğitilebilir</label>
+    </div>
+</div>
                     </div>
 
                     <div class="ilan-grup ilan-tam">
