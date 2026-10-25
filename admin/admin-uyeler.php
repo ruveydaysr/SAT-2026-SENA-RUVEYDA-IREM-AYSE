@@ -10,11 +10,7 @@ require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
-    return htmlspecialchars(
-        (string)$deger,
-        ENT_QUOTES,
-        "UTF-8"
-    );
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
 }
 
 $arama = is_string($_GET["arama"] ?? null)
@@ -51,7 +47,7 @@ $uyeler = mysqli_stmt_get_result($stmt);
 
     <title>Üye Yönetimi | Admin Paneli</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=14">
+    <link rel="stylesheet" href="admin-style.css?v=15">
 
     <style>
         .uye-arama {
@@ -73,6 +69,7 @@ $uyeler = mysqli_stmt_get_result($stmt);
         }
 
         .uye-arama input {
+            box-sizing: border-box;
             width: 100%;
             padding: 13px;
             border: 1px solid #ded6c6;
@@ -80,6 +77,70 @@ $uyeler = mysqli_stmt_get_result($stmt);
             background: #fffdf8;
             color: #284b32;
             font: inherit;
+        }
+
+        .uye-arama button,
+        .uye-arama .filtre-temizle,
+        .uye-detay-buton {
+            display: inline-block;
+            padding: 11px 16px;
+            border: 1px solid #426b46;
+            border-radius: 8px;
+            background: #426b46;
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .uye-arama .filtre-temizle {
+            background: #e6eddf;
+            border-color: #e6eddf;
+            color: #284b32;
+        }
+
+        .uye-detay-buton {
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .uye-detay-buton:hover,
+        .uye-arama button:hover {
+            background: #284b32;
+        }
+
+        .tablo-alani {
+            overflow-x: auto;
+        }
+
+        .tablo-alani table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tablo-alani th,
+        .tablo-alani td {
+            padding: 15px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #e5dfd2;
+        }
+
+        .tablo-alani th {
+            background: #e6eddf;
+            color: #284b32;
+        }
+
+        .tablo-alani td {
+            background: #fffdf8;
+        }
+
+        .uye-arama input:focus-visible,
+        .uye-arama button:focus-visible,
+        .uye-arama a:focus-visible,
+        .uye-detay-buton:focus-visible {
+            outline: 2px solid #426b46;
+            outline-offset: 3px;
         }
     </style>
 </head>
@@ -133,6 +194,7 @@ $uyeler = mysqli_stmt_get_result($stmt);
                     <th scope="col">Ad Soyad</th>
                     <th scope="col">E-posta</th>
                     <th scope="col">Telefon</th>
+                    <th scope="col">İşlem</th>
                 </tr>
             </thead>
 
@@ -141,16 +203,19 @@ $uyeler = mysqli_stmt_get_result($stmt);
                 <?php if (mysqli_num_rows($uyeler) === 0): ?>
 
                     <tr>
-                        <td colspan="4">
-                            <?php echo $arama !== ""
+                        <td colspan="5">
+                            <?php
+                            echo $arama !== ""
                                 ? "Aramanıza uygun üye bulunamadı."
-                                : "Henüz kayıtlı üye bulunmuyor."; ?>
+                                : "Henüz kayıtlı üye bulunmuyor.";
+                            ?>
                         </td>
                     </tr>
 
                 <?php else: ?>
 
                     <?php while ($uye = mysqli_fetch_assoc($uyeler)): ?>
+
                         <tr>
                             <td>
                                 <?php echo (int)$uye["id"]; ?>
@@ -167,7 +232,17 @@ $uyeler = mysqli_stmt_get_result($stmt);
                             <td>
                                 <?php echo guvenli($uye["telefon"] ?? ""); ?>
                             </td>
+
+                            <td>
+                                <a
+                                    href="admin-uye-detay.php?id=<?php echo (int)$uye['id']; ?>"
+                                    class="uye-detay-buton"
+                                >
+                                    Detayları Gör
+                                </a>
+                            </td>
                         </tr>
+
                     <?php endwhile; ?>
 
                 <?php endif; ?>

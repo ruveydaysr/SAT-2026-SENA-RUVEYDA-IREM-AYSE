@@ -16,8 +16,8 @@
 
 body {
     display: block;
-    margin: 0;
     min-height: 100vh;
+    margin: 0;
     background: var(--zemin);
     color: var(--koyu-yesil);
     font-family: Arial, sans-serif;
@@ -39,29 +39,18 @@ a {
 body > header {
     width: 100%;
     padding: 22px 5%;
-    background: #fff;
-    text-align: center;
     border-bottom: 1px solid var(--kenarlik);
+    background: #fffdf8;
+    text-align: center;
 }
 
 .admin-logo {
     display: inline-flex;
     align-items: center;
     gap: 12px;
+    max-width: 100%;
     color: var(--koyu-yesil);
     text-align: left;
-}
-
-.logo-pati {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 58px;
-    height: 58px;
-    border-radius: 14px;
-    background: #dceecf;
-    font-size: 30px;
 }
 
 .admin-logo strong {
@@ -76,11 +65,53 @@ body > header {
     font-size: 12px;
 }
 
+.logo-pati {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: #eee5d3;
+    font-size: 30px;
+}
+
+.admin-logo-resim {
+    display: block;
+    flex-shrink: 0;
+    width: 75px;
+    height: 75px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
 body > header h2 {
     margin: 10px 0 0;
     color: var(--soluk-yazi);
     font-size: 13px;
     font-weight: normal;
+}
+
+body > header.admin-ust {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 5%;
+    text-align: left;
+}
+
+.admin-ust .admin-logo {
+    gap: 10px;
+}
+
+.admin-ust .admin-logo strong {
+    font-size: 19px;
+}
+
+.admin-ust .admin-logo small {
+    margin-top: 4px;
+    font-size: 11px;
 }
 
 /* MENÜ */
@@ -94,15 +125,15 @@ body > header h2 {
     width: 100%;
     margin: 0;
     padding: 15px 3%;
+    border-bottom: 3px solid #c6b58f;
     background: var(--koyu-yesil);
-    border-bottom: 3px solid #92bc83;
 }
 
 .admin-menu a {
     display: inline-block;
     padding: 11px 13px;
     border-radius: 8px;
-    color: #fff;
+    color: #fffdf8;
     font-size: 14px;
     line-height: 1.4;
 }
@@ -112,7 +143,7 @@ body > header h2 {
 }
 
 .admin-menu a[aria-current="page"] {
-    background: #dceecf;
+    background: #eee5d3;
     color: var(--koyu-yesil);
     font-weight: bold;
 }
@@ -126,7 +157,7 @@ body > header h2 {
     background: #f2dcd8;
 }
 
-/* İÇERİK */
+/* İÇERİK VE KARTLAR */
 
 .icerik {
     width: min(1180px, 92%);
@@ -147,9 +178,9 @@ body > header h2 {
     margin-bottom: 22px;
     padding: 24px;
     border: 1px solid var(--kenarlik);
-    border-top: 4px solid #78a86b;
+    border-top: 4px solid var(--yesil);
     border-radius: 12px;
-    background: #fff;
+    background: #fffdf8;
     box-shadow: 0 5px 18px rgba(32, 88, 67, 0.06);
     overflow-wrap: anywhere;
 }
@@ -174,7 +205,7 @@ body > header h2 {
     border: 0;
     border-radius: 8px;
     background: var(--yesil);
-    color: #fff;
+    color: white;
     font-size: 14px;
     cursor: pointer;
 }
@@ -254,9 +285,9 @@ body > header h2 {
 .giris input {
     width: 100%;
     padding: 13px;
-    border: 1px solid #cbdccf;
+    border: 1px solid var(--kenarlik);
     border-radius: 8px;
-    background: #f8fbf8;
+    background: #fffdf8;
     color: var(--koyu-yesil);
 }
 
@@ -328,19 +359,25 @@ body > header h2 {
 }
 
 .durum.Bekliyor,
-.basvuru-durum.Bekliyor {
+.durum-bekliyor,
+.basvuru-durum.Bekliyor,
+.basvuru-durum.bekliyor {
     background: #fff3cd;
     color: #795b0b;
 }
 
 .durum.Onaylandı,
-.basvuru-durum.Onaylandı {
+.durum-onaylandi,
+.basvuru-durum.Onaylandı,
+.basvuru-durum.onaylandi {
     background: #dceecf;
     color: #285f3a;
 }
 
 .durum.Reddedildi,
-.basvuru-durum.Reddedildi {
+.durum-reddedildi,
+.basvuru-durum.Reddedildi,
+.basvuru-durum.reddedildi {
     background: #f9ecea;
     color: #a63c35;
 }
@@ -389,7 +426,7 @@ body > header h2 {
     white-space: pre-wrap;
 }
 
-/* MESAJLAR */
+/* MESAJ VE BİLDİRİMLER */
 
 .mesaj,
 .basvuru-mesaj,
@@ -425,7 +462,7 @@ body > header h2 {
     overflow-x: auto;
     border: 1px solid var(--kenarlik);
     border-radius: 12px;
-    background: #fff;
+    background: white;
 }
 
 .icerik table {
@@ -444,7 +481,7 @@ body > header h2 {
 
 .icerik th {
     background: var(--koyu-yesil);
-    color: #fff;
+    color: white;
 }
 
 .icerik tr:last-child td {
@@ -473,29 +510,14 @@ body > header h2 {
     border: 1px solid var(--kenarlik);
     border-top: 5px solid var(--yesil);
     border-radius: 12px;
-    background: #fff;
+    background: #fffdf8;
     color: var(--koyu-yesil);
     overflow-wrap: anywhere;
     box-shadow: 0 5px 18px rgba(32, 88, 67, 0.06);
 }
 
 .istatistik-karti:hover {
-    background: #f6fbf6;
-}
-
-.istatistik-karti:nth-child(3) {
-    border-top-color: #d4a52c;
-    background: #fffdf4;
-}
-
-.istatistik-karti:nth-child(5) {
-    border-top-color: #b75b52;
-    background: #fff8f6;
-}
-
-.istatistik-karti:nth-child(6) {
-    border-top-color: #558da0;
-    background: #f5fbfd;
+    background: #f0ebdf;
 }
 
 .istatistik-karti span {
@@ -555,7 +577,7 @@ body.admin-giris-sayfasi > header.giris-ust {
     border: 1px solid var(--kenarlik);
     border-top: 5px solid var(--yesil);
     border-radius: 14px;
-    background: #fff;
+    background: #fffdf8;
     text-align: center;
     box-shadow: 0 5px 18px rgba(32, 88, 67, 0.06);
 }
@@ -591,127 +613,13 @@ body.admin-giris-sayfasi > header.giris-ust {
     border-radius: 8px;
 }
 
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-button:focus-visible,
-a:focus-visible,
-summary:focus-visible {
-    outline: 3px solid #92bc83;
-    outline-offset: 3px;
-}
-
-/* DAR EKRANLAR */
-
-@media (max-width: 900px) {
-    .istatistikler {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 700px) {
-    .admin-ilan-grid,
-    .istatistikler {
-        grid-template-columns: 1fr;
-    }
-
-    body.admin-giris-sayfasi > header.giris-ust {
-        flex-direction: column;
-    }
-
-    .admin-menu {
-        gap: 6px;
-        padding: 12px;
-    }
-
-    .admin-menu a {
-        padding: 10px;
-        font-size: 13px;
-    }
-
-    .icerik {
-        margin-top: 26px;
-    }
-
-    .icerik > h2 {
-        font-size: 26px;
-    }
-
-    .kart,
-    .basvuru-karti {
-        padding: 18px;
-    }
-
-    .admin-giris-sayfasi .giris {
-        margin: 30px auto;
-        padding: 28px 22px;
-    }
-
-    .admin-logo strong {
-        font-size: 21px;
-    }
-    /* YEŞİL VE BEJ ADMIN TASARIMI */
-
-body {
-    background: var(--zemin);
-}
-
-body > header {
-    padding: 22px 5%;
-    background: #fffdf8;
-    border-bottom: 1px solid var(--kenarlik);
-}
-
-.logo-pati {
-    background: #eee5d3;
-}
-
-.admin-menu {
-    background: var(--koyu-yesil);
-    border-bottom: 3px solid #c6b58f;
-}
-
-.admin-menu a {
-    color: #fffdf8;
-}
-
-.admin-menu a:hover {
-    background: var(--yesil);
-}
-
-.admin-menu a[aria-current="page"] {
-    background: #eee5d3;
-    color: var(--koyu-yesil);
-}
-
-.kart,
-.basvuru-karti,
-.istatistik-karti {
-    background: #fffdf8;
-    border-color: var(--kenarlik);
-    border-top-color: var(--yesil);
-}
-
-.istatistik-karti:nth-child(n) {
-    background: #fffdf8;
-    border-top-color: var(--yesil);
-}
-
-.istatistik-karti:hover {
-    background: #f0ebdf;
-}
-
-.icerik th {
-    background: var(--koyu-yesil);
-}
-
-.ilan-filtre select,
-.anasayfa-form input:not([type="hidden"]),
-.anasayfa-form textarea,
-.ret-formu textarea,
-.giris input {
-    background: #fffdf8;
-    border-color: var(--kenarlik);
+.giris-logo-resim {
+    display: block;
+    width: 80px;
+    height: 80px;
+    max-width: 100%;
+    margin: 0 auto 24px;
+    object-fit: contain;
 }
 
 /* GELEN KUTUSU */
@@ -846,7 +754,196 @@ body > header {
     line-height: 1.7;
 }
 
+/* SAHİPLENME BAŞVURULARI */
+
+.basvurular-sayfasi .basvuru-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 360px));
+    align-items: start;
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.basvurular-sayfasi .basvuru-karti {
+    width: 100%;
+    max-width: 360px;
+    margin: 0;
+    padding: 16px;
+}
+
+.basvurular-sayfasi .basvuru-karti > h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+
+.basvurular-sayfasi .basvuru-karti > p {
+    margin: 7px 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.basvurular-sayfasi .basvuru-islemleri {
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.basvurular-sayfasi .basvuru-islemleri form {
+    flex: 1 1 100px;
+    min-width: 0;
+}
+
+.basvurular-sayfasi .basvuru-islemleri button {
+    width: 100%;
+    padding: 10px;
+}
+
+/* EK BİLGİ PENCERESİ */
+
+.icerik .ek-bilgi-buton {
+    margin: 10px 0;
+    padding: 10px 14px;
+    border: 1px solid var(--kenarlik);
+    border-radius: 8px;
+    background: var(--zemin);
+    color: var(--koyu-yesil);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.icerik .ek-bilgi-buton:hover {
+    background: var(--acik-yesil);
+}
+
+dialog.ek-bilgi-pencere {
+    box-sizing: border-box;
+    width: min(760px, calc(100% - 32px));
+    max-width: none;
+    max-height: 85vh;
+    margin: auto;
+    padding: 26px;
+    border: 1px solid var(--kenarlik);
+    border-radius: 16px;
+    background: #fffdf8;
+    color: var(--koyu-yesil);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+}
+
+.ek-bilgi-pencere::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.ek-bilgi-ust {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.icerik .ek-bilgi-pencere h3 {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 20px;
+}
+
+.ek-bilgi-ust form {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.icerik .ek-bilgi-kapat {
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--acik-yesil);
+    color: var(--koyu-yesil);
+    cursor: pointer;
+}
+
+.icerik .ek-bilgi-kapat:hover {
+    background: #d6e8da;
+}
+
+.ek-bilgi-kisi {
+    color: var(--soluk-yazi);
+}
+
+.ek-bilgi-yazi {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--kenarlik);
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* KLAVYE ODAĞI */
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+    outline: 3px solid #92bc83;
+    outline-offset: 3px;
+}
+
+/* DAR EKRANLAR */
+
+@media (max-width: 900px) {
+    .istatistikler {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 700px) {
+    .admin-ilan-grid,
+    .istatistikler {
+        grid-template-columns: 1fr;
+    }
+
+    body.admin-giris-sayfasi > header.giris-ust {
+        flex-direction: column;
+    }
+
+    .admin-menu {
+        gap: 6px;
+        padding: 12px;
+    }
+
+    .admin-menu a {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .icerik {
+        margin-top: 26px;
+    }
+
+    .icerik > h2 {
+        font-size: 26px;
+    }
+
+    .kart {
+        padding: 18px;
+    }
+
+    .admin-giris-sayfasi .giris {
+        margin: 30px auto;
+        padding: 28px 22px;
+    }
+
+    .admin-logo strong {
+        font-size: 21px;
+    }
+
+    .admin-ust .admin-logo strong {
+        font-size: 19px;
+    }
+
     .mesaj-karti-ust {
         flex-wrap: wrap;
         padding: 18px;
@@ -865,56 +962,17 @@ body > header {
         font-size: 26px;
     }
 }
-.admin-logo {
-    max-width: 100%;
-}
 
-.admin-logo-resim {
-    display: block;
-    width: 340px;
-    max-width: 100%;
-    height: auto;
-}
-
-.giris-logo-resim {
-    display: block;
-    width: 290px;
-    max-width: 100%;
-    height: auto;
-    margin: 0 auto 24px;
-}
-
-@media (max-width: 600px) {
-    .admin-logo-resim {
-        width: 280px;
+@media (max-width: 550px) {
+    .basvurular-sayfasi .basvuru-grid {
+        grid-template-columns: minmax(0, 360px);
     }
-}
-.admin-logo-resim {
-    width: 75px;
-    height: 75px;
-    flex-shrink: 0;
-    object-fit: contain;
-}
-body > header.admin-ust {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 12px 5%;
-    text-align: left;
-}
 
-.admin-ust .admin-logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
+    dialog.ek-bilgi-pencere {
+        padding: 18px;
+    }
 
-.admin-ust .admin-logo strong {
-    font-size: 19px;
-}
-
-.admin-ust .admin-logo small {
-    margin-top: 4px;
-    font-size: 11px;
-}
+    .ek-bilgi-ust {
+        align-items: flex-start;
+    }
 }

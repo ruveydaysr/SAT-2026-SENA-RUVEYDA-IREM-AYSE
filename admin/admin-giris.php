@@ -6,6 +6,11 @@ require_once __DIR__ . "/../baglanti.php";
 $hata = "";
 $kullanici_adi = "";
 
+if (isset($_SESSION["admin"])) {
+    header("Location: admin-genel-bakis.php");
+    exit();
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $kullanici_adi = is_string($_POST["kullanici_adi"] ?? null)
@@ -45,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } else {
 
-            // Eski açık şifreyi doğrula ve hash olarak güncelle.
+            // Eski açık şifreleri başarılı girişte hash'e dönüştür.
             $dogru = hash_equals($kayitli_sifre, $sifre);
 
             if ($dogru) {
@@ -79,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         session_regenerate_id(true);
         $_SESSION["admin"] = $admin["kullanici_adi"];
 
-        header("Location: admin-panel.php");
+        header("Location: admin-genel-bakis.php");
         exit();
 
     } else {
@@ -98,10 +103,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <title>Yönetici Girişi | Aris Pati Yuvası</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
-
     <style>
-        body.admin-giris-sayfasi {
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -111,25 +118,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-family: Arial, sans-serif;
         }
 
-        .admin-giris-sayfasi,
-        .admin-giris-sayfasi * {
-            box-sizing: border-box;
-        }
-
-        body.admin-giris-sayfasi > header.giris-ust {
+        .giris-ust {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 20px;
-            width: 100%;
             padding: 16px 5%;
             border-bottom: 1px solid #ded6c6;
             background: #fffdf8;
-            text-align: left;
         }
 
-        .admin-giris-sayfasi .admin-logo {
+        .admin-logo {
             display: inline-flex;
             align-items: center;
             gap: 12px;
@@ -137,61 +137,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-decoration: none;
         }
 
-        .admin-giris-sayfasi .admin-logo img {
-            display: block;
-            flex-shrink: 0;
+        .admin-logo img {
             width: 48px;
             height: 48px;
             object-fit: contain;
+            flex-shrink: 0;
         }
 
-        .admin-giris-sayfasi .admin-logo strong {
+        .admin-logo strong {
             display: block;
             font-size: 19px;
         }
 
-        .admin-giris-sayfasi .admin-logo small {
+        .admin-logo small {
             display: block;
             margin-top: 5px;
             color: #687361;
             font-size: 11px;
         }
 
-        .admin-giris-sayfasi .giris-ust nav {
+        .giris-ust nav {
             display: flex;
-            align-items: center;
             justify-content: center;
             flex-wrap: wrap;
             gap: 6px;
         }
 
-        .admin-giris-sayfasi .giris-ust nav a {
-            display: inline-block;
+        .giris-ust nav a {
             padding: 10px 13px;
             border-radius: 8px;
-            background: transparent;
             color: #284b32;
             font-size: 14px;
             text-decoration: none;
         }
 
-        .admin-giris-sayfasi .giris-ust nav a:hover {
+        .giris-ust nav a:hover {
             background: #e6eddf;
         }
 
-        .admin-giris-sayfasi .giris-ana {
+        .giris-ana {
             display: flex;
             flex: 1;
             align-items: center;
             justify-content: center;
-            width: 100%;
             padding: 40px 20px;
         }
 
-        .admin-giris-sayfasi .giris {
+        .giris {
             width: 100%;
             max-width: 420px;
-            margin: 0;
             padding: 34px;
             border: 1px solid #ded6c6;
             border-radius: 18px;
@@ -200,86 +194,74 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             box-shadow: 0 10px 30px rgba(40, 75, 50, 0.08);
         }
 
-        .admin-giris-sayfasi .giris-logo-resim {
+        .giris-logo-resim {
             display: block;
             width: 80px;
             height: 80px;
-            max-width: 100%;
             margin: 0 auto 20px;
             object-fit: contain;
         }
 
-        .admin-giris-sayfasi .giris h2 {
+        .giris h1 {
             margin: 0 0 12px;
-            color: #284b32;
             font-size: 27px;
         }
 
-        .admin-giris-sayfasi .giris p {
-            margin: 8px 0;
+        .giris-aciklama {
+            margin: 8px 0 26px;
             color: #687361;
+            font-size: 13px;
             line-height: 1.6;
         }
 
-        .admin-giris-sayfasi .giris .giris-aciklama {
-            margin-bottom: 26px;
-            font-size: 13px;
-        }
-
-        .admin-giris-sayfasi .giris form {
+        .giris form {
             display: grid;
             gap: 16px;
             text-align: left;
         }
 
-        .admin-giris-sayfasi .giris label {
+        .giris label {
             display: block;
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: bold;
         }
 
-        .admin-giris-sayfasi .giris input {
-            display: block;
+        .giris input {
             width: 100%;
-            margin: 0;
             padding: 13px 14px;
             border: 1px solid #d6d9c9;
             border-radius: 9px;
-            background: #fff;
+            background: white;
             color: #284b32;
             font: inherit;
         }
 
-        .admin-giris-sayfasi .giris input:focus-visible {
-            outline: 2px solid #426b46;
-            outline-offset: 2px;
-        }
-
-        .admin-giris-sayfasi .giris button {
+        .giris button {
             width: 100%;
             margin-top: 4px;
             padding: 14px;
             border: 0;
             border-radius: 9px;
             background: #426b46;
-            color: #fff;
+            color: white;
             font: inherit;
             font-weight: bold;
             cursor: pointer;
         }
 
-        .admin-giris-sayfasi .giris button:hover {
+        .giris button:hover {
             background: #284b32;
         }
 
-        .admin-giris-sayfasi .giris button:focus-visible,
-        .admin-giris-sayfasi a:focus-visible {
+        input:focus-visible,
+        button:focus-visible,
+        a:focus-visible {
             outline: 2px solid #426b46;
             outline-offset: 3px;
         }
 
-        .admin-giris-sayfasi .giris .hata {
+        .hata {
             margin: 0 0 20px;
             padding: 12px;
             border: 1px solid #edccc7;
@@ -290,34 +272,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         @media (max-width: 650px) {
-            body.admin-giris-sayfasi > header.giris-ust {
+            .giris-ust {
                 justify-content: center;
                 padding: 16px;
             }
 
-            .admin-giris-sayfasi .giris-ust nav {
+            .giris-ust nav {
                 width: 100%;
             }
 
-            .admin-giris-sayfasi .giris-ust nav a {
+            .giris-ust nav a {
                 padding: 8px 10px;
                 font-size: 13px;
             }
 
-            .admin-giris-sayfasi .giris {
+            .giris {
                 padding: 28px 22px;
-            }
-
-            .admin-giris-sayfasi .giris h2 {
-                font-size: 24px;
             }
         }
     </style>
 </head>
 
-<body class="admin-giris-sayfasi">
+<body>
 
 <header class="giris-ust">
+
     <a href="../index.php" class="admin-logo">
         <img
             src="../images/aris-logoo.png"
@@ -338,9 +317,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <a href="../hakkimizda.php">Hakkımızda</a>
         <a href="../iletisim.php">İletişim</a>
     </nav>
+
 </header>
 
 <main class="giris-ana">
+
     <section class="giris" aria-labelledby="giris-baslik">
 
         <img
@@ -351,19 +332,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             height="80"
         >
 
-        <h2 id="giris-baslik">Yönetici Girişi</h2>
+        <h1 id="giris-baslik">Yönetici Girişi</h1>
 
-        <p>Aris Pati Yuvası</p>
-        <p class="giris-aciklama">Her can dostuna bir yuva</p>
+        <p class="giris-aciklama">
+            Aris Pati Yuvası yönetim paneline giriş yapın.
+        </p>
 
         <?php if ($hata !== ""): ?>
             <p class="hata" role="alert">
                 <?php
-                echo htmlspecialchars(
-                    $hata,
-                    ENT_QUOTES,
-                    "UTF-8"
-                );
+                echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8");
                 ?>
             </p>
         <?php endif; ?>
@@ -377,13 +355,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     type="text"
                     id="kullanici_adi"
                     name="kullanici_adi"
-                    value="<?php
-                    echo htmlspecialchars(
-                        $kullanici_adi,
-                        ENT_QUOTES,
-                        "UTF-8"
-                    );
-                    ?>"
+                    value="<?php echo htmlspecialchars($kullanici_adi, ENT_QUOTES, 'UTF-8'); ?>"
                     placeholder="Kullanıcı adınızı yazınız"
                     autocomplete="username"
                     required
@@ -410,6 +382,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
 
     </section>
+
 </main>
 
 </body>

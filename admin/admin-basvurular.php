@@ -10,22 +10,14 @@ require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
-    return htmlspecialchars(
-        (string)$deger,
-        ENT_QUOTES,
-        "UTF-8"
-    );
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
 }
 
 if (empty($_SESSION["basvuru_token"])) {
     $_SESSION["basvuru_token"] = bin2hex(random_bytes(32));
 }
 
-$izinli_durumlar = [
-    "Bekliyor",
-    "Onaylandı",
-    "Reddedildi"
-];
+$izinli_durumlar = ["Bekliyor", "Onaylandı", "Reddedildi"];
 
 $filtre = is_string($_GET["durum"] ?? null)
     ? trim($_GET["durum"])
@@ -35,11 +27,17 @@ if (!in_array($filtre, $izinli_durumlar, true)) {
     $filtre = "";
 }
 
+$form_adresi = "admin-basvurular.php";
+
+if ($filtre !== "") {
+    $form_adresi .= "?durum=" . rawurlencode($filtre);
+}
+
 $mesaj = $_SESSION["basvuru_bildirimi"] ?? "";
 unset($_SESSION["basvuru_bildirimi"]);
 
-// Başvuru değerlendirme
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
     $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
     $islem = $_POST["islem"] ?? "";
     $token = $_POST["token"] ?? "";
@@ -49,58 +47,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         || !hash_equals($_SESSION["basvuru_token"], $token)
     ) {
         $mesaj = "Sayfayı yenileyip tekrar deneyiniz.";
+
     } elseif (
         !$id
         || $id < 1
         || !in_array($islem, ["onayla", "reddet"], true)
     ) {
         $mesaj = "Geçersiz işlem.";
+
     } else {
+
         $yeni_durum = $islem === "onayla"
             ? "Onaylandı"
             : "Reddedildi";
 
-        $stmt = mysqli_prepare(
+        $guncelle = mysqli_prepare(
             $baglanti,
             "UPDATE sahiplenme_basvurulari
              SET durum = ?
              WHERE id = ? AND durum = 'Bekliyor'"
         );
 
-        mysqli_stmt_bind_param(
-            $stmt,
-            "si",
-            $yeni_durum,
-            $id
-        );
+        mysqli_stmt_bind_param($guncelle, "si", $yeni_durum, $id);
 
-        if (mysqli_stmt_execute($stmt)) {
-            $mesaj = mysqli_stmt_affected_rows($stmt) > 0
+        if (mysqli_stmt_execute($guncelle)) {
+            $mesaj = mysqli_stmt_affected_rows($guncelle) > 0
                 ? "Başvuru durumu güncellendi."
                 : "Başvuru bulunamadı veya zaten değerlendirilmiş.";
         } else {
             $mesaj = "İşlem sırasında hata oluştu.";
         }
 
-        mysqli_stmt_close($stmt);
+        mysqli_stmt_close($guncelle);
     }
 
     $_SESSION["basvuru_bildirimi"] = $mesaj;
 
-    $adres = "admin-basvurular.php";
-
-    if ($filtre !== "") {
-        $adres .= "?durum=" . rawurlencode($filtre);
-    }
-
-    header("Location: " . $adres, true, 303);
+    header("Location: " . $form_adresi, true, 303);
     exit();
 }
 
-// Filtreye uygun başvurular
 $sql = "SELECT
             b.id,
-            b.ilan_id,
             b.adsoyad,
             b.telefon,
             b.email,
@@ -116,22 +104,22 @@ $sql = "SELECT
         ORDER BY b.id DESC";
 
 $stmt = mysqli_prepare($baglanti, $sql);
-
-mysqli_stmt_bind_param(
-    $stmt,
-    "ss",
-    $filtre,
-    $filtre
-);
-
+mysqli_stmt_bind_param($stmt, "ss", $filtre, $filtre);
 mysqli_stmt_execute($stmt);
+
 $sonuc = mysqli_stmt_get_result($stmt);
+$toplam_basvuru = mysqli_num_rows($sonuc);
 
-$form_adresi = "admin-basvurular.php";
+$evler = [
+    "apartman" => "Apartman",
+    "mustakil" => "Müstakil Ev"
+];
 
-if ($filtre !== "") {
-    $form_adresi .= "?durum=" . rawurlencode($filtre);
-}
+$durum_siniflari = [
+    "Bekliyor" => "bekliyor",
+    "Onaylandı" => "onaylandi",
+    "Reddedildi" => "reddedildi"
+];
 ?>
 
 <!DOCTYPE html>
@@ -143,14 +131,14 @@ if ($filtre !== "") {
 
     <title>Sahiplenme Başvuruları | Admin Paneli</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=14">
+    <link rel="stylesheet" href="admin-style.css?v=18">
 </head>
 
 <body>
 
 <?php require __DIR__ . "/admin-menu.php"; ?>
 
-<main class="icerik">
+<main class="icerik basvurular-sayfasi">
 
     <h2>Sahiplenme Başvuruları</h2>
 
@@ -176,9 +164,7 @@ if ($filtre !== "") {
                     <?php foreach ($izinli_durumlar as $secenek): ?>
                         <option
                             value="<?php echo guvenli($secenek); ?>"
-                            <?php if ($filtre === $secenek): ?>
-                                selected
-                            <?php endif; ?>
+                            <?php echo $filtre === $secenek ? "selected" : ""; ?>
                         >
                             <?php echo guvenli($secenek); ?>
                         </option>
@@ -188,164 +174,181 @@ if ($filtre !== "") {
 
             <button type="submit">Filtrele</button>
 
-            <a
-                href="admin-basvurular.php"
-                class="filtre-temizle"
-            >
+            <a href="admin-basvurular.php" class="filtre-temizle">
                 Temizle
             </a>
         </form>
 
         <p>
             Bulunan başvuru sayısı:
-            <strong><?php echo mysqli_num_rows($sonuc); ?></strong>
+            <strong><?php echo $toplam_basvuru; ?></strong>
         </p>
 
     </section>
 
-    <?php if (mysqli_num_rows($sonuc) === 0): ?>
+    <?php if ($toplam_basvuru === 0): ?>
 
-        <div class="basvuru-karti">
+        <div class="kart">
             <p>
-                <?php echo $filtre !== ""
+                <?php
+                echo $filtre !== ""
                     ? "Seçilen duruma uygun başvuru bulunamadı."
-                    : "Henüz sahiplenme başvurusu bulunmuyor."; ?>
+                    : "Henüz sahiplenme başvurusu bulunmuyor.";
+                ?>
             </p>
         </div>
 
     <?php else: ?>
 
-        <?php while ($basvuru = mysqli_fetch_assoc($sonuc)): ?>
+        <div class="basvuru-grid">
 
-            <?php
-            $basvuru_id = (int)$basvuru["id"];
+            <?php while ($basvuru = mysqli_fetch_assoc($sonuc)): ?>
+                <?php
+                $basvuru_id = (int)$basvuru["id"];
+                $durum = (string)($basvuru["durum"] ?? "");
+                $sinif = $durum_siniflari[$durum] ?? "";
+                $ev = $evler[$basvuru["ev"] ?? ""] ?? "-";
+                ?>
 
-            $evler = [
-                "apartman" => "Apartman",
-                "mustakil" => "Müstakil Ev"
-            ];
+                <article class="basvuru-karti">
 
-            $ev = $evler[$basvuru["ev"] ?? ""] ?? "-";
-            ?>
+                    <h3>Başvuru #<?php echo $basvuru_id; ?></h3>
 
-            <article class="basvuru-karti">
+                    <p>
+                        <strong>Hayvan:</strong>
+                        <?php echo guvenli($basvuru["hayvan_adi"] ?? "İlan silinmiş"); ?>
+                    </p>
 
-                <h3>Başvuru #<?php echo $basvuru_id; ?></h3>
+                    <p>
+                        <strong>Tür:</strong>
+                        <?php echo guvenli($basvuru["tur"] ?? "-"); ?>
+                    </p>
 
-                <p>
-                    <strong>Hayvan:</strong>
-                    <?php echo guvenli($basvuru["hayvan_adi"] ?? "İlan silinmiş"); ?>
-                </p>
+                    <p>
+                        <strong>Başvuran:</strong>
+                        <?php echo guvenli($basvuru["adsoyad"] ?? ""); ?>
+                    </p>
 
-                <p>
-                    <strong>Tür:</strong>
-                    <?php echo guvenli($basvuru["tur"] ?? "-"); ?>
-                </p>
+                    <p>
+                        <strong>Telefon:</strong>
+                        <?php echo guvenli($basvuru["telefon"] ?? ""); ?>
+                    </p>
 
-                <p>
-                    <strong>Başvuran:</strong>
-                    <?php echo guvenli($basvuru["adsoyad"] ?? ""); ?>
-                </p>
+                    <p>
+                        <strong>E-posta:</strong>
+                        <?php echo guvenli($basvuru["email"] ?? ""); ?>
+                    </p>
 
-                <p>
-                    <strong>Telefon:</strong>
-                    <?php echo guvenli($basvuru["telefon"] ?? ""); ?>
-                </p>
+                    <p>
+                        <strong>Yaşadığı Yer:</strong>
+                        <?php echo guvenli($ev); ?>
+                    </p>
 
-                <p>
-                    <strong>E-posta:</strong>
-                    <?php echo guvenli($basvuru["email"] ?? ""); ?>
-                </p>
+                    <button
+                        type="button"
+                        class="ek-bilgi-buton"
+                        onclick="document.getElementById('ek-bilgi-<?php echo $basvuru_id; ?>').showModal();"
+                    >
+                        Ek Bilgiyi Gör
+                    </button>
 
-                <p>
-                    <strong>Yaşadığı Yer:</strong>
-                    <?php echo guvenli($ev); ?>
-                </p>
+                    <dialog
+                        id="ek-bilgi-<?php echo $basvuru_id; ?>"
+                        class="ek-bilgi-pencere"
+                        aria-labelledby="ek-bilgi-baslik-<?php echo $basvuru_id; ?>"
+                    >
+                        <div class="ek-bilgi-ust">
 
-                <p><strong>Ek Bilgi:</strong></p>
+                            <h3 id="ek-bilgi-baslik-<?php echo $basvuru_id; ?>">
+                                Başvuru #<?php echo $basvuru_id; ?> — Ek Bilgi
+                            </h3>
 
-                <div class="mesaj"><?php echo guvenli($basvuru["mesaj"] ?? ""); ?></div>
+                            <form method="dialog">
+                                <button type="submit" class="ek-bilgi-kapat">
+                                    Kapat ✕
+                                </button>
+                            </form>
 
-                <p>
-                    <strong>Başvuru Tarihi:</strong>
-                    <?php echo guvenli($basvuru["basvuru_tarihi"] ?? ""); ?>
-                </p>
+                        </div>
 
-                <p>
-                    <strong>Durum:</strong>
+                        <p class="ek-bilgi-kisi">
+                            <?php echo guvenli($basvuru["adsoyad"] ?? ""); ?>
+                        </p>
 
-                    <span class="basvuru-durum <?php echo guvenli($basvuru["durum"] ?? ""); ?>">
-                        <?php echo guvenli($basvuru["durum"] ?? ""); ?>
-                    </span>
-                </p>
+                        <div class="ek-bilgi-yazi"><?php
+                            echo guvenli($basvuru["mesaj"] ?? "");
+                        ?></div>
+                    </dialog>
 
-                <?php if ($basvuru["durum"] === "Bekliyor"): ?>
+                    <p>
+                        <strong>Başvuru Tarihi:</strong>
+                        <?php echo guvenli($basvuru["basvuru_tarihi"] ?? ""); ?>
+                    </p>
 
-                    <div class="basvuru-islemleri">
+                    <p>
+                        <strong>Durum:</strong>
+                        <span class="basvuru-durum <?php echo guvenli($sinif); ?>">
+                            <?php echo guvenli($durum); ?>
+                        </span>
+                    </p>
 
-                        <form
-                            action="<?php echo guvenli($form_adresi); ?>"
-                            method="POST"
-                            onsubmit="return confirm('Başvuruyu onaylamak istediğinize emin misiniz?');"
-                        >
-                            <input
-                                type="hidden"
-                                name="token"
-                                value="<?php echo guvenli($_SESSION["basvuru_token"]); ?>"
+                    <?php if ($durum === "Bekliyor"): ?>
+
+                        <div class="basvuru-islemleri">
+
+                            <form
+                                action="<?php echo guvenli($form_adresi); ?>"
+                                method="POST"
+                                onsubmit="return confirm('Başvuruyu onaylamak istediğinize emin misiniz?');"
                             >
+                                <input
+                                    type="hidden"
+                                    name="token"
+                                    value="<?php echo guvenli($_SESSION['basvuru_token']); ?>"
+                                >
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $basvuru_id; ?>"
+                                >
+                                <input type="hidden" name="islem" value="onayla">
 
-                            <input
-                                type="hidden"
-                                name="id"
-                                value="<?php echo $basvuru_id; ?>"
+                                <button type="submit" class="basvuru-onayla">
+                                    Onayla
+                                </button>
+                            </form>
+
+                            <form
+                                action="<?php echo guvenli($form_adresi); ?>"
+                                method="POST"
+                                onsubmit="return confirm('Başvuruyu reddetmek istediğinize emin misiniz?');"
                             >
+                                <input
+                                    type="hidden"
+                                    name="token"
+                                    value="<?php echo guvenli($_SESSION['basvuru_token']); ?>"
+                                >
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $basvuru_id; ?>"
+                                >
+                                <input type="hidden" name="islem" value="reddet">
 
-                            <input
-                                type="hidden"
-                                name="islem"
-                                value="onayla"
-                            >
+                                <button type="submit" class="basvuru-reddet">
+                                    Reddet
+                                </button>
+                            </form>
 
-                            <button type="submit" class="basvuru-onayla">
-                                Onayla
-                            </button>
-                        </form>
+                        </div>
 
-                        <form
-                            action="<?php echo guvenli($form_adresi); ?>"
-                            method="POST"
-                            onsubmit="return confirm('Başvuruyu reddetmek istediğinize emin misiniz?');"
-                        >
-                            <input
-                                type="hidden"
-                                name="token"
-                                value="<?php echo guvenli($_SESSION["basvuru_token"]); ?>"
-                            >
+                    <?php endif; ?>
 
-                            <input
-                                type="hidden"
-                                name="id"
-                                value="<?php echo $basvuru_id; ?>"
-                            >
+                </article>
 
-                            <input
-                                type="hidden"
-                                name="islem"
-                                value="reddet"
-                            >
+            <?php endwhile; ?>
 
-                            <button type="submit" class="basvuru-reddet">
-                                Reddet
-                            </button>
-                        </form>
-
-                    </div>
-
-                <?php endif; ?>
-
-            </article>
-
-        <?php endwhile; ?>
+        </div>
 
     <?php endif; ?>
 

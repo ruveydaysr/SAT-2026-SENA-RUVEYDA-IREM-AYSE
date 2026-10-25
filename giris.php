@@ -120,7 +120,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["giris"])) {
 
     <header class="ilan-ust">
         <a href="index.php" class="ilan-logo">
-            <span class="logo-pati">🐾</span>
+            <img src="images/aris-logoo.png"
+     alt="Aris Pati Yuvası logosu"
+     style="width:48px; height:48px; object-fit:contain;">
             <span>
                 <strong>Aris Pati Yuvası</strong>
                 <small>Her can dostuna bir yuva</small>
@@ -139,9 +141,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["giris"])) {
     <main class="giris-alani">
 
         <div class="giris-kart">
-
-            <div class="giris-simge">🐾</div>
-
+<img src="images/aris-logoo.png"
+     alt="Aris Pati Yuvası logosu"
+     style="width:48px; height:48px; object-fit:contain;">
             <h1>Tekrar Hoş Geldiniz!</h1>
             <p class="giris-aciklama">
                 Aris Pati Yuvası hesabınıza giriş yapın.
