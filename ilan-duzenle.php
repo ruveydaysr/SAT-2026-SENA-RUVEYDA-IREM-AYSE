@@ -35,6 +35,44 @@ if (!$ilan) {
 }
 
 
+$ozellik_secenekleri = [
+    "Karakter Özellikleri" => [
+        "Oyuncu", "Sakin", "Sevecen",
+        "Hareketli", "Uysal", "Çekingen"
+    ],
+    "Sosyal Özellikleri" => [
+        "Çocuklarla anlaşır",
+        "Diğer hayvanlarla anlaşır",
+        "İnsanlara alışkın"
+    ],
+    "Bakım ve Sağlık" => [
+        "Tuvalet eğitimi var",
+        "Aşıları yapıldı",
+        "Kısırlaştırıldı",
+        "Özel bakım gerektiriyor"
+    ],
+    "Yaşam Ortamı" => [
+        "Ev ortamına alışkın",
+        "Apartman yaşamına uygun",
+        "Bahçeli ev için uygun"
+    ]
+];
+
+$kayitli_aciklama = $ilan["aciklama"] ?? "";
+$parcalar = explode("\n\nEk Açıklama: ", $kayitli_aciklama, 2);
+
+$kayitli_ozellikler = array_map("trim", explode(",", $parcalar[0]));
+$kayitli_ek_aciklama = $parcalar[1] ?? "";
+
+$tum_ozellikler = array_merge(...array_values($ozellik_secenekleri));
+$eski_aciklama = array_diff($kayitli_ozellikler, $tum_ozellikler);
+
+if (!empty($eski_aciklama)) {
+    $kayitli_ek_aciklama = trim(
+        implode(", ", $eski_aciklama) . "\n" . $kayitli_ek_aciklama
+    );
+}
+
 $hata = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
@@ -44,7 +82,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
     $yas = filter_var($_POST["yas"] ?? "", FILTER_VALIDATE_INT);
     $cinsiyet = $_POST["cinsiyet"] ?? "";
     $sehir = trim($_POST["sehir"] ?? "");
-    $aciklama = trim($_POST["aciklama"] ?? "");
+    
+$ozellikler = $_POST["ozellikler"] ?? [];
+
+if (!is_array($ozellikler)) {
+    $ozellikler = [];
+}
+
+$tum_ozellikler = array_merge(...array_values($ozellik_secenekleri));
+$ozellikler = array_values(array_intersect($tum_ozellikler, $ozellikler));
+
+$ek_aciklama = trim($_POST["ek_aciklama"] ?? "");
+
+$aciklama = implode(", ", $ozellikler);
+
+if ($ek_aciklama !== "") {
+    $aciklama .= "\n\nEk Açıklama: " . $ek_aciklama;
+}
+
 
     if (
         $hayvan_adi === "" ||
@@ -52,7 +107,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
         $yas === false || $yas < 0 ||
         !in_array($cinsiyet, ["Dişi", "Erkek"], true) ||
         $sehir === "" ||
-        $aciklama === ""
+        
+empty($ozellikler)
+
     ) {
         $hata = "Lütfen tüm alanları doğru doldurunuz.";
     } else {
@@ -193,6 +250,49 @@ mysqli_stmt_bind_param(
         color: #c62828;
         margin-bottom: 20px;
     }
+    
+/* Hayvan özellikleri */
+.ozellik-listesi {
+    margin-top: 15px;
+}
+
+.ozellik-listesi h4 {
+    color: #245c3d;
+    margin-top: 22px;
+    margin-bottom: 12px;
+}
+
+.ozellik-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.duzenle-kutusu .ozellik-secimi {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: normal;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.duzenle-kutusu .ozellik-secimi input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: #347a53;
+}
+
+@media (max-width: 600px) {
+    .ozellik-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 </style>
 
 </head>
@@ -257,8 +357,11 @@ mysqli_stmt_bind_param(
     <option value="Köpek" <?php if ($ilan['tur'] === 'Köpek') echo 'selected'; ?>>Köpek</option>
     <option value="Kuş" <?php if ($ilan['tur'] === 'Kuş') echo 'selected'; ?>>Kuş</option>
     <option value="Tavşan" <?php if ($ilan['tur'] === 'Tavşan') echo 'selected'; ?>>Tavşan</option>
-    <option value="Balık" <?php if ($ilan['tur'] === 'Balık') echo 'selected'; ?>>Balık</option>
-    <option value="Diğer" <?php if ($ilan['tur'] === 'Diğer') echo 'selected'; ?>>Diğer</option>
+<option value="Balık" <?php if ($ilan['tur'] === 'Balık') echo 'selected'; ?>>Balık</option>
+<option value="Kemirgen" <?php if ($ilan['tur'] === 'Kemirgen') echo 'selected'; ?>>Kemirgen</option>
+<option value="Sürüngen" <?php if ($ilan['tur'] === 'Sürüngen') echo 'selected'; ?>>Sürüngen</option>
+<option value="Diğer" <?php if ($ilan['tur'] === 'Diğer') echo 'selected'; ?>>Diğer</option>
+
 </select>
 
 
@@ -298,12 +401,43 @@ mysqli_stmt_bind_param(
 </select>
         <br><br>
 
-        <label>Açıklama:</label>
-        <textarea name="aciklama" rows="5" required><?php
-            echo htmlspecialchars($ilan['aciklama'] ?? '', ENT_QUOTES, 'UTF-8');
-        ?></textarea>
+      
+<label>Hayvanın Özellikleri:</label>
+<p>Hayvanınıza uygun özellikleri işaretleyiniz.</p>
 
-        <br><br>
+<div class="ozellik-listesi">
+    <?php foreach ($ozellik_secenekleri as $kategori => $secenekler): ?>
+        <h4><?php echo htmlspecialchars($kategori, ENT_QUOTES, "UTF-8"); ?></h4>
+
+        <div class="ozellik-grid">
+            <?php foreach ($secenekler as $secenek): ?>
+                <label class="ozellik-secimi">
+                    <input
+                        type="checkbox"
+                        name="ozellikler[]"
+                        value="<?php echo htmlspecialchars($secenek, ENT_QUOTES, 'UTF-8'); ?>"
+                        <?php echo in_array($secenek, $kayitli_ozellikler, true) ? 'checked' : ''; ?>
+                    >
+                    <?php echo htmlspecialchars($secenek, ENT_QUOTES, "UTF-8"); ?>
+                </label>
+            <?php endforeach; ?>
+        </div>
+    <?php endforeach; ?>
+</div>
+
+<br>
+
+<label for="ek_aciklama">Ek Açıklama (İsteğe Bağlı):</label>
+<textarea
+    id="ek_aciklama"
+    name="ek_aciklama"
+    rows="3"
+    maxlength="500"
+    placeholder="Hayvanınızın alışkanlıkları veya özel ihtiyaçları hakkında bilgi verebilirsiniz."
+><?php echo htmlspecialchars($kayitli_ek_aciklama, ENT_QUOTES, "UTF-8"); ?></textarea>
+
+<br><br>
+
 
         <button type="submit" name="guncelle">
             Değişiklikleri Kaydet

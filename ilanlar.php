@@ -436,11 +436,12 @@ body.ilan-sayfasi .filtreler input {
                     <select id="tur" name="tur">
                         <option value="">Tümü</option>
 
-                        <?php
-                        $turler = [
-                            "Kedi", "Köpek", "Kuş",
-                            "Tavşan", "Balık", "Diğer"
-                        ];
+                        <?php    
+$turler = [
+    "Kedi", "Köpek", "Kuş",
+    "Tavşan", "Balık", "Kemirgen",
+    "Sürüngen", "Diğer"
+];
 
                         foreach ($turler as $secenek):
                         ?>
@@ -536,26 +537,27 @@ body.ilan-sayfasi .filtreler input {
             <?php while ($ilan = mysqli_fetch_assoc($sonuc)): ?>
 
                 <div class="ilan-karti">
+                
+<?php
+$fotograf = $ilan["fotograf"] ?? "";
+$dosya_adi = basename($fotograf);
 
-                    <?php
-                    $fotograf = $ilan["fotograf"] ?? "";
-                    $dosya_adi = basename($fotograf);
+$gecerli_fotograf = false;
 
-                    $gecerli_fotograf =
-                        $fotograf !== "" &&
-                        preg_match(
-                            '/^[a-f0-9]{32}\.(jpg|png|webp)$/',
-                            $dosya_adi
-                        ) &&
-                        is_file(
-                            __DIR__ . "/uploads/" . $dosya_adi
-                        );
-                    ?>
-
+if (str_starts_with($fotograf, "images/hayvanlar/")) {
+    $gecerli_fotograf = is_file(__DIR__ . "/" . $fotograf);
+} elseif (
+    preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $dosya_adi)
+) {
+    $gecerli_fotograf = is_file(__DIR__ . "/uploads/" . $dosya_adi);
+}
+?>
                     <?php if ($gecerli_fotograf): ?>
 
                         <img
-                            src="uploads/<?php echo guvenli($dosya_adi); ?>"
+                            
+src="<?php echo guvenli(str_starts_with($fotograf, 'images/hayvanlar/') ? $fotograf : 'uploads/' . $dosya_adi); ?>"
+
                             alt="<?php echo guvenli($ilan["hayvan_adi"]); ?>"
                             class="ilan-fotograf"
                         >

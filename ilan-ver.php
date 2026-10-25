@@ -54,7 +54,21 @@ if ($uye_girisi) {
         $yas = filter_input(INPUT_POST, "yas", FILTER_VALIDATE_INT);
         $cinsiyet = form_degeri("cinsiyet");
         $sehir = form_degeri("sehir");
-        $aciklama = form_degeri("aciklama");
+        
+$ozellikler = $_POST["ozellikler"] ?? [];
+
+if (!is_array($ozellikler)) {
+    $ozellikler = [];
+}
+
+$ek_aciklama = trim($_POST["ek_aciklama"] ?? "");
+
+$aciklama = implode(", ", $ozellikler);
+
+if ($ek_aciklama !== "") {
+    $aciklama .= "\n\nEk Açıklama: " . $ek_aciklama;
+}
+
         $uye_id = (int)$_SESSION["uye_id"];
 
         $fotograf = null;
@@ -70,7 +84,7 @@ if ($uye_girisi) {
             || $yas < 0
             || !in_array($cinsiyet, ["Dişi", "Erkek"], true)
             || !in_array($sehir, $sehirler, true)
-            || $aciklama === ""
+            || empty($ozellikler)
         ) {
             $mesaj = "Lütfen tüm alanları doğru şekilde doldurunuz.";
         } else {
@@ -224,6 +238,62 @@ if ($uye_girisi) {
             outline: 3px solid #35583b;
             outline-offset: 4px;
         }
+        .ilan-grup input[type="checkbox"] {
+    accent-color: #347a53;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
+
+.ilan-grup h4 {
+    color: #245c3d;
+    margin-top: 18px;
+    margin-bottom: 10px;
+}
+.ilan-grup label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.ilan-grup input[type="checkbox"] {
+    accent-color: #347a53;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* Hayvan özelliklerini üç sütunda göster */
+.ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 20px;
+    row-gap: 10px;
+}
+
+.ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) > h4,
+.ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) > p,
+.ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) > label:first-child {
+    grid-column: 1 / -1;
+}
+
+.ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .ilan-grup.ilan-tam:has(input[name="ozellikler[]"]) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
     </style>
 </head>
 
@@ -400,17 +470,47 @@ if ($uye_girisi) {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    
+<div class="ilan-grup ilan-tam">
+    <label>Hayvanın Özellikleri *</label>
+    <p>Hayvanınıza uygun özellikleri işaretleyiniz.</p>
 
-                    <div class="ilan-grup ilan-tam">
-                        <label for="aciklama">Açıklama *</label>
-                        <textarea
-                            id="aciklama"
-                            name="aciklama"
-                            rows="5"
-                            placeholder="Hayvanın özelliklerini ve karakterini anlatın."
-                            required
-                        ><?php echo guvenli(form_degeri("aciklama")); ?></textarea>
-                    </div>
+    <h4>Karakter Özellikleri</h4>
+    <label><input type="checkbox" name="ozellikler[]" value="Oyuncu"> Oyuncu</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Sakin"> Sakin</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Sevecen"> Sevecen</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Hareketli"> Hareketli</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Uysal"> Uysal</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Çekingen"> Çekingen</label>
+
+    <h4>Sosyal Özellikleri</h4>
+    <label><input type="checkbox" name="ozellikler[]" value="Çocuklarla anlaşır"> Çocuklarla anlaşır</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Diğer hayvanlarla anlaşır"> Diğer hayvanlarla anlaşır</label>
+    <label><input type="checkbox" name="ozellikler[]" value="İnsanlara alışkın"> İnsanlara alışkın</label>
+
+    <h4>Bakım ve Sağlık</h4>
+    <label><input type="checkbox" name="ozellikler[]" value="Tuvalet eğitimi var"> Tuvalet eğitimi var</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Aşıları yapıldı"> Aşıları yapıldı</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Kısırlaştırıldı"> Kısırlaştırıldı</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Özel bakım gerektiriyor"> Özel bakım gerektiriyor</label>
+
+    <h4>Yaşam Ortamı</h4>
+    <label><input type="checkbox" name="ozellikler[]" value="Ev ortamına alışkın"> Ev ortamına alışkın</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Apartman yaşamına uygun"> Apartman yaşamına uygun</label>
+    <label><input type="checkbox" name="ozellikler[]" value="Bahçeli ev için uygun"> Bahçeli ev için uygun</label>
+</div>
+
+<div class="ilan-grup ilan-tam">
+    <label for="ek_aciklama">Ek Açıklama (İsteğe Bağlı)</label>
+    <textarea
+        id="ek_aciklama"
+        name="ek_aciklama"
+        rows="3"
+        maxlength="500"
+        placeholder="Hayvanınızın alışkanlıkları veya özel ihtiyaçları hakkında bilgi verebilirsiniz."
+    ></textarea>
+</div>
+
 
                     <div class="ilan-grup ilan-tam">
                         <label for="fotograf">Hayvan Fotoğrafı</label>
@@ -445,6 +545,34 @@ if ($uye_girisi) {
     </footer>
 
 <?php endif; ?>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const turSecimi = document.querySelector('select[name="tur"]');
+    const aciklama = document.getElementById("ek_aciklama");
+
+    if (!turSecimi || !aciklama) return;
+
+    const ornekler = {
+        "Kedi": "Örneğin: Kedim yabancılara karşı ilk başta çekingen davranır ancak alışınca çok sevecendir.",
+        "Köpek": "Örneğin: Köpeğim yürüyüş yapmayı çok sever ve temel komutları bilir.",
+        "Kuş": "Örneğin: Kuşum insan sesine alışkındır ve zaman zaman sesleri taklit eder.",
+        "Tavşan": "Örneğin: Tavşanım sakin bir ortamda yaşamayı sever ve elde beslenmeye alışkındır.",
+        "Balık": "Örneğin: Balığım diğer balıklarla uyumludur ve düzenli beslenme saatlerine alışkındır.",
+        "Kemirgen": "Örneğin: Küçük dostum hareketli ve meraklıdır, oyuncaklarla vakit geçirmeyi sever.",
+        "Sürüngen": "Örneğin: Sürüngenimin özel sıcaklık ve bakım ihtiyaçları vardır.",
+        "Diğer": "Örneğin: Hayvanımın özel alışkanlıkları ve bakım ihtiyaçları bulunmaktadır."
+    };
+
+    function ornegiGuncelle() {
+        aciklama.placeholder = ornekler[turSecimi.value] ||
+            "Hayvanınız hakkında eklemek istediğiniz bilgileri yazabilirsiniz.";
+    }
+
+    turSecimi.addEventListener("change", ornegiGuncelle);
+    ornegiGuncelle();
+});
+</script>
 
 </body>
 </html>

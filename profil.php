@@ -16,16 +16,103 @@ function guvenli($deger) {
 }
 
 // Kullanıcının verdiği ilanlar
+$arama = trim($_GET["arama"] ?? "");
+// İlan sıralama seçeneği
+$siralama = $_GET["siralama"] ?? "yeni";
+
+if (!in_array($siralama, ["yeni", "eski"], true)) {
+    $siralama = "yeni";
+}
+// Sayfalama ayarları
+$sayfa = max(1, (int)($_GET["sayfa"] ?? 1));
+$limit = 6;
+$baslangic = ($sayfa - 1) * $limit;
+$durum = $_GET["durum"] ?? "";
+
+$gecerli_durumlar = ["Onaylandı", "Bekliyor", "Reddedildi"];
+
+if (!in_array($durum, $gecerli_durumlar, true)) {
+    $durum = "";
+}
 $sql = "SELECT * FROM ilanlar
         WHERE uye_id = ?
-        ORDER BY id DESC";
+        AND (hayvan_adi LIKE ? OR ilan_basligi LIKE ?)";
+
+$arama_kelimesi = "%" . $arama . "%";
+
+if ($durum != "") {
+    $sql .= " AND durum = ?";
+}
+if ($siralama == "eski") {
+    $sql .= " ORDER BY id ASC";
+} else {
+    $sql .= " ORDER BY id DESC";
+}
+
+$sql .= " LIMIT $limit OFFSET $baslangic";
 
 $sorgu = mysqli_prepare($baglanti, $sql);
-mysqli_stmt_bind_param($sorgu, "i", $uye_id);
+
+if ($durum != "") {
+    mysqli_stmt_bind_param(
+        $sorgu,
+        "isss",
+        $uye_id,
+        $arama_kelimesi,
+        $arama_kelimesi,
+        $durum
+    );
+} else {
+    mysqli_stmt_bind_param(
+        $sorgu,
+        "iss",
+        $uye_id,
+        $arama_kelimesi,
+        $arama_kelimesi
+    );
+}
+
 mysqli_stmt_execute($sorgu);
 
 $ilanlar = mysqli_stmt_get_result($sorgu);
+// Kullanıcının filtrelere uygun toplam ilan sayısı
+$sql_say = "SELECT COUNT(*) AS toplam FROM ilanlar
+            WHERE uye_id = ?
+            AND (hayvan_adi LIKE ? OR ilan_basligi LIKE ?)";
 
+if ($durum != "") {
+    $sql_say .= " AND durum = ?";
+}
+
+$sorgu_say = mysqli_prepare($baglanti, $sql_say);
+
+if ($durum != "") {
+    mysqli_stmt_bind_param(
+        $sorgu_say,
+        "isss",
+        $uye_id,
+        $arama_kelimesi,
+        $arama_kelimesi,
+        $durum
+    );
+} else {
+    mysqli_stmt_bind_param(
+        $sorgu_say,
+        "iss",
+        $uye_id,
+        $arama_kelimesi,
+        $arama_kelimesi
+    );
+}
+
+mysqli_stmt_execute($sorgu_say);
+
+$sonuc_say = mysqli_stmt_get_result($sorgu_say);
+$toplam_ilan = (int) mysqli_fetch_assoc($sonuc_say)["toplam"];
+
+$toplam_sayfa = (int) ceil($toplam_ilan / $limit);
+
+mysqli_stmt_close($sorgu_say);
 // Kullanıcının sahiplenme başvuruları
 $sql2 = "SELECT
             b.id,
@@ -182,6 +269,37 @@ hr {
 .favori-sil-buton:hover {
     background-color: #245c3d;
 }
+
+/* Temizle butonu */
+.profil-temizle {
+    display: inline-block;
+    background-color: #347a53;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.profil-temizle:hover {
+    background-color: #245c3d;
+    color: white;
+}
+
+/* Sayfalama butonları */
+.profil-sayfalama a {
+    display: inline-block;
+    background-color: #347a53;
+    color: white;
+    padding: 8px 12px;
+    margin: 3px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.profil-sayfalama a:hover {
+    background-color: #245c3d;
+}
+
     </style>
 </head>
 
@@ -231,6 +349,45 @@ hr {
     <section class="profil-bolum">
 
         <h2>İlanlarım</h2>
+        <form method="GET" action="profil.php" style="margin: 15px 0;">
+    <input
+        type="text"
+        name="arama"
+        placeholder="Hayvan adı veya ilan başlığı ara..."
+        value="<?php echo guvenli($arama); ?>"
+        style="padding: 10px; width: 280px; max-width: 100%;"
+    >
+    <select name="durum" style="padding: 10px; margin-left: 10px;">
+    <option value="">Tüm Durumlar</option>
+
+    <option value="Onaylandı" <?php if ($durum == "Onaylandı") echo "selected"; ?>>
+        Onaylandı
+    </option>
+
+    <option value="Bekliyor" <?php if ($durum == "Bekliyor") echo "selected"; ?>>
+        Bekliyor
+    </option>
+
+    <option value="Reddedildi" <?php if ($durum == "Reddedildi") echo "selected"; ?>>
+        Reddedildi
+    </option>
+</select>
+    <select name="siralama" style="padding: 10px; margin-left: 10px;">
+    <option value="yeni" <?php if ($siralama == "yeni") echo "selected"; ?>>
+        En Yeni
+    </option>
+
+    <option value="eski" <?php if ($siralama == "eski") echo "selected"; ?>>
+        En Eski
+    </option>
+</select>
+<button type="submit" class="profil-temizle" style="border: none; cursor: pointer;">
+    Ara
+</button>
+    <a href="profil.php" class="profil-temizle" style="margin-left:10px;">
+        Temizle
+    </a>
+</form>
 
         <?php if (mysqli_num_rows($ilanlar) > 0): ?>
 
@@ -315,7 +472,41 @@ hr {
             <p>Henüz ilan vermediniz.</p>
 
         <?php endif; ?>
+<?php if ($toplam_sayfa > 1): ?>
+    <div class="profil-sayfalama" style="margin-top: 20px; text-align: center;">
 
+        <?php if ($sayfa > 1): ?>
+            <a href="profil.php?<?php echo http_build_query([
+                'arama' => $arama,
+                'durum' => $durum,
+                'siralama' => $siralama,
+                'sayfa' => $sayfa - 1
+            ]); ?>">← Önceki</a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
+            <a href="profil.php?<?php echo http_build_query([
+                'arama' => $arama,
+                'durum' => $durum,
+                'siralama' => $siralama,
+                'sayfa' => $i
+            ]); ?>"
+               style="margin: 0 8px; <?php echo $i == $sayfa ? 'font-weight: bold;' : ''; ?>">
+                <?php echo $i; ?>
+            </a>
+        <?php endfor; ?>
+
+        <?php if ($sayfa < $toplam_sayfa): ?>
+            <a href="profil.php?<?php echo http_build_query([
+                'arama' => $arama,
+                'durum' => $durum,
+                'siralama' => $siralama,
+                'sayfa' => $sayfa + 1
+            ]); ?>">Sonraki →</a>
+        <?php endif; ?>
+
+    </div>
+<?php endif; ?>
     </section>
 
     <hr>
