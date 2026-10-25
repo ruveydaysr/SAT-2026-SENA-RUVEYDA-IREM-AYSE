@@ -20,8 +20,8 @@ $izinli_siralamalar = ["yeni", "eski", "yas_artan", "yas_azalan"];
 if (!is_string($siralama) || !in_array($siralama, $izinli_siralamalar, true)) {
     $siralama = "yeni";
 }
-// Sayfalama ayarları
-$ilan_sayisi = 6;
+//sayfalama ayarları
+$ilan_sayisi = 8;
 
 $sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
 
@@ -349,6 +349,26 @@ body.ilan-sayfasi .filtreler input {
 
 .favori-buton:hover {
     background-color: #245c3d;
+}
+/* Bilgisayarda yan yana 4 ilan */
+body.ilan-sayfasi .ilanlar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+}
+
+/* Tablette yan yana 2 ilan */
+@media (max-width: 1100px) {
+    body.ilan-sayfasi .ilanlar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Telefonda tek ilan */
+@media (max-width: 700px) {
+    body.ilan-sayfasi .ilanlar {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 </head>
