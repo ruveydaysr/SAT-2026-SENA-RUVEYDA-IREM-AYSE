@@ -468,17 +468,21 @@ $kategoriler = [
 
         <section class="ay-bolum">
             <h2>Hayvan Kategorileri</h2>
+        <div class="ay-kategoriler">
+    <?php foreach ($kategoriler as $kategori): ?>
+        <?php
+        $tur = trim(preg_replace('/^[^\p{L}\p{N}]+/u', '', $kategori));
+        ?>
+        <div class="ay-kategori"
+             onclick="window.location.href='ilanlar.php?tur=<?php echo urlencode($tur); ?>'"
+             style="cursor: pointer;">
+            <?php echo guvenli($kategori); ?>
+        </div>
+    <?php endforeach; ?>
+</div>
+</section>
 
-            <div class="ay-kategoriler">
-                <?php foreach ($kategoriler as $kategori): ?>
-                    <div class="ay-kategori">
-                        <?php echo guvenli($kategori); ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-    <?php endif; ?>
+<?php endif; ?>
 
     <?php if ($ayar["vitrin_aktif"] && $vitrin): ?>
 
