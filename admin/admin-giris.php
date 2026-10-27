@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if ($admin && $kullanici_adi !== "" && $sifre !== "") {
 
-        $kayitli_sifre = (string)$admin["sifre"];
+        $kayitli_sifre = (string) $admin["sifre"];
         $bilgi = password_get_info($kayitli_sifre);
 
         if (!empty($bilgi["algo"])) {
@@ -175,40 +175,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: #e6eddf;
         }
 
+        /* Görselin tamamı görünür, kenarlardan kesilmez. */
         .giris-ana {
             display: flex;
             flex: 1;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 30px 20px;
+            background-color: #879273;
+            background-image: url("../images/anasayfa-kapak.png");
+            background-position: center;
+            background-size: contain;
+            background-repeat: no-repeat;
         }
 
         .giris {
             width: 100%;
-            max-width: 420px;
-            padding: 34px;
+            max-width: 380px;
+            padding: 26px;
             border: 1px solid #ded6c6;
             border-radius: 18px;
-            background: #fffdf8;
+            background: rgba(255, 253, 248, 0.97);
             text-align: center;
-            box-shadow: 0 10px 30px rgba(40, 75, 50, 0.08);
+            box-shadow: 0 15px 45px rgba(20, 40, 25, 0.22);
         }
 
         .giris-logo-resim {
             display: block;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 14px;
             object-fit: contain;
         }
 
         .giris h1 {
-            margin: 0 0 12px;
-            font-size: 27px;
+            margin: 0 0 10px;
+            font-size: 25px;
         }
 
         .giris-aciklama {
-            margin: 8px 0 26px;
+            margin: 8px 0 22px;
             color: #687361;
             font-size: 13px;
             line-height: 1.6;
@@ -229,7 +235,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .giris input {
             width: 100%;
-            padding: 13px 14px;
+            padding: 12px 14px;
             border: 1px solid #d6d9c9;
             border-radius: 9px;
             background: white;
@@ -240,7 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .giris button {
             width: 100%;
             margin-top: 4px;
-            padding: 14px;
+            padding: 13px;
             border: 0;
             border-radius: 9px;
             background: #426b46;
@@ -286,8 +292,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 font-size: 13px;
             }
 
+            .giris-ana {
+                padding: 30px 16px;
+            }
+
             .giris {
-                padding: 28px 22px;
+                padding: 24px 20px;
             }
         }
     </style>
@@ -328,8 +338,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             src="../images/aris-logoo.png"
             alt=""
             class="giris-logo-resim"
-            width="80"
-            height="80"
+            width="65"
+            height="65"
         >
 
         <h1 id="giris-baslik">Yönetici Girişi</h1>
@@ -340,9 +350,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php if ($hata !== ""): ?>
             <p class="hata" role="alert">
-                <?php
-                echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8");
-                ?>
+                <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
             </p>
         <?php endif; ?>
 
