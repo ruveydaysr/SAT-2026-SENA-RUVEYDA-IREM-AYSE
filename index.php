@@ -755,7 +755,347 @@ $menu_kategorileri = [
             </div>
         </section>
     <?php endif; ?>
-</main>
+</main><style>
+    /* ANA SAYFANIN ALT BÖLÜMLERİ */
+
+    .pati-sehir-bolumu {
+        padding: 45px 20px;
+        border-top: 1px solid #d2ddc7;
+        border-bottom: 1px solid #d2ddc7;
+        background: #e6eddf;
+        text-align: center;
+    }
+
+    .pati-sehir-bolumu h2 {
+        margin: 0 0 14px;
+        color: #284b32;
+        font-size: 28px;
+    }
+
+    .pati-sehir-bolumu p {
+        margin: 0 0 25px;
+        color: #60745b;
+        line-height: 1.7;
+    }
+
+    .pati-sehirler {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .pati-sehirler a {
+        padding: 12px 22px;
+        border: 1px solid #cbd8bf;
+        border-radius: 8px;
+        background: #fffdf8;
+        color: #284b32;
+        text-decoration: none;
+    }
+
+    .pati-sehirler a:hover {
+        background: #426b46;
+        color: white;
+    }
+
+    .pati-tum-ilanlar {
+        display: inline-block;
+        margin-top: 25px;
+        color: #284b32;
+        font-weight: bold;
+        text-underline-offset: 5px;
+    }
+
+    /* SAHİPLENME MESAJI */
+
+    .pati-mesaj-bolumu {
+        padding: 50px 20px;
+        background: #f5f0e6;
+        text-align: center;
+    }
+
+    .pati-soz-kutusu {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 30px 20px;
+        border: 1px solid #bacba9;
+        border-radius: 12px;
+        background: #edf2e6;
+    }
+
+    .pati-soz-simge {
+        color: #6b8c56;
+        font: 60px/1 Georgia, serif;
+    }
+
+    .pati-soz-kutusu p {
+        margin: 12px 0 18px;
+        color: #284b32;
+        font: italic 26px/1.6 Georgia, serif;
+    }
+
+    .pati-soz-kutusu small {
+        color: #60745b;
+        font-size: 14px;
+    }
+
+    .pati-davet-yazisi {
+        margin: 30px 0 20px;
+        color: #60745b;
+        line-height: 1.8;
+    }
+
+    .pati-ilan-butonu {
+        display: inline-block;
+        padding: 14px 24px;
+        border-radius: 8px;
+        background: #426b46;
+        color: white;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .pati-ilan-butonu:hover {
+        background: #284b32;
+    }
+
+    /* EN ALT BİLGİ ALANI */
+
+    .pati-footer {
+        background: #35583b;
+        color: #fffdf8;
+    }
+
+    .pati-footer-icerik {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr 1fr 1fr;
+        gap: 35px;
+        width: min(1200px, 92%);
+        margin: auto;
+        padding: 45px 0;
+    }
+
+    .pati-footer-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #fffdf8;
+        font-size: 20px;
+        text-decoration: none;
+    }
+
+    .pati-footer-logo img {
+        width: 52px;
+        height: 52px;
+        padding: 5px;
+        border-radius: 10px;
+        background: #fffdf8;
+        object-fit: contain;
+    }
+
+    .pati-footer-tanitim {
+        max-width: 320px;
+        margin: 16px 0 0;
+        color: #dce6d5;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .pati-footer h3 {
+        margin: 4px 0 20px;
+        color: #edf2df;
+        font-size: 16px;
+    }
+
+    .pati-footer-linkler {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 13px;
+    }
+
+    .pati-footer-linkler a {
+        color: #dce6d5;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    .pati-footer-linkler a:hover {
+        color: white;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+    }
+
+    .pati-footer-taban {
+        border-top: 1px solid #547358;
+    }
+
+    .pati-footer-taban-icerik {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        width: min(1200px, 92%);
+        margin: auto;
+        padding: 18px 0;
+        color: #dce6d5;
+        font-size: 13px;
+    }
+
+    .pati-footer-taban a {
+        color: #fffdf8;
+        text-underline-offset: 4px;
+    }
+
+    @media (max-width: 850px) {
+        .pati-footer-icerik {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 500px) {
+        .pati-footer-icerik {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .pati-sehir-bolumu h2 {
+            font-size: 24px;
+        }
+
+        .pati-soz-kutusu p {
+            font-size: 22px;
+        }
+
+        .pati-sehirler a {
+            padding: 10px 15px;
+        }
+    }
+    .pati-sehir-bolumu {
+    background: #426b46;
+    border-color: #35583b;
+}
+
+.pati-sehir-bolumu h2,
+.pati-sehir-bolumu p,
+.pati-sehir-bolumu .pati-tum-ilanlar {
+    color: #fffdf8;
+}
+</style>
+
+<!-- ŞEHİRLERE GÖRE İLANLAR -->
+
+<section class="pati-sehir-bolumu">
+    <h2>Yakınındaki Dostunu Bul</h2>
+
+    <p>
+        Şehrindeki sahiplendirme ilanlarını incele,
+        yuva arayan bir dostumuzla tanış.
+    </p>
+
+    <div class="pati-sehirler">
+        <a href="ilanlar.php?sehir=İstanbul">İstanbul</a>
+        <a href="ilanlar.php?sehir=Ankara">Ankara</a>
+        <a href="ilanlar.php?sehir=İzmir">İzmir</a>
+        <a href="ilanlar.php?sehir=Bursa">Bursa</a>
+        <a href="ilanlar.php?sehir=Antalya">Antalya</a>
+        <a href="ilanlar.php?sehir=Eskişehir">Eskişehir</a>
+    </div>
+
+    <a href="ilanlar.php" class="pati-tum-ilanlar">
+        Tüm şehirlerdeki ilanları incele →
+    </a>
+</section>
+
+<!-- SAHİPLENME MESAJI -->
+
+<section class="pati-mesaj-bolumu">
+    <div class="pati-soz-kutusu">
+        <span class="pati-soz-simge" aria-hidden="true">“</span>
+
+        <p>
+            Senin için bir dost,<br>
+            onun için bütün bir dünya.
+        </p>
+
+        <small>Bir yuva, bir hayatı değiştirir.</small>
+    </div>
+
+    <p class="pati-davet-yazisi">
+        Birlikte daha fazla patinin sıcak bir yuvaya
+        kavuşmasına yardımcı olabiliriz.
+    </p>
+
+    <a href="ilan-ver.php" class="pati-ilan-butonu">
+        Sahiplendirme İlanı Ver
+    </a>
+</section>
+
+<!-- EN ALT BİLGİ ALANI -->
+
+<footer class="pati-footer">
+    <div class="pati-footer-icerik">
+
+        <div>
+            <a href="index.php" class="pati-footer-logo">
+                <img
+                    src="images/aris-logoo.png"
+                    alt=""
+                    width="52"
+                    height="52"
+                >
+                <strong>Aris Pati Yuvası</strong>
+            </a>
+
+            <p class="pati-footer-tanitim">
+                Her can dostuna bir yuva. Yuva arayan hayvanlarla
+                onlara sevgiyle bakmak isteyen insanları
+                bir araya getiriyoruz.
+            </p>
+        </div>
+
+        <div>
+            <h3>Hızlı Bağlantılar</h3>
+
+            <nav class="pati-footer-linkler" aria-label="Alt menü">
+                <a href="index.php">Ana Sayfa</a>
+                <a href="ilanlar.php">Sahiplendirme İlanları</a>
+                <a href="ilan-ver.php">İlan Ver</a>
+            </nav>
+        </div>
+
+        <div>
+            <h3>Dostlarımız</h3>
+
+            <nav class="pati-footer-linkler" aria-label="Hayvan türleri">
+                <a href="ilanlar.php?tur=Kedi">Kedi İlanları</a>
+                <a href="ilanlar.php?tur=Köpek">Köpek İlanları</a>
+                <a href="ilanlar.php?tur=Kuş">Kuş İlanları</a>
+                <a href="ilanlar.php?tur=Diğer">Diğer Dostlarımız</a>
+            </nav>
+        </div>
+
+        <div>
+            <h3>Bizi Tanıyın</h3>
+
+            <nav class="pati-footer-linkler" aria-label="Bilgi menüsü">
+                <a href="hakkimizda.php">Hakkımızda</a>
+                <a href="iletisim.php">Bize Ulaşın</a>
+                <a href="fotograf-kaynaklari.html">Fotoğraf Kaynakları</a>
+            </nav>
+        </div>
+
+    </div>
+
+    <div class="pati-footer-taban">
+        <div class="pati-footer-taban-icerik">
+            <span>© Aris Pati Yuvası</span>
+            <span>Satın alma, sahiplen.</span>
+            <a href="#aris-ortak-ust">Yukarı dön ↑</a>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>
