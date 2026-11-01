@@ -1,166 +1,195 @@
 <?php
 session_start();
+
 require_once __DIR__ . "/baglanti.php";
 
-function guvenli($deger)
+function aa_h($value)
 {
-    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
 }
 
-/* Okunmamış mesaj bildirimi */
-
-$okunmamis_mesaj_var = false;
-$bildirim_uye_id = (int) ($_SESSION["uye_id"] ?? 0);
-
-if ($bildirim_uye_id > 0) {
-    $bildirim_sorgusu = mysqli_prepare(
-        $baglanti,
-        "SELECT id
-         FROM ilan_mesajlari
-         WHERE alici_id = ? AND okundu = 0
-         LIMIT 1"
-    );
-
-    mysqli_stmt_bind_param(
-        $bildirim_sorgusu,
-        "i",
-        $bildirim_uye_id
-    );
-
-    mysqli_stmt_execute($bildirim_sorgusu);
-
-    $okunmamis_mesaj_var = mysqli_num_rows(
-        mysqli_stmt_get_result($bildirim_sorgusu)
-    ) > 0;
-
-    mysqli_stmt_close($bildirim_sorgusu);
+function guvenli($value)
+{
+    return aa_h($value);
 }
 
-/* Ana sayfa içeriği */
-
-$sonuc = mysqli_query(
-    $baglanti,
-    "SELECT baslik, aciklama, buton_yazisi
-     FROM anasayfa_icerik
-     WHERE id = 1"
-);
-
-$icerik = mysqli_fetch_assoc($sonuc) ?: [
-    "baslik" => "Yeni Bir Dost Edin",
-    "aciklama" => "İlanları inceleyerek sana uygun yeni dostunu bulabilirsin.",
-    "buton_yazisi" => "İlanları İncele"
-];
-
-$varsayilan_ayarlar = [
-    "buton_linki" => "ilanlar.php",
-    "kapak" => null,
-    "duyuru" => "",
-    "duyuru_aktif" => 0,
-    "tanitim_aktif" => 1,
-    "kategoriler_aktif" => 1,
-    "vitrin_aktif" => 1,
-    "vitrin_idler" => "[]"
-];
-
-$sonuc = mysqli_query(
-    $baglanti,
-    "SELECT * FROM anasayfa_ayarlar WHERE id = 1"
-);
-
-$ayar = array_merge(
-    $varsayilan_ayarlar,
-    mysqli_fetch_assoc($sonuc) ?: []
-);
-
-$izinli_linkler = [
-    "ilanlar.php",
-    "ilan-ver.php",
-    "hakkimizda.php",
-    "iletisim.php"
-];
-
-$buton_linki = in_array(
-    $ayar["buton_linki"],
-    $izinli_linkler,
-    true
-) ? $ayar["buton_linki"] : "ilanlar.php";
-
-/* Kapak fotoğrafı */
-
-$kapak_yolu = is_file(__DIR__ . "/images/anasayfa-kapak.png")
-    ? "images/anasayfa-kapak.png"
-    : "";
-
-if (
-    !empty($ayar["kapak"])
-    && preg_match(
-        '/^kapak_[a-f0-9]{32}\.(jpg|png|webp)$/',
-        $ayar["kapak"]
-    ) === 1
-    && is_file(__DIR__ . "/uploads/" . $ayar["kapak"])
-) {
-    $kapak_yolu = "uploads/" . $ayar["kapak"];
+function aa_links()
+{
+    return [
+        "ilanlar.php" => "İlanlar",
+        "ilan-ver.php" => "İlan Ver",
+        "hakkimizda.php" => "Hakkımızda",
+        "iletisim.php" => "İletişim"
+    ];
 }
 
-/* Vitrindeki ilanlar */
+function aa_categories()
+{
+    return [
+        "Kedi" => "kedi.png",
+        "Köpek" => "kopek.png",
+        "Kuş" => "kus.png",
+        "Balık" => "balik.png",
+        "Tavşan" => "tavsan.png",
+        "Kemirgen" => "kemirgen.png",
+        "Sürüngen" => "surungen.png",
+        "Diğer" => "diger.png"
+    ];
+}
 
-$secili_idler = json_decode(
-    (string) $ayar["vitrin_idler"],
-    true
-);
+function aa_defaults()
+{
+    $cats = [];
 
-$temiz_idler = [];
+    foreach (aa_categories() as $name => $file) {
+        $cats[$name] = ["gorsel" => "images/" . $file];
+    }
 
-if (is_array($secili_idler)) {
-    foreach ($secili_idler as $deger) {
-        if (!is_int($deger) && !is_string($deger)) {
-            continue;
-        }
+    return [
+        "degerler" => [
+            "aktif" => 1,
+            "ogeler" => [
+                ["baslik" => "Bir dostluk başlasın", "aciklama" => "Hayatına sevgi dolu bir arkadaş kat."],
+                ["baslik" => "Bir yuva umut olsun", "aciklama" => "Yuva arayan bir dostun hikâyesini değiştir."],
+                ["baslik" => "Sorumlulukla sahiplen", "aciklama" => "Ömür boyu sürecek bir bağ için adım at."]
+            ]
+        ],
+        "kategoriler" => [
+            "etiket" => "Yeni arkadaşın seni bekliyor",
+            "baslik" => "Hangi dostumuzla tanışmak istersin?",
+            "ogeler" => $cats
+        ],
+        "vitrin" => [
+            "etiket" => "Belki de aradığın dost burada",
+            "baslik" => "Yuva arayan dostlarımız",
+            "aciklama" => "Her birinin farklı bir hikâyesi, aynı güzel hayali var: sevgi dolu bir yuva."
+        ],
+        "surec" => [
+            "aktif" => 1,
+            "etiket" => "Dostluğa giden yol",
+            "baslik" => "Yeni bir başlangıç için üç adım",
+            "aciklama" => "Sana ve yaşamına uygun dostunu bul, onu tanı ve sahiplenme başvurunu oluştur.",
+            "ogeler" => [
+                ["baslik" => "Dostunu keşfet", "aciklama" => "İlanları incele. Tür ve şehir seçeneklerini kullanarak sana uygun dostlarımızı keşfet."],
+                ["baslik" => "Onu daha yakından tanı", "aciklama" => "İlan detaylarını oku. İlan sahibiyle iletişime geçerek dostumuzun ihtiyaçları hakkında bilgi al."],
+                ["baslik" => "Başvurunu oluştur", "aciklama" => "Hesabına giriş yapıp sahiplenme başvurunu gönder. Başvurunun durumunu profilinden takip et."]
+            ]
+        ],
+        "sehir" => [
+            "aktif" => 1,
+            "etiket" => "Güzel bir karşılaşma çok yakında",
+            "baslik" => "Yakınındaki dostunu bul.",
+            "aciklama" => "Şehrindeki sahiplendirme ilanlarını incele. Belki de yeni arkadaşın düşündüğünden daha yakındadır.",
+            "liste" => "İstanbul\nAnkara\nİzmir\nBursa\nAntalya\nEskişehir"
+        ],
+        "sss" => [
+            "aktif" => 1,
+            "etiket" => "Aklındaki sorular",
+            "baslik" => "Sahiplenmeden önce merak ettiklerin.",
+            "aciklama" => "Yeni bir dost edinmek güzel bir başlangıçtır. Bu kararı onun ihtiyaçlarını ve kendi yaşam koşullarını düşünerek vermelisin.",
+            "ogeler" => [
+                ["baslik" => "Sahiplenmek için üye olmam gerekiyor mu?", "aciklama" => "İlanları üye olmadan inceleyebilirsin. Sahiplenme başvurusu göndermek için hesabına giriş yapmalısın."],
+                ["baslik" => "İlan sahibiyle nasıl iletişim kurabilirim?", "aciklama" => "İlgilendiğin ilanın detay sayfasındaki mesajlaşma alanını kullanabilirsin. Mesaj göndermek için hesabına giriş yapmalısın."],
+                ["baslik" => "Başvurumu nereden takip edebilirim?", "aciklama" => "Profilim sayfasındaki Sahiplenme Başvurularım bölümünden başvurunun durumunu görebilirsin."],
+                ["baslik" => "Sahiplenmeden önce neleri düşünmeliyim?", "aciklama" => "Dostumuzun bakımına ayırabileceğin zamanı, yaşam alanını, veteriner ve beslenme ihtiyaçlarını değerlendir. Birlikte yaşayacağın kişilerle de bu sorumluluğu konuş."]
+            ]
+        ],
+        "davet" => [
+            "aktif" => 1,
+            "baslik" => "Senin için bir dost,\nonun için bütün bir dünya.",
+            "aciklama" => "Yuva arayan bir dostumuz için ilan oluştur, onun yeni ailesiyle tanışmasına yardımcı ol.",
+            "buton_yazisi" => "Sahiplendirme İlanı Ver",
+            "buton_linki" => "ilan-ver.php"
+        ],
+        "footer" => [
+            "aciklama" => "Yuva arayan hayvanlarla onlara sevgiyle bakmak isteyen insanları bir araya getiriyoruz. Her can dostuna bir yuva."
+        ]
+    ];
+}
 
-        $id = filter_var($deger, FILTER_VALIDATE_INT);
-
-        if ($id && $id > 0) {
-            $temiz_idler[] = $id;
+function aa_merge($defaults, $data)
+{
+    foreach ($defaults as $key => $value) {
+        if (is_array($value)) {
+            $defaults[$key] = aa_merge(
+                $value,
+                is_array($data[$key] ?? null) ? $data[$key] : []
+            );
+        } elseif (is_int($value)) {
+            $defaults[$key] = !empty($data[$key] ?? $value) ? 1 : 0;
+        } elseif (is_string($data[$key] ?? null)) {
+            $defaults[$key] = $data[$key];
         }
     }
+
+    return $defaults;
 }
 
-$secili_idler = array_slice(
-    array_values(array_unique($temiz_idler)),
-    0,
-    12
-);
+function aa_read($db)
+{
+    $defaults = aa_defaults();
 
-$vitrin = [];
-
-if ($ayar["vitrin_aktif"] && $secili_idler) {
-    $id_listesi = implode(",", $secili_idler);
-
-    $sonuc = mysqli_query(
-        $baglanti,
-        "SELECT id, hayvan_adi, tur, sehir, fotograf
-         FROM ilanlar
-         WHERE durum = 'Onaylandı'
-           AND id IN ($id_listesi)
-         ORDER BY id DESC
-         LIMIT 12"
+    $result = mysqli_query(
+        $db,
+        "SHOW TABLES LIKE 'anasayfa_bolumler'"
     );
 
-    while ($ilan = mysqli_fetch_assoc($sonuc)) {
-        $vitrin[] = $ilan;
+    if (!mysqli_num_rows($result)) {
+        return $defaults;
     }
+
+    $result = mysqli_query(
+        $db,
+        "SELECT icerik_json FROM anasayfa_bolumler WHERE id = 1"
+    );
+
+    $row = mysqli_fetch_assoc($result);
+    $data = json_decode((string) ($row["icerik_json"] ?? ""), true);
+
+    return aa_merge($defaults, is_array($data) ? $data : []);
 }
 
-function vitrin_fotografi($fotograf)
+function aa_image($path)
+{
+    if (!is_string($path)) {
+        return "";
+    }
+
+    $pattern = '~^(images/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)|uploads/(?:kapak|kategori)_[a-f0-9]{32}\.(?:jpg|png|webp))$~i';
+
+    if (!preg_match($pattern, $path)) {
+        return "";
+    }
+
+    return is_file(__DIR__ . "/" . $path) ? $path : "";
+}
+
+function aa_cover($ayar)
+{
+    $default = aa_image("images/anasayfa.png")
+        ?: aa_image("images/anasayfa-kapak.png");
+
+    if (is_string($ayar["kapak"] ?? null)) {
+        $upload = aa_image("uploads/" . $ayar["kapak"]);
+
+        if ($upload !== "") {
+            return $upload;
+        }
+    }
+
+    return $default;
+}
+
+function aa_listing_image($fotograf)
 {
     $fotograf = (string) $fotograf;
-    $dosya = basename($fotograf);
+    $base = basename($fotograf);
 
     if (
-        preg_match('/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i', $dosya)
-        && is_file(__DIR__ . "/uploads/" . $dosya)
+        preg_match('/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i', $base)
+        && is_file(__DIR__ . "/uploads/" . $base)
     ) {
-        return "uploads/" . $dosya;
+        return "uploads/" . $base;
     }
 
     if (
@@ -176,54 +205,212 @@ function vitrin_fotografi($fotograf)
     return "";
 }
 
-$menu_kategorileri = [
-    "Kedi" => "🐱",
-    "Köpek" => "🐶",
-    "Kuş" => "🐦",
-    "Balık" => "🐠",
-    "Tavşan" => "🐰",
-    "Kemirgen" => "🐹",
-    "Sürüngen" => "🦎",
-    "Diğer" => "🐾"
+function aa_cities($text)
+{
+    $lines = preg_split('/\R/u', (string) $text);
+
+    return array_values(
+        array_unique(
+            array_filter(
+                array_map("trim", $lines ?: []),
+                function ($value) {
+                    return $value !== "";
+                }
+            )
+        )
+    );
+}
+
+/* Okunmamış mesaj bildirimi. */
+
+$uye_id = (int) ($_SESSION["uye_id"] ?? 0);
+$okunmamis_mesaj_var = false;
+
+if ($uye_id > 0) {
+    $query = mysqli_prepare(
+        $baglanti,
+        "SELECT id
+         FROM ilan_mesajlari
+         WHERE alici_id = ? AND okundu = 0
+         LIMIT 1"
+    );
+
+    mysqli_stmt_bind_param($query, "i", $uye_id);
+    mysqli_stmt_execute($query);
+
+    $okunmamis_mesaj_var = mysqli_num_rows(
+        mysqli_stmt_get_result($query)
+    ) > 0;
+
+    mysqli_stmt_close($query);
+}
+
+/* Yönetim panelinde kaydedilen bilgiler. */
+
+$result = mysqli_query(
+    $baglanti,
+    "SELECT baslik, aciklama, buton_yazisi
+     FROM anasayfa_icerik
+     WHERE id = 1"
+);
+
+$icerik = mysqli_fetch_assoc($result) ?: [
+    "baslik" => "Bir dost edin, bir hayat değiştir.",
+    "aciklama" => "Yuva arayan dostlarımızla tanış.",
+    "buton_yazisi" => "Dostunu Bul"
 ];
+
+$result = mysqli_query(
+    $baglanti,
+    "SELECT * FROM anasayfa_ayarlar WHERE id = 1"
+);
+
+$ayar = array_merge([
+    "buton_linki" => "ilanlar.php",
+    "kapak" => null,
+    "duyuru" => "",
+    "duyuru_aktif" => 0,
+    "tanitim_aktif" => 1,
+    "kategoriler_aktif" => 1,
+    "vitrin_aktif" => 1,
+    "vitrin_idler" => "[]"
+], mysqli_fetch_assoc($result) ?: []);
+
+$bolumler = aa_read($baglanti);
+$kategoriler = aa_categories();
+
+$buton_linki = isset(aa_links()[$ayar["buton_linki"]])
+    ? $ayar["buton_linki"]
+    : "ilanlar.php";
+
+$kapak_yolu = aa_cover($ayar);
+
+/* Vitrin ilanları. */
+
+$ids = json_decode((string) $ayar["vitrin_idler"], true);
+$temiz_idler = [];
+
+foreach (is_array($ids) ? $ids : [] as $value) {
+    if (!is_string($value) && !is_int($value)) {
+        continue;
+    }
+
+    $id = filter_var($value, FILTER_VALIDATE_INT);
+
+    if ($id && $id > 0) {
+        $temiz_idler[] = $id;
+    }
+}
+
+$temiz_idler = array_slice(
+    array_values(array_unique($temiz_idler)),
+    0,
+    12
+);
+
+$vitrin = [];
+
+if ($ayar["vitrin_aktif"] && $temiz_idler) {
+    $id_listesi = implode(",", $temiz_idler);
+
+    $result = mysqli_query(
+        $baglanti,
+        "SELECT id, hayvan_adi, tur, sehir, fotograf
+         FROM ilanlar
+         WHERE durum = 'Onaylandı'
+           AND id IN ($id_listesi)
+         ORDER BY id DESC
+         LIMIT 12"
+    );
+
+    while ($ilan = mysqli_fetch_assoc($result)) {
+        $vitrin[] = $ilan;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aris Pati Yuvası | Hayvan Sahiplendirme</title>
+    <meta
+        name="description"
+        content="Aris Pati Yuvası ile yuva arayan dostlarımızla tanış. Sahiplendirme ilanlarını incele, şehrindeki yeni dostunu bul."
+    >
+    <meta name="theme-color" content="#426b46">
+
+    <title>Aris Pati Yuvası | Bir Dost, Yeni Bir Başlangıç</title>
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --yesil: #426b46;
+            --koyu: #284b32;
+            --krem: #f5f0e6;
+            --beyaz: #fffdf8;
+            --acik: #e6eddf;
+            --cizgi: #dddccc;
+            --metin: #65715f;
         }
+
+        * { box-sizing: border-box; }
 
         html {
             scrollbar-gutter: stable;
+            scroll-behavior: smooth;
+            scroll-padding-top: 120px;
         }
 
         body {
             margin: 0;
-            background: #f5f0e6;
-            color: #284b32;
+            background: var(--krem);
+            color: var(--koyu);
             font-family: Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
+
+        img { max-width: 100%; }
+        a { color: inherit; }
+        button { font: inherit; }
+
+        a:focus-visible,
+        button:focus-visible,
+        summary:focus-visible {
+            outline: 3px solid #8eac73;
+            outline-offset: 4px;
+        }
+
+        .kapsayici {
+            width: min(1200px, calc(100% - 48px));
+            margin-inline: auto;
+        }
+
+        .atla {
+            position: fixed;
+            top: -100px;
+            left: 20px;
+            z-index: 999;
+            padding: 12px 18px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .atla:focus { top: 12px; }
 
         /* Üst menü */
 
         .ilan-ust {
-            position: relative;
+            position: sticky;
+            top: 0;
             z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 24px;
+            gap: 18px;
             min-height: 88px;
             padding: 16px 24px;
-            background: #426b46;
             border-bottom: 1px solid #35583b;
+            background: var(--yesil);
         }
 
         .ilan-logo {
@@ -231,7 +418,7 @@ $menu_kategorileri = [
             align-items: center;
             gap: 12px;
             flex-shrink: 0;
-            color: #fff;
+            color: white;
             text-decoration: none;
         }
 
@@ -242,7 +429,7 @@ $menu_kategorileri = [
             padding: 5px;
             border: 1px solid #eee5d3;
             border-radius: 12px;
-            background: #fffdf8;
+            background: var(--beyaz);
             object-fit: contain;
         }
 
@@ -255,8 +442,8 @@ $menu_kategorileri = [
         .ilan-logo small {
             display: block;
             margin-top: 5px;
+            color: #e3ebdd;
             font-size: 11px;
-            line-height: 1.4;
         }
 
         .ilan-menu {
@@ -275,12 +462,11 @@ $menu_kategorileri = [
             justify-content: center;
             gap: 7px;
             min-height: 40px;
-            margin: 0;
             padding: 10px;
             border: 0;
             border-radius: 8px;
             background: transparent;
-            color: #fff;
+            color: white;
             font: normal 14px/20px Arial, sans-serif;
             text-decoration: none;
             white-space: nowrap;
@@ -288,35 +474,27 @@ $menu_kategorileri = [
         }
 
         .ilan-menu > a:hover,
-        .ilan-menu > a:focus-visible,
         .kategori-menu:hover .kategori-baslik,
         .kategori-menu:focus-within .kategori-baslik {
-            background: #284b32;
-            color: #fff;
+            background: var(--koyu);
         }
 
         .ilan-menu > a[aria-current="page"] {
             background: #eee5d3;
-            color: #284b32;
+            color: var(--koyu);
             font-weight: bold;
         }
 
         .mesaj-bildirim {
-            display: inline-block;
-            flex-shrink: 0;
             width: 9px;
             height: 9px;
-            border: 1px solid #fff;
+            border: 1px solid white;
             border-radius: 50%;
             background: #ef5350;
-        }
-
-        /* Hayvan kategorileri */
-
-        .kategori-menu {
-            position: relative;
             flex-shrink: 0;
         }
+
+        .kategori-menu { position: relative; }
 
         .kategori-acilir {
             position: absolute;
@@ -324,13 +502,13 @@ $menu_kategorileri = [
             right: 0;
             z-index: 200;
             display: none;
-            width: 205px;
+            width: 210px;
             max-width: calc(100vw - 36px);
             padding: 8px;
-            border: 1px solid #ded6c6;
+            border: 1px solid var(--cizgi);
             border-radius: 12px;
-            background: #fffdf8;
-            box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
+            background: var(--beyaz);
+            box-shadow: 0 14px 35px rgba(40, 75, 50, .16);
         }
 
         .kategori-menu:hover .kategori-acilir,
@@ -341,228 +519,677 @@ $menu_kategorileri = [
         .kategori-acilir a {
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-height: 40px;
-            padding: 10px 12px;
+            gap: 10px;
+            min-height: 44px;
+            padding: 7px 10px;
             border-radius: 7px;
-            color: #284b32;
             font-size: 14px;
-            line-height: 20px;
             text-decoration: none;
         }
 
-        .kategori-acilir a:hover,
-        .kategori-acilir a:focus-visible {
-            background: #426b46;
-            color: #fff;
+        .kategori-acilir a:hover { background: var(--acik); }
+
+        .kategori-acilir img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--acik);
         }
 
-        .kategori-simge {
-            width: 24px;
-            font-size: 20px;
-            text-align: center;
-        }
+        /* Karşılama alanı */
 
-        /* Duyuru ve kapak */
-
-        .ay-duyuru {
-            padding: 14px 5%;
-            background: #e6eddf;
+        .duyuru {
+            padding: 13px 24px;
+            background: var(--acik);
+            font-size: 14px;
             line-height: 1.6;
             text-align: center;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
         }
 
-        .ay-kapak-bolum {
-            margin-bottom: 38px;
-        }
+        .hero { padding-top: 34px; }
 
-        .ay-hero {
-            position: relative;
-            isolation: isolate;
-            display: flex;
+        .hero-kutu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             align-items: center;
-            justify-content: center;
-            min-height: 450px;
-            padding: 55px 24px;
-            overflow: hidden;
-            background: #426b46;
-            text-align: center;
+            gap: 34px;
+            min-height: 460px;
+            padding: 42px;
+            border: 1px solid #d9dfcd;
+            border-radius: 26px;
+            background: var(--acik);
         }
 
-        .ay-hero::before {
+        .hero-yazi { min-width: 0; }
+
+        .etiket {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            color: var(--yesil);
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.6;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .etiket::before {
             content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            background: linear-gradient(
-                90deg,
-                rgba(25, 48, 29, .06),
-                rgba(25, 48, 29, .45) 35%,
-                rgba(25, 48, 29, .45) 65%,
-                rgba(25, 48, 29, .06)
-            );
+            width: 22px;
+            height: 2px;
+            flex-shrink: 0;
+            background: currentColor;
         }
 
-        .ay-hero.ay-gorselsiz::before {
-            background: transparent;
-        }
-
-        .ay-kapak {
-            position: absolute;
-            inset: 0;
-            z-index: -2;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-        }
-
-        .ay-hero-yazi {
-            width: min(580px, 48%);
-        }
-
-        .ay-hero h1 {
-            margin: 0 0 18px;
-            color: #fffdf8;
-            font-size: clamp(28px, 3.2vw, 46px);
-            line-height: 1.2;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+        .hero h1 {
+            margin: 0 0 20px;
+            font-size: clamp(34px, 4.1vw, 56px);
+            line-height: 1.1;
+            letter-spacing: -1.8px;
             overflow-wrap: anywhere;
         }
 
-        .ay-hero p {
+        .hero-aciklama {
+            max-width: 490px;
             margin: 0 0 26px;
-            color: #fffdf8;
-            font-size: 17px;
-            line-height: 1.7;
+            color: #53664e;
+            font-size: 16px;
+            line-height: 1.8;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
         }
 
-        .ay-buton {
-            display: inline-block;
-            min-width: 220px;
+        .butonlar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .buton {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-height: 48px;
             max-width: 100%;
-            padding: 14px 24px;
-            border: 1px solid #eee5d3;
-            border-radius: 8px;
-            background: #eee5d3;
-            color: #284b32;
+            padding: 14px 22px;
+            border: 1px solid var(--yesil);
+            border-radius: 10px;
+            background: var(--yesil);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.5;
+            text-decoration: none;
+            text-align: center;
+            transition: background .2s, transform .2s;
+        }
+
+        .buton:hover {
+            transform: translateY(-2px);
+            background: var(--koyu);
+        }
+
+        .buton.ikincil {
+            border-color: #bac8b1;
+            background: transparent;
+            color: var(--koyu);
+        }
+
+        .buton.ikincil:hover { background: var(--beyaz); }
+
+        .hero-not {
+            margin: 22px 0 0;
+            color: #53664e;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .hero-gorsel { min-width: 0; }
+
+        .hero-gorsel img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid #d3ddc7;
+            border-radius: 20px;
+            background: #d6dfc9;
+        }
+
+        .hero-gorsel .kapak-yok {
+            min-height: 250px;
+            padding: 50px;
+            object-fit: contain;
+        }
+
+        /* Kısa tanıtım */
+
+        .degerler {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 28px;
+            padding: 28px 10px;
+            border-bottom: 1px solid var(--cizgi);
+        }
+
+        .deger {
+            padding-left: 15px;
+            border-left: 3px solid #a8bc97;
+        }
+
+        .deger strong {
+            display: block;
+            font-size: 14px;
+        }
+
+        .deger p {
+            margin: 6px 0 0;
+            color: var(--metin);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Bölümler */
+
+        .bolum { padding-block: 60px; }
+
+        .bolum-baslik {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 26px;
+        }
+
+        .bolum-baslik .etiket { margin-bottom: 12px; }
+
+        .bolum h2,
+        .sehir-alani h2,
+        .davet h2 {
+            margin: 0;
+            font-size: clamp(25px, 3vw, 36px);
+            line-height: 1.2;
+            letter-spacing: -1px;
+        }
+
+        .bolum-baslik p {
+            max-width: 580px;
+            margin: 12px 0 0;
+            color: var(--metin);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .metin-link {
+            display: inline-block;
+            padding-block: 8px;
+            color: var(--yesil);
+            font-size: 14px;
             font-weight: bold;
             text-decoration: none;
         }
 
-        .ay-buton:hover {
-            background: #fffdf8;
+        .metin-link:hover {
+            text-decoration: underline;
+            text-underline-offset: 5px;
         }
 
-        /* Vitrin */
+        /* Kategori görselleri */
 
-        .ay-bolum {
-            width: min(1200px, 92%);
-            margin: 30px auto 40px;
+        .kategori-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 14px;
         }
 
-        .ay-bolum h2 {
-            margin: 0 0 24px;
-            font-size: 28px;
-            text-align: center;
+        .kategori-kart {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0;
+            padding: 20px 8px;
+            border: 1px solid #dedfce;
+            border-radius: 18px;
+            background: var(--beyaz);
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s, border-color .2s;
         }
 
-        .ay-vitrin {
+        .kategori-fotograf {
+            display: block;
+            width: 90px;
+            height: 90px;
+            padding: 4px;
+            border: 1px solid #d6dfcd;
+            border-radius: 50%;
+            background: #f5f0e6;
+            object-fit: cover;
+        }
+
+        .kategori-kart strong {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .kategori-kart:hover {
+            transform: translateY(-5px);
+            border-color: #91aa80;
+            box-shadow: 0 12px 24px rgba(40, 75, 50, .1);
+        }
+
+        /* Vitrin ilanları */
+
+        .vitrin-bolumu { padding-top: 10px; }
+
+        .vitrin-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 22px;
         }
 
-        .ay-ilan {
+        .ilan-kart {
             display: block;
+            min-width: 0;
             overflow: hidden;
-            border: 1px solid #ded6c6;
-            border-radius: 14px;
-            background: #fffdf8;
-            color: #284b32;
+            border: 1px solid var(--cizgi);
+            border-radius: 18px;
+            background: var(--beyaz);
             text-decoration: none;
-            transition: transform .2s;
+            transition: transform .2s, box-shadow .2s;
         }
 
-        .ay-ilan:hover {
-            transform: translateY(-4px);
+        .ilan-kart:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 30px rgba(40, 75, 50, .1);
         }
 
-        .ay-ilan > img,
-        .ay-foto-yok {
+        .ilan-gorsel {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1.15;
+            background: var(--acik);
+        }
+
+        .ilan-gorsel img {
             display: block;
             width: 100%;
-            height: 220px;
+            height: 100%;
             object-fit: cover;
         }
 
-        .ay-foto-yok {
-            display: grid;
-            place-items: center;
-            background: #e6eddf;
-            font-size: 48px;
+        .ilan-gorsel img.logo-yedek {
+            padding: 45px;
+            object-fit: contain;
         }
 
-        .ay-ilan-bilgi {
-            padding: 18px;
+        .ilan-rozet {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            padding: 6px 10px;
+            border-radius: 7px;
+            background: var(--beyaz);
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .ilan-bilgi {
+            padding: 19px;
             overflow-wrap: anywhere;
         }
 
-        .ay-ilan-bilgi h3 {
-            margin: 0 0 8px;
+        .ilan-bilgi h3 {
+            margin: 0 0 9px;
+            font-size: 21px;
         }
 
-        .ay-ilan-bilgi p {
+        .ilan-bilgi p {
             margin: 0;
-            color: #687361;
+            color: var(--metin);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .ilan-alt {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 17px;
+            padding-top: 13px;
+            border-top: 1px solid #e7e7dc;
+            color: var(--yesil);
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* Sahiplenme adımları */
+
+        .surec {
+            border-block: 1px solid #dbe1d3;
+            background: #edf2e8;
+        }
+
+        .surec-baslik {
+            max-width: 650px;
+            margin: 0 auto 32px;
+            text-align: center;
+        }
+
+        .surec-baslik p {
+            margin: 14px 0 0;
+            color: var(--metin);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .adim-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .adim {
+            padding: 28px;
+            border: 1px solid #d9e0cf;
+            border-radius: 16px;
+            background: var(--beyaz);
+        }
+
+        .adim-no {
+            display: inline-grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            background: var(--acik);
+            color: var(--yesil);
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .adim h3 {
+            margin: 0 0 12px;
+            font-size: 19px;
+        }
+
+        .adim p {
+            margin: 0;
+            color: var(--metin);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        /* Şehirler */
+
+        .sehir-alani {
+            padding-block: 54px;
+            background: var(--yesil);
+            color: var(--beyaz);
+        }
+
+        .sehir-icerik {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .sehir-alani .etiket {
+            margin-bottom: 15px;
+            color: #e0e9d6;
+        }
+
+        .sehir-alani p {
+            max-width: 450px;
+            margin: 16px 0 0;
+            color: #e1e9db;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .sehirler {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .sehirler a {
+            padding: 14px 10px;
+            border: 1px solid #d6dfca;
+            border-radius: 9px;
+            background: var(--beyaz);
+            color: var(--koyu);
+            font-size: 14px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .sehirler a:hover { background: #dce8cf; }
+
+        .sehir-link {
+            display: inline-block;
+            margin-top: 18px;
+            color: white;
+            font-size: 13px;
+            text-underline-offset: 5px;
+        }
+
+        /* Sık sorulan sorular */
+
+        .sss-duzen {
+            display: grid;
+            grid-template-columns: .85fr 1.15fr;
+            align-items: start;
+            gap: 60px;
+        }
+
+        .sss-giris p {
+            margin: 17px 0 18px;
+            color: var(--metin);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .sss-listesi details {
+            border-bottom: 1px solid var(--cizgi);
+        }
+
+        .sss-listesi details:first-child {
+            border-top: 1px solid var(--cizgi);
+        }
+
+        .sss-listesi summary {
+            position: relative;
+            padding: 21px 32px 21px 0;
+            font-size: 15px;
+            font-weight: bold;
             line-height: 1.5;
+            list-style: none;
+            cursor: pointer;
         }
 
-        a:focus-visible,
-        button:focus-visible {
-            outline: 2px solid #284b32;
-            outline-offset: 3px;
+        .sss-listesi summary::-webkit-details-marker { display: none; }
+
+        .sss-listesi summary::after {
+            content: "+";
+            position: absolute;
+            top: 17px;
+            right: 3px;
+            color: var(--yesil);
+            font-size: 24px;
+            font-weight: normal;
         }
 
-        .ilan-menu > a:focus-visible,
-        .kategori-baslik:focus-visible {
-            outline-color: #eee5d3;
+        .sss-listesi details[open] summary::after { content: "−"; }
+
+        .sss-listesi details p {
+            margin: 0;
+            padding: 0 20px 21px 0;
+            color: var(--metin);
+            font-size: 14px;
+            line-height: 1.8;
         }
 
-        @media (min-width: 1500px) {
-            .ay-hero {
-                min-height: 520px;
-            }
+        /* Son davet */
+
+        .davet {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 60px;
+            padding: 38px 42px;
+            border: 1px solid #d7dfcb;
+            border-radius: 20px;
+            background: var(--acik);
         }
+
+        .davet h2 {
+            max-width: 650px;
+            font-size: clamp(25px, 2.8vw, 33px);
+        }
+
+        .davet p {
+            margin: 14px 0 0;
+            color: #53664e;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .davet .buton { flex-shrink: 0; }
+
+        /* Alt menü */
+
+        .pati-footer {
+            background: var(--koyu);
+            color: var(--beyaz);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 40px;
+            padding-block: 50px;
+        }
+
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .footer-logo img {
+            width: 48px;
+            height: 48px;
+            padding: 5px;
+            border-radius: 10px;
+            background: var(--beyaz);
+            object-fit: contain;
+        }
+
+        .footer-logo strong { font-size: 19px; }
+
+        .footer-tanitim {
+            max-width: 310px;
+            margin: 18px 0 0;
+            color: #cedbc6;
+            font-size: 13px;
+            line-height: 1.9;
+        }
+
+        .pati-footer h3 {
+            margin: 7px 0 20px;
+            font-size: 14px;
+        }
+
+        .footer-linkler {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .footer-linkler a {
+            color: #d4dfcc;
+            font-size: 13px;
+            line-height: 1.5;
+            text-decoration: none;
+        }
+
+        .footer-linkler a:hover {
+            color: white;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .footer-taban { border-top: 1px solid #48664b; }
+
+        .footer-taban > div {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-block: 21px;
+            color: #d4dfcc;
+            font-size: 12px;
+        }
+
+        .footer-taban a { text-decoration: none; }
+
+        /* Tablet ve telefon */
 
         @media (max-width: 1100px) {
-            .ilan-menu {
-                width: 100%;
+            .ilan-menu { width: 100%; }
+            .hero-kutu { padding: 32px; gap: 25px; }
+            .hero h1 { font-size: 43px; }
+
+            .kategori-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
             }
+
+            .sss-duzen { gap: 35px; }
         }
 
         @media (max-width: 900px) {
-            .ay-hero {
-                min-height: 380px;
-            }
+            .hero-kutu { grid-template-columns: 1fr; }
+            .hero-yazi { max-width: 650px; }
 
-            .ay-hero-yazi {
-                width: min(550px, 75%);
-            }
-
-            .ay-vitrin {
+            .vitrin-grid,
+            .footer-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .sehir-icerik,
+            .sss-duzen {
+                grid-template-columns: 1fr;
+                gap: 28px;
+            }
+
+            .adim { padding: 22px; }
+
+            .davet {
+                align-items: flex-start;
+                flex-direction: column;
             }
         }
 
         @media (max-width: 700px) {
+            html { scroll-padding-top: 24px; }
+
             .ilan-ust {
+                position: relative;
+                gap: 15px;
                 padding: 15px 18px;
-                gap: 16px;
             }
 
             .ilan-menu > a,
@@ -570,48 +1197,89 @@ $menu_kategorileri = [
                 padding: 8px;
                 font-size: 13px;
             }
-        }
 
-        @media (max-width: 600px) {
-            .ay-hero {
-                min-height: 360px;
-                padding: 35px 20px;
+            .kapsayici { width: calc(100% - 32px); }
+            .hero { padding-top: 20px; }
+            .hero-kutu { padding: 24px; border-radius: 20px; }
+
+            .hero h1 {
+                font-size: clamp(34px, 7vw, 44px);
+                letter-spacing: -1.3px;
             }
 
-            .ay-hero::before {
-                background: rgba(25, 48, 29, .55);
+            .hero-aciklama { font-size: 15px; }
+
+            .degerler,
+            .adim-grid {
+                grid-template-columns: 1fr;
             }
 
-            .ay-hero-yazi {
-                width: 100%;
-            }
+            .degerler { gap: 20px; }
+            .bolum { padding-block: 42px; }
+            .vitrin-bolumu { padding-top: 8px; }
+            .kategori-grid { gap: 10px; }
 
-            .ay-hero h1 {
-                font-size: 30px;
-            }
-
-            .ay-hero p {
-                font-size: 15px;
-            }
-
-            .ay-vitrin {
+            .kategori-kart {
+                padding: 16px 5px;
                 gap: 12px;
             }
 
-            .ay-ilan > img,
-            .ay-foto-yok {
-                height: 170px;
+            .kategori-fotograf {
+                width: 64px;
+                height: 64px;
+                padding: 3px;
+            }
+
+            .kategori-kart strong { font-size: 12px; }
+            .vitrin-grid { gap: 12px; }
+            .ilan-bilgi { padding: 14px; }
+            .ilan-bilgi h3 { font-size: 18px; }
+            .davet { padding: 26px; margin-bottom: 42px; }
+        }
+
+        @media (max-width: 440px) {
+            .hero .butonlar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .sehirler {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 28px;
             }
         }
 
-        @media (max-width: 380px) {
-            .ay-vitrin {
-                grid-template-columns: 1fr;
+        @media (max-width: 360px) {
+            .kategori-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .vitrin-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+
+            *, *::before, *::after {
+                transition: none !important;
+            }
+
+            .ilan-kart:hover,
+            .kategori-kart:hover,
+            .buton:hover {
+                transform: none;
             }
         }
     </style>
 </head>
+
 <body>
+
+<a class="atla" href="#ana-icerik">İçeriğe geç</a>
 
 <header class="ilan-ust" id="aris-ortak-ust">
     <a href="index.php" class="ilan-logo">
@@ -621,7 +1289,6 @@ $menu_kategorileri = [
             width="54"
             height="54"
         >
-
         <span>
             <strong>Aris Pati Yuvası</strong>
             <small>Her can dostuna bir yuva</small>
@@ -643,12 +1310,16 @@ $menu_kategorileri = [
             </button>
 
             <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span class="kategori-simge" aria-hidden="true">
-                            <?= $simge ?>
-                        </span>
-                        <span><?= guvenli($kategori_adi) ?></span>
+                <?php foreach ($kategoriler as $ad => $dosya): ?>
+                    <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
+                        <img
+                            src="<?= aa_h(aa_image($bolumler['kategoriler']['ogeler'][$ad]['gorsel']) ?: 'images/' . $dosya) ?>"
+                            alt=""
+                            width="32"
+                            height="32"
+                            loading="lazy"
+                        >
+                        <span><?= guvenli($ad) ?></span>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -658,7 +1329,7 @@ $menu_kategorileri = [
         <a href="hakkimizda.php">Hakkımızda</a>
         <a href="iletisim.php">İletişim</a>
 
-        <?php if ($bildirim_uye_id > 0): ?>
+        <?php if ($uye_id > 0): ?>
             <a href="mesajlar.php">
                 Mesajlarım
 
@@ -683,414 +1354,379 @@ $menu_kategorileri = [
     </nav>
 </header>
 
-<main>
+<main id="ana-icerik">
+
     <?php if (
         $ayar["duyuru_aktif"]
         && trim((string) $ayar["duyuru"]) !== ""
     ): ?>
-        <div class="ay-duyuru"><?= guvenli($ayar["duyuru"]) ?></div>
+        <div class="duyuru">
+            <?= aa_h($ayar["duyuru"]) ?>
+        </div>
     <?php endif; ?>
 
     <?php if ($ayar["tanitim_aktif"]): ?>
-        <section class="ay-kapak-bolum">
-            <div class="ay-hero <?= $kapak_yolu === "" ? 'ay-gorselsiz' : '' ?>">
-                <div class="ay-hero-yazi">
-                    <h1><?= guvenli($icerik["baslik"]) ?></h1>
+        <section class="hero kapsayici">
+            <div class="hero-kutu">
 
-                    <p><?= guvenli($icerik["aciklama"]) ?></p>
+                <div class="hero-yazi">
+                    <span class="etiket">
+                        Bir yuva, yeni bir başlangıç
+                    </span>
 
-                    <a
-                        href="<?= guvenli($buton_linki) ?>"
-                        class="ay-buton"
-                    ><?= guvenli($icerik["buton_yazisi"]) ?></a>
+                    <h1><?= aa_h($icerik["baslik"]) ?></h1>
+
+                    <p class="hero-aciklama"><?= aa_h($icerik["aciklama"]) ?></p>
+
+                    <div class="butonlar">
+                        <a href="<?= aa_h($buton_linki) ?>" class="buton">
+                            <?= aa_h($icerik["buton_yazisi"]) ?>
+                            <span aria-hidden="true">↗</span>
+                        </a>
+
+                        <?php if ($bolumler["surec"]["aktif"]): ?>
+                            <a
+                                href="#nasil-sahiplenirim"
+                                class="buton ikincil"
+                            >
+                                Nasıl Sahiplenirim?
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <p class="hero-not">
+                        Küçük bir adım, ömür boyu sürecek bir dostluk.
+                    </p>
                 </div>
 
-                <?php if ($kapak_yolu !== ""): ?>
+                <div class="hero-gorsel">
                     <img
-                        src="<?= guvenli($kapak_yolu) ?>"
-                        alt="Yuva arayan kedi ve köpekler"
-                        class="ay-kapak"
+                        src="<?= aa_h($kapak_yolu ?: 'images/aris-logoo.png') ?>"
+                        alt="Aris Pati Yuvası: kedi ve köpek"
                         fetchpriority="high"
                     >
-                <?php endif; ?>
+                </div>
+
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($bolumler["degerler"]["aktif"]): ?>
+        <div class="kapsayici">
+            <div class="degerler">
+                <?php foreach ($bolumler["degerler"]["ogeler"] as $oge): ?>
+                    <div class="deger">
+                        <strong><?= aa_h($oge["baslik"]) ?></strong>
+                        <p><?= aa_h($oge["aciklama"]) ?></p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($ayar["kategoriler_aktif"]): ?>
+        <?php $bolum = $bolumler["kategoriler"]; ?>
+
+        <section class="bolum kapsayici">
+            <div class="bolum-baslik">
+                <div>
+                    <span class="etiket">
+                        <?= aa_h($bolum["etiket"]) ?>
+                    </span>
+
+                    <h2><?= aa_h($bolum["baslik"]) ?></h2>
+                </div>
+            </div>
+
+            <div class="kategori-grid">
+                <?php foreach ($kategoriler as $ad => $dosya): ?>
+                    <?php
+                    $gorsel = aa_image(
+                        $bolum["ogeler"][$ad]["gorsel"]
+                    ) ?: aa_image("images/" . $dosya);
+                    ?>
+
+                    <a
+                        href="ilanlar.php?tur=<?= rawurlencode($ad) ?>"
+                        class="kategori-kart"
+                    >
+                        <img
+                            src="<?= aa_h($gorsel ?: 'images/aris-logoo.png') ?>"
+                            alt=""
+                            class="kategori-fotograf"
+                            width="90"
+                            height="90"
+                            loading="lazy"
+                        >
+
+                        <strong><?= aa_h($ad) ?></strong>
+                    </a>
+                <?php endforeach; ?>
             </div>
         </section>
     <?php endif; ?>
 
     <?php if ($ayar["vitrin_aktif"] && $vitrin): ?>
-        <section class="ay-bolum">
-            <h2>Yuva Arayan Dostlarımız</h2>
+        <?php $bolum = $bolumler["vitrin"]; ?>
 
-            <div class="ay-vitrin">
+        <section class="bolum vitrin-bolumu kapsayici">
+            <div class="bolum-baslik">
+                <div>
+                    <span class="etiket">
+                        <?= aa_h($bolum["etiket"]) ?>
+                    </span>
+
+                    <h2><?= aa_h($bolum["baslik"]) ?></h2>
+
+                    <p><?= aa_h($bolum["aciklama"]) ?></p>
+                </div>
+
+                <a href="ilanlar.php" class="metin-link">
+                    Tüm ilanları gör →
+                </a>
+            </div>
+
+            <div class="vitrin-grid">
                 <?php foreach ($vitrin as $ilan): ?>
                     <?php
-                    $foto_yolu = vitrin_fotografi($ilan["fotograf"] ?? "");
+                    $foto = aa_listing_image($ilan["fotograf"] ?? "")
+                        ?: "images/aris-logoo.png";
                     ?>
 
                     <a
-                        href="ilan-detay.php?id=<?= (int) $ilan["id"] ?>"
-                        class="ay-ilan"
+                        href="ilan-detay.php?id=<?= (int) $ilan['id'] ?>"
+                        class="ilan-kart"
                     >
-                        <?php if ($foto_yolu !== ""): ?>
+                        <div class="ilan-gorsel">
                             <img
-                                src="<?= guvenli($foto_yolu) ?>"
-                                alt="<?= guvenli($ilan["hayvan_adi"]) ?>"
+                                src="<?= aa_h($foto) ?>"
+                                alt="<?= aa_h($ilan['hayvan_adi']) ?>"
+                                class="<?= $foto === 'images/aris-logoo.png' ? 'logo-yedek' : '' ?>"
                                 loading="lazy"
+                                width="400"
+                                height="350"
                             >
-                        <?php else: ?>
-                            <div class="ay-foto-yok" aria-label="Fotoğraf yok">
-                                🐾
-                            </div>
-                        <?php endif; ?>
 
-                        <div class="ay-ilan-bilgi">
-                            <h3><?= guvenli($ilan["hayvan_adi"]) ?></h3>
+                            <span class="ilan-rozet">Yuva arıyor</span>
+                        </div>
+
+                        <div class="ilan-bilgi">
+                            <h3><?= aa_h($ilan["hayvan_adi"]) ?></h3>
+
                             <p>
-                                <?= guvenli($ilan["tur"]) ?>
-                                · <?= guvenli($ilan["sehir"]) ?>
+                                <?= aa_h($ilan["tur"]) ?>
+                                ·
+                                <?= aa_h($ilan["sehir"]) ?>
                             </p>
+
+                            <div class="ilan-alt">
+                                <span>Benimle tanış</span>
+                                <span aria-hidden="true">↗</span>
+                            </div>
                         </div>
                     </a>
                 <?php endforeach; ?>
             </div>
         </section>
     <?php endif; ?>
-</main><style>
-    /* ANA SAYFANIN ALT BÖLÜMLERİ */
 
-    .pati-sehir-bolumu {
-        padding: 45px 20px;
-        border-top: 1px solid #d2ddc7;
-        border-bottom: 1px solid #d2ddc7;
-        background: #e6eddf;
-        text-align: center;
-    }
+    <?php if ($bolumler["surec"]["aktif"]): ?>
+        <?php $bolum = $bolumler["surec"]; ?>
 
-    .pati-sehir-bolumu h2 {
-        margin: 0 0 14px;
-        color: #284b32;
-        font-size: 28px;
-    }
+        <section class="bolum surec" id="nasil-sahiplenirim">
+            <div class="kapsayici">
 
-    .pati-sehir-bolumu p {
-        margin: 0 0 25px;
-        color: #60745b;
-        line-height: 1.7;
-    }
+                <div class="surec-baslik">
+                    <span class="etiket">
+                        <?= aa_h($bolum["etiket"]) ?>
+                    </span>
 
-    .pati-sehirler {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
+                    <h2><?= aa_h($bolum["baslik"]) ?></h2>
 
-    .pati-sehirler a {
-        padding: 12px 22px;
-        border: 1px solid #cbd8bf;
-        border-radius: 8px;
-        background: #fffdf8;
-        color: #284b32;
-        text-decoration: none;
-    }
+                    <p><?= aa_h($bolum["aciklama"]) ?></p>
+                </div>
 
-    .pati-sehirler a:hover {
-        background: #426b46;
-        color: white;
-    }
+                <div class="adim-grid">
+                    <?php foreach ($bolum["ogeler"] as $sira => $oge): ?>
+                        <article class="adim">
+                            <span class="adim-no">
+                                <?= sprintf("%02d", $sira + 1) ?>
+                            </span>
 
-    .pati-tum-ilanlar {
-        display: inline-block;
-        margin-top: 25px;
-        color: #284b32;
-        font-weight: bold;
-        text-underline-offset: 5px;
-    }
+                            <h3><?= aa_h($oge["baslik"]) ?></h3>
 
-    /* SAHİPLENME MESAJI */
+                            <p><?= aa_h($oge["aciklama"]) ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
 
-    .pati-mesaj-bolumu {
-        padding: 50px 20px;
-        background: #f5f0e6;
-        text-align: center;
-    }
+            </div>
+        </section>
+    <?php endif; ?>
 
-    .pati-soz-kutusu {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 30px 20px;
-        border: 1px solid #bacba9;
-        border-radius: 12px;
-        background: #edf2e6;
-    }
+    <?php if ($bolumler["sehir"]["aktif"]): ?>
+        <?php $bolum = $bolumler["sehir"]; ?>
 
-    .pati-soz-simge {
-        color: #6b8c56;
-        font: 60px/1 Georgia, serif;
-    }
+        <section class="sehir-alani">
+            <div class="kapsayici sehir-icerik">
 
-    .pati-soz-kutusu p {
-        margin: 12px 0 18px;
-        color: #284b32;
-        font: italic 26px/1.6 Georgia, serif;
-    }
+                <div>
+                    <span class="etiket">
+                        <?= aa_h($bolum["etiket"]) ?>
+                    </span>
 
-    .pati-soz-kutusu small {
-        color: #60745b;
-        font-size: 14px;
-    }
+                    <h2><?= aa_h($bolum["baslik"]) ?></h2>
 
-    .pati-davet-yazisi {
-        margin: 30px 0 20px;
-        color: #60745b;
-        line-height: 1.8;
-    }
+                    <p><?= aa_h($bolum["aciklama"]) ?></p>
+                </div>
 
-    .pati-ilan-butonu {
-        display: inline-block;
-        padding: 14px 24px;
-        border-radius: 8px;
-        background: #426b46;
-        color: white;
-        font-weight: bold;
-        text-decoration: none;
-    }
+                <div>
+                    <div class="sehirler">
+                        <?php foreach (aa_cities($bolum["liste"]) as $sehir): ?>
+                            <a
+                                href="ilanlar.php?sehir=<?= rawurlencode($sehir) ?>"
+                            >
+                                <?= aa_h($sehir) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
 
-    .pati-ilan-butonu:hover {
-        background: #284b32;
-    }
+                    <a href="ilanlar.php" class="sehir-link">
+                        Tüm şehirlerdeki ilanları incele →
+                    </a>
+                </div>
 
-    /* EN ALT BİLGİ ALANI */
+            </div>
+        </section>
+    <?php endif; ?>
 
-    .pati-footer {
-        background: #35583b;
-        color: #fffdf8;
-    }
+    <?php if ($bolumler["sss"]["aktif"]): ?>
+        <?php $bolum = $bolumler["sss"]; ?>
 
-    .pati-footer-icerik {
-        display: grid;
-        grid-template-columns: 1.6fr 1fr 1fr 1fr;
-        gap: 35px;
-        width: min(1200px, 92%);
-        margin: auto;
-        padding: 45px 0;
-    }
+        <section class="bolum kapsayici">
+            <div class="sss-duzen">
 
-    .pati-footer-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #fffdf8;
-        font-size: 20px;
-        text-decoration: none;
-    }
+                <div class="sss-giris">
+                    <span class="etiket">
+                        <?= aa_h($bolum["etiket"]) ?>
+                    </span>
 
-    .pati-footer-logo img {
-        width: 52px;
-        height: 52px;
-        padding: 5px;
-        border-radius: 10px;
-        background: #fffdf8;
-        object-fit: contain;
-    }
+                    <h2><?= aa_h($bolum["baslik"]) ?></h2>
 
-    .pati-footer-tanitim {
-        max-width: 320px;
-        margin: 16px 0 0;
-        color: #dce6d5;
-        font-size: 14px;
-        line-height: 1.8;
-    }
+                    <p><?= aa_h($bolum["aciklama"]) ?></p>
 
-    .pati-footer h3 {
-        margin: 4px 0 20px;
-        color: #edf2df;
-        font-size: 16px;
-    }
+                    <a href="iletisim.php" class="metin-link">
+                        Bize ulaş →
+                    </a>
+                </div>
 
-    .pati-footer-linkler {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 13px;
-    }
+                <div class="sss-listesi">
+                    <?php foreach ($bolum["ogeler"] as $oge): ?>
+                        <?php
+                        if (
+                            trim($oge["baslik"]) === ""
+                            || trim($oge["aciklama"]) === ""
+                        ) {
+                            continue;
+                        }
+                        ?>
 
-    .pati-footer-linkler a {
-        color: #dce6d5;
-        font-size: 14px;
-        text-decoration: none;
-    }
+                        <details>
+                            <summary>
+                                <?= aa_h($oge["baslik"]) ?>
+                            </summary>
 
-    .pati-footer-linkler a:hover {
-        color: white;
-        text-decoration: underline;
-        text-underline-offset: 4px;
-    }
+                            <p><?= aa_h($oge["aciklama"]) ?></p>
+                        </details>
+                    <?php endforeach; ?>
+                </div>
 
-    .pati-footer-taban {
-        border-top: 1px solid #547358;
-    }
+            </div>
+        </section>
+    <?php endif; ?>
 
-    .pati-footer-taban-icerik {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 15px;
-        width: min(1200px, 92%);
-        margin: auto;
-        padding: 18px 0;
-        color: #dce6d5;
-        font-size: 13px;
-    }
+    <?php if ($bolumler["davet"]["aktif"]): ?>
+        <?php
+        $bolum = $bolumler["davet"];
 
-    .pati-footer-taban a {
-        color: #fffdf8;
-        text-underline-offset: 4px;
-    }
+        $davet_linki = isset(aa_links()[$bolum["buton_linki"]])
+            ? $bolum["buton_linki"]
+            : "ilan-ver.php";
+        ?>
 
-    @media (max-width: 850px) {
-        .pati-footer-icerik {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
+        <section class="davet kapsayici">
+            <div>
+                <h2 style="white-space: pre-line"><?= aa_h($bolum["baslik"]) ?></h2>
 
-    @media (max-width: 500px) {
-        .pati-footer-icerik {
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
+                <p><?= aa_h($bolum["aciklama"]) ?></p>
+            </div>
 
-        .pati-sehir-bolumu h2 {
-            font-size: 24px;
-        }
+            <a href="<?= aa_h($davet_linki) ?>" class="buton">
+                <?= aa_h($bolum["buton_yazisi"]) ?>
+                <span aria-hidden="true">↗</span>
+            </a>
+        </section>
+    <?php endif; ?>
 
-        .pati-soz-kutusu p {
-            font-size: 22px;
-        }
-
-        .pati-sehirler a {
-            padding: 10px 15px;
-        }
-    }
-    .pati-sehir-bolumu {
-    background: #426b46;
-    border-color: #35583b;
-}
-
-.pati-sehir-bolumu h2,
-.pati-sehir-bolumu p,
-.pati-sehir-bolumu .pati-tum-ilanlar {
-    color: #fffdf8;
-}
-</style>
-
-<!-- ŞEHİRLERE GÖRE İLANLAR -->
-
-<section class="pati-sehir-bolumu">
-    <h2>Yakınındaki Dostunu Bul</h2>
-
-    <p>
-        Şehrindeki sahiplendirme ilanlarını incele,
-        yuva arayan bir dostumuzla tanış.
-    </p>
-
-    <div class="pati-sehirler">
-        <a href="ilanlar.php?sehir=İstanbul">İstanbul</a>
-        <a href="ilanlar.php?sehir=Ankara">Ankara</a>
-        <a href="ilanlar.php?sehir=İzmir">İzmir</a>
-        <a href="ilanlar.php?sehir=Bursa">Bursa</a>
-        <a href="ilanlar.php?sehir=Antalya">Antalya</a>
-        <a href="ilanlar.php?sehir=Eskişehir">Eskişehir</a>
-    </div>
-
-    <a href="ilanlar.php" class="pati-tum-ilanlar">
-        Tüm şehirlerdeki ilanları incele →
-    </a>
-</section>
-
-<!-- SAHİPLENME MESAJI -->
-
-<section class="pati-mesaj-bolumu">
-    <div class="pati-soz-kutusu">
-        <span class="pati-soz-simge" aria-hidden="true">“</span>
-
-        <p>
-            Senin için bir dost,<br>
-            onun için bütün bir dünya.
-        </p>
-
-        <small>Bir yuva, bir hayatı değiştirir.</small>
-    </div>
-
-    <p class="pati-davet-yazisi">
-        Birlikte daha fazla patinin sıcak bir yuvaya
-        kavuşmasına yardımcı olabiliriz.
-    </p>
-
-    <a href="ilan-ver.php" class="pati-ilan-butonu">
-        Sahiplendirme İlanı Ver
-    </a>
-</section>
-
-<!-- EN ALT BİLGİ ALANI -->
+</main>
 
 <footer class="pati-footer">
-    <div class="pati-footer-icerik">
-
+    <div class="kapsayici footer-grid">
         <div>
-            <a href="index.php" class="pati-footer-logo">
+            <a href="index.php" class="footer-logo">
                 <img
                     src="images/aris-logoo.png"
                     alt=""
-                    width="52"
-                    height="52"
+                    width="48"
+                    height="48"
                 >
                 <strong>Aris Pati Yuvası</strong>
             </a>
 
-            <p class="pati-footer-tanitim">
-                Her can dostuna bir yuva. Yuva arayan hayvanlarla
-                onlara sevgiyle bakmak isteyen insanları
-                bir araya getiriyoruz.
+            <p class="footer-tanitim">
+    <?= aa_h($bolumler["footer"]["aciklama"]) ?>
+
+                Yuva arayan hayvanlarla onlara sevgiyle
+                bakmak isteyen insanları bir araya getiriyoruz.
+                Her can dostuna bir yuva.
             </p>
         </div>
 
         <div>
-            <h3>Hızlı Bağlantılar</h3>
-
-            <nav class="pati-footer-linkler" aria-label="Alt menü">
+            <h3>Keşfet</h3>
+            <nav class="footer-linkler" aria-label="Alt menü">
                 <a href="index.php">Ana Sayfa</a>
                 <a href="ilanlar.php">Sahiplendirme İlanları</a>
                 <a href="ilan-ver.php">İlan Ver</a>
+                <?php if ($bolumler["surec"]["aktif"]): ?>
+    <a href="#nasil-sahiplenirim">Nasıl Sahiplenirim?</a>
+<?php endif; ?>
             </nav>
         </div>
 
         <div>
             <h3>Dostlarımız</h3>
-
-            <nav class="pati-footer-linkler" aria-label="Hayvan türleri">
-                <a href="ilanlar.php?tur=Kedi">Kedi İlanları</a>
-                <a href="ilanlar.php?tur=Köpek">Köpek İlanları</a>
-                <a href="ilanlar.php?tur=Kuş">Kuş İlanları</a>
-                <a href="ilanlar.php?tur=Diğer">Diğer Dostlarımız</a>
+            <nav class="footer-linkler" aria-label="Hayvan türleri">
+                <a href="ilanlar.php?tur=<?= rawurlencode('Kedi') ?>">Kedi İlanları</a>
+                <a href="ilanlar.php?tur=<?= rawurlencode('Köpek') ?>">Köpek İlanları</a>
+                <a href="ilanlar.php?tur=<?= rawurlencode('Kuş') ?>">Kuş İlanları</a>
+                <a href="ilanlar.php">Tüm Dostlarımız</a>
             </nav>
         </div>
 
         <div>
             <h3>Bizi Tanıyın</h3>
-
-            <nav class="pati-footer-linkler" aria-label="Bilgi menüsü">
+            <nav class="footer-linkler" aria-label="Bilgi menüsü">
                 <a href="hakkimizda.php">Hakkımızda</a>
                 <a href="iletisim.php">Bize Ulaşın</a>
                 <a href="fotograf-kaynaklari.html">Fotoğraf Kaynakları</a>
             </nav>
         </div>
-
     </div>
 
-    <div class="pati-footer-taban">
-        <div class="pati-footer-taban-icerik">
-            <span>© Aris Pati Yuvası</span>
+    <div class="footer-taban">
+        <div class="kapsayici">
+            <span>© <?= date("Y") ?> Aris Pati Yuvası</span>
             <span>Satın alma, sahiplen.</span>
             <a href="#aris-ortak-ust">Yukarı dön ↑</a>
         </div>

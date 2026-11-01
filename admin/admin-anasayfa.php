@@ -8,63 +8,436 @@ if (!isset($_SESSION["admin"])) {
 
 require_once __DIR__ . "/../baglanti.php";
 
-function guvenli($deger)
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+function aa_h($value)
 {
-    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
 }
 
-function metin($alan)
+function aa_links()
 {
-    return is_string($_POST[$alan] ?? null)
-        ? trim($_POST[$alan])
+    return [
+        "ilanlar.php" => "İlanlar",
+        "ilan-ver.php" => "İlan Ver",
+        "hakkimizda.php" => "Hakkımızda",
+        "iletisim.php" => "İletişim"
+    ];
+}
+
+function aa_categories()
+{
+    return [
+        "Kedi" => "kedi.png",
+        "Köpek" => "kopek.png",
+        "Kuş" => "kus.png",
+        "Balık" => "balik.png",
+        "Tavşan" => "tavsan.png",
+        "Kemirgen" => "kemirgen.png",
+        "Sürüngen" => "surungen.png",
+        "Diğer" => "diger.png"
+    ];
+}
+
+function aa_defaults()
+{
+    $cats = [];
+
+    foreach (aa_categories() as $name => $file) {
+        $cats[$name] = ["gorsel" => "images/" . $file];
+    }
+
+    return [
+        "degerler" => [
+            "aktif" => 1,
+            "ogeler" => [
+                [
+                    "baslik" => "Bir dostluk başlasın",
+                    "aciklama" => "Hayatına sevgi dolu bir arkadaş kat."
+                ],
+                [
+                    "baslik" => "Bir yuva umut olsun",
+                    "aciklama" => "Yuva arayan bir dostun hikâyesini değiştir."
+                ],
+                [
+                    "baslik" => "Sorumlulukla sahiplen",
+                    "aciklama" => "Ömür boyu sürecek bir bağ için adım at."
+                ]
+            ]
+        ],
+
+        "kategoriler" => [
+            "etiket" => "Yeni arkadaşın seni bekliyor",
+            "baslik" => "Hangi dostumuzla tanışmak istersin?",
+            "ogeler" => $cats
+        ],
+
+        "vitrin" => [
+            "etiket" => "Belki de aradığın dost burada",
+            "baslik" => "Yuva arayan dostlarımız",
+            "aciklama" => "Her birinin farklı bir hikâyesi, aynı güzel hayali var: sevgi dolu bir yuva."
+        ],
+
+        "surec" => [
+            "aktif" => 1,
+            "etiket" => "Dostluğa giden yol",
+            "baslik" => "Yeni bir başlangıç için üç adım",
+            "aciklama" => "Sana ve yaşamına uygun dostunu bul, onu tanı ve sahiplenme başvurunu oluştur.",
+            "ogeler" => [
+                [
+                    "baslik" => "Dostunu keşfet",
+                    "aciklama" => "İlanları incele. Tür ve şehir seçeneklerini kullanarak sana uygun dostlarımızı keşfet."
+                ],
+                [
+                    "baslik" => "Onu daha yakından tanı",
+                    "aciklama" => "İlan detaylarını oku. İlan sahibiyle iletişime geçerek dostumuzun ihtiyaçları hakkında bilgi al."
+                ],
+                [
+                    "baslik" => "Başvurunu oluştur",
+                    "aciklama" => "Hesabına giriş yapıp sahiplenme başvurunu gönder. Başvurunun durumunu profilinden takip et."
+                ]
+            ]
+        ],
+
+        "sehir" => [
+            "aktif" => 1,
+            "etiket" => "Güzel bir karşılaşma çok yakında",
+            "baslik" => "Yakınındaki dostunu bul.",
+            "aciklama" => "Şehrindeki sahiplendirme ilanlarını incele. Belki de yeni arkadaşın düşündüğünden daha yakındadır.",
+            "liste" => "İstanbul\nAnkara\nİzmir\nBursa\nAntalya\nEskişehir"
+        ],
+
+        "sss" => [
+            "aktif" => 1,
+            "etiket" => "Aklındaki sorular",
+            "baslik" => "Sahiplenmeden önce merak ettiklerin.",
+            "aciklama" => "Yeni bir dost edinmek güzel bir başlangıçtır. Bu kararı onun ihtiyaçlarını ve kendi yaşam koşullarını düşünerek vermelisin.",
+            "ogeler" => [
+                [
+                    "baslik" => "Sahiplenmek için üye olmam gerekiyor mu?",
+                    "aciklama" => "İlanları üye olmadan inceleyebilirsin. Sahiplenme başvurusu göndermek için hesabına giriş yapmalısın."
+                ],
+                [
+                    "baslik" => "İlan sahibiyle nasıl iletişim kurabilirim?",
+                    "aciklama" => "İlgilendiğin ilanın detay sayfasındaki mesajlaşma alanını kullanabilirsin. Mesaj göndermek için hesabına giriş yapmalısın."
+                ],
+                [
+                    "baslik" => "Başvurumu nereden takip edebilirim?",
+                    "aciklama" => "Profilim sayfasındaki Sahiplenme Başvurularım bölümünden başvurunun durumunu görebilirsin."
+                ],
+                [
+                    "baslik" => "Sahiplenmeden önce neleri düşünmeliyim?",
+                    "aciklama" => "Dostumuzun bakımına ayırabileceğin zamanı, yaşam alanını, veteriner ve beslenme ihtiyaçlarını değerlendir. Birlikte yaşayacağın kişilerle de bu sorumluluğu konuş."
+                ]
+            ]
+        ],
+
+        "davet" => [
+            "aktif" => 1,
+            "baslik" => "Senin için bir dost,\nonun için bütün bir dünya.",
+            "aciklama" => "Yuva arayan bir dostumuz için ilan oluştur, onun yeni ailesiyle tanışmasına yardımcı ol.",
+            "buton_yazisi" => "Sahiplendirme İlanı Ver",
+            "buton_linki" => "ilan-ver.php"
+        ],
+
+        "footer" => [
+            "aciklama" => "Yuva arayan hayvanlarla onlara sevgiyle bakmak isteyen insanları bir araya getiriyoruz. Her can dostuna bir yuva."
+        ]
+    ];
+}
+
+function aa_merge($defaults, $data)
+{
+    foreach ($defaults as $key => $value) {
+        if (is_array($value)) {
+            $defaults[$key] = aa_merge(
+                $value,
+                is_array($data[$key] ?? null) ? $data[$key] : []
+            );
+        } elseif (is_int($value)) {
+            $defaults[$key] = !empty($data[$key] ?? $value) ? 1 : 0;
+        } elseif (is_string($data[$key] ?? null)) {
+            $defaults[$key] = $data[$key];
+        }
+    }
+
+    return $defaults;
+}
+
+function aa_read($db)
+{
+    $defaults = aa_defaults();
+
+    $result = mysqli_query(
+        $db,
+        "SELECT icerik_json FROM anasayfa_bolumler WHERE id = 1"
+    );
+
+    $row = mysqli_fetch_assoc($result);
+
+    $data = json_decode((string) ($row["icerik_json"] ?? ""), true);
+
+    return aa_merge($defaults, is_array($data) ? $data : []);
+}
+
+function aa_image($path)
+{
+    if (!is_string($path)) {
+        return "";
+    }
+
+    $pattern = '~^(images/[a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp)|uploads/(?:kapak|kategori)_[a-f0-9]{32}\.(?:jpg|png|webp))$~i';
+
+    if (!preg_match($pattern, $path)) {
+        return "";
+    }
+
+    return is_file(dirname(__DIR__) . "/" . $path) ? $path : "";
+}
+
+function aa_cover($ayar)
+{
+    $default = aa_image("images/anasayfa.png")
+        ?: aa_image("images/anasayfa-kapak.png");
+
+    if (is_string($ayar["kapak"] ?? null)) {
+        $upload = aa_image("uploads/" . $ayar["kapak"]);
+
+        if ($upload !== "") {
+            return $upload;
+        }
+    }
+
+    return $default;
+}
+
+function aa_cities($text)
+{
+    $lines = preg_split('/\R/u', (string) $text);
+
+    return array_values(
+        array_unique(
+            array_filter(
+                array_map("trim", $lines ?: []),
+                function ($value) {
+                    return $value !== "";
+                }
+            )
+        )
+    );
+}
+
+function ay_post($key)
+{
+    return is_string($_POST[$key] ?? null)
+        ? trim($_POST[$key])
         : "";
 }
 
-if (empty($_SESSION["anasayfa_token"])) {
-    $_SESSION["anasayfa_token"] = bin2hex(random_bytes(32));
+function ay_len($text)
+{
+    return function_exists("mb_strlen")
+        ? mb_strlen($text, "UTF-8")
+        : strlen($text);
 }
 
-$sonuc = mysqli_query(
+function ay_field($name, $label, $value, $multi = false, $max = 3000)
+{
+    $id = "alan-" . substr(hash("sha256", $name), 0, 12);
+
+    echo '<div class="ay-alan">';
+    echo '<label for="' . aa_h($id) . '">' . aa_h($label) . '</label>';
+
+    if ($multi) {
+        echo '<textarea id="' . $id . '" name="' . aa_h($name)
+            . '" maxlength="' . $max . '">'
+            . aa_h($value) . '</textarea>';
+    } else {
+        echo '<input type="text" id="' . $id
+            . '" name="' . aa_h($name)
+            . '" value="' . aa_h($value)
+            . '" maxlength="' . $max . '">';
+    }
+
+    echo '</div>';
+}
+
+function ay_clean($defaults, $posted, $current)
+{
+    $output = [];
+
+    foreach ($defaults as $key => $value) {
+        if ($key === "gorsel") {
+            $output[$key] = $current[$key] ?? $value;
+            continue;
+        }
+
+        if (is_array($value)) {
+            $output[$key] = ay_clean(
+                $value,
+                is_array($posted[$key] ?? null) ? $posted[$key] : [],
+                is_array($current[$key] ?? null) ? $current[$key] : []
+            );
+        } elseif (is_int($value)) {
+            $output[$key] = isset($posted[$key]) ? 1 : 0;
+        } else {
+            if (
+                isset($posted[$key])
+                && !is_string($posted[$key])
+            ) {
+                throw new RuntimeException("Geçersiz form alanı.");
+            }
+
+            $text = trim($posted[$key] ?? "");
+
+            $max = in_array($key, ["aciklama", "liste"], true)
+                ? 3000
+                : 150;
+
+            if (ay_len($text) > $max) {
+                throw new RuntimeException(
+                    "Metin alanlarının karakter sınırlarını aşmayınız."
+                );
+            }
+
+            $output[$key] = $text;
+        }
+    }
+
+    return $output;
+}
+
+function ay_upload($field, $prefix, &$created)
+{
+    $file = $_FILES[$field] ?? null;
+
+    if ($file === null) {
+        return null;
+    }
+
+    if (
+        !is_array($file)
+        || !is_int($file["error"] ?? null)
+    ) {
+        throw new RuntimeException("Geçersiz görsel yüklemesi.");
+    }
+
+    if ($file["error"] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if ($file["error"] !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(
+            "Görsel yüklenemedi. Dosya boyutu veya sunucu yükleme sınırını kontrol ediniz."
+        );
+    }
+
+    if (
+        !is_string($file["tmp_name"] ?? null)
+        || !is_uploaded_file($file["tmp_name"])
+        || ($file["size"] ?? 0) > 5 * 1024 * 1024
+    ) {
+        throw new RuntimeException(
+            "Her görsel en fazla 5 MB olabilir."
+        );
+    }
+
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file(
+        $file["tmp_name"]
+    );
+
+    $extensions = [
+        "image/jpeg" => "jpg",
+        "image/png" => "png",
+        "image/webp" => "webp"
+    ];
+
+    $dimensions = @getimagesize($file["tmp_name"]);
+
+    if (
+        !isset($extensions[$mime])
+        || !$dimensions
+        || $dimensions[0] > 8000
+        || $dimensions[1] > 8000
+    ) {
+        throw new RuntimeException(
+            "JPG, PNG veya WEBP seçiniz. Görsel en fazla 8000 × 8000 piksel olabilir."
+        );
+    }
+
+    $directory = __DIR__ . "/../uploads";
+
+    if (
+        !is_dir($directory)
+        && !mkdir($directory, 0755, true)
+        && !is_dir($directory)
+    ) {
+        throw new RuntimeException(
+            "Görsel klasörü oluşturulamadı."
+        );
+    }
+
+    $name = $prefix . "_"
+        . bin2hex(random_bytes(16))
+        . "." . $extensions[$mime];
+
+    if (
+        !move_uploaded_file(
+            $file["tmp_name"],
+            $directory . "/" . $name
+        )
+    ) {
+        throw new RuntimeException("Görsel kaydedilemedi.");
+    }
+
+    $created[] = $directory . "/" . $name;
+
+    return $name;
+}
+
+/* Mevcut kayıtları getir. */
+
+$result = mysqli_query(
     $baglanti,
-    "SELECT baslik, aciklama, buton_yazisi
-     FROM anasayfa_icerik WHERE id = 1"
+    "SHOW TABLES LIKE 'anasayfa_bolumler'"
 );
 
-$icerik = mysqli_fetch_assoc($sonuc);
+if (!mysqli_num_rows($result)) {
+    exit("Önce verilen SQL sorgusunu phpMyAdmin üzerinden çalıştırınız.");
+}
 
-$ayar_sonuc = mysqli_query(
+$result = mysqli_query(
+    $baglanti,
+    "SELECT baslik, aciklama, buton_yazisi
+     FROM anasayfa_icerik
+     WHERE id = 1"
+);
+
+$icerik = mysqli_fetch_assoc($result);
+
+$result = mysqli_query(
     $baglanti,
     "SELECT * FROM anasayfa_ayarlar WHERE id = 1"
 );
 
-$ayar = mysqli_fetch_assoc($ayar_sonuc);
+$ayar = mysqli_fetch_assoc($result);
 
 if (!$icerik || !$ayar) {
-    exit("Ana sayfa kayıtları bulunamadı. Önce verilen SQL kodunu çalıştırınız.");
+    exit(
+        "Ana sayfa kayıtları bulunamadı. anasayfa_icerik ve "
+        . "anasayfa_ayarlar tablolarında id=1 kaydını kontrol ediniz."
+    );
 }
 
-$linkler = [
-    "ilanlar.php" => "İlanlar",
-    "ilan-ver.php" => "İlan Ver",
-    "hakkimizda.php" => "Hakkımızda",
-    "iletisim.php" => "İletişim"
-];
+$b = aa_read($baglanti);
 
-$bolumler = [
-    "tanitim_aktif" => "Karşılama alanı",
-    "kategoriler_aktif" => "Hayvan kategorileri",
-    "vitrin_aktif" => "Vitrin ilanları",
-    "duyuru_aktif" => "Duyuru bandı"
-];
+if (!is_string($_SESSION["anasayfa_token"] ?? null)) {
+    $_SESSION["anasayfa_token"] = bin2hex(random_bytes(32));
+}
 
-$kategoriler = [
-    "🐱 Kedi", "🐶 Köpek", "🐦 Kuş", "🐠 Balık",
-    "🐰 Tavşan", "🐹 Kemirgen", "🦎 Sürüngen", "🐾 Diğer"
-];
+$onayli = [];
 
-$onayli_ilanlar = [];
-
-$ilan_sonuc = mysqli_query(
+$result = mysqli_query(
     $baglanti,
     "SELECT id, hayvan_adi, tur, sehir, fotograf
      FROM ilanlar
@@ -72,768 +445,1137 @@ $ilan_sonuc = mysqli_query(
      ORDER BY id DESC"
 );
 
-while ($satir = mysqli_fetch_assoc($ilan_sonuc)) {
-    $onayli_ilanlar[(int)$satir["id"]] = $satir;
+while ($row = mysqli_fetch_assoc($result)) {
+    $onayli[(int) $row["id"]] = $row;
 }
 
-$secili = json_decode($ayar["vitrin_idler"], true);
-$secili = is_array($secili) ? array_map("intval", $secili) : [];
+$ids = json_decode((string) $ayar["vitrin_idler"], true);
+
+$secili = [];
+
+foreach (is_array($ids) ? $ids : [] as $id) {
+    if (
+        (is_string($id) || is_int($id))
+        && isset($onayli[(int) $id])
+    ) {
+        $secili[] = (int) $id;
+    }
+}
+
+$legacy = [
+    "tanitim_aktif" => "Karşılama alanını göster",
+    "kategoriler_aktif" => "Kategorileri göster",
+    "vitrin_aktif" => "Vitrin ilanlarını göster",
+    "duyuru_aktif" => "Duyuru bandını göster"
+];
+
+$titles = [
+    "degerler" => "Kısa Tanıtım",
+    "kategoriler" => "Hayvan Kategorileri",
+    "vitrin" => "Vitrin Başlıkları",
+    "surec" => "Sahiplenme Adımları",
+    "sehir" => "Şehirlere Göre İlanlar",
+    "sss" => "Sık Sorulan Sorular",
+    "davet" => "Alt Davet Alanı",
+    "footer" => "Alt Bilgi Metni"
+];
+
+$labels = [
+    "etiket" => "Küçük üst yazı",
+    "baslik" => "Başlık",
+    "aciklama" => "Açıklama",
+    "liste" => "Şehirler (her satıra bir şehir)",
+    "buton_yazisi" => "Buton yazısı"
+];
 
 $hata = "";
-$basari = $_SESSION["anasayfa_bildirim"] ?? "";
+
+$basari = is_string($_SESSION["anasayfa_bildirim"] ?? null)
+    ? $_SESSION["anasayfa_bildirim"]
+    : "";
+
 unset($_SESSION["anasayfa_bildirim"]);
 
+/* Kaydetme işlemi. */
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $token = $_POST["token"] ?? "";
+    $created = [];
+    $transaction = false;
 
-    $icerik["baslik"] = metin("baslik");
-    $icerik["aciklama"] = metin("aciklama");
-    $icerik["buton_yazisi"] = metin("buton_yazisi");
+    try {
+        if (
+            !hash_equals(
+                $_SESSION["anasayfa_token"],
+                ay_post("token")
+            )
+        ) {
+            throw new RuntimeException(
+                "İşlem doğrulanamadı. Sayfayı yenileyiniz. "
+                . "Büyük dosya yüklediyseniz sunucu yükleme sınırını kontrol ediniz."
+            );
+        }
 
-    $ayar["buton_linki"] = metin("buton_linki");
-    $ayar["duyuru"] = metin("duyuru");
+        foreach (["baslik", "aciklama", "buton_yazisi"] as $key) {
+            $icerik[$key] = ay_post($key);
+        }
 
-    foreach ($bolumler as $alan => $etiket) {
-        $ayar[$alan] = isset($_POST[$alan]) ? 1 : 0;
-    }
+        $ayar["buton_linki"] = ay_post("buton_linki");
+        $ayar["duyuru"] = ay_post("duyuru");
 
-    $secili = [];
-    $gelen_idler = $_POST["vitrin"] ?? [];
+        foreach ($legacy as $key => $label) {
+            $ayar[$key] = isset($_POST[$key]) ? 1 : 0;
+        }
 
-    if (is_array($gelen_idler)) {
-        foreach ($gelen_idler as $deger) {
-            if (!is_string($deger)) {
+        if (
+            $icerik["baslik"] === ""
+            || $icerik["aciklama"] === ""
+            || $icerik["buton_yazisi"] === ""
+        ) {
+            throw new RuntimeException(
+                "Karşılama başlığını, açıklamasını ve buton yazısını doldurunuz."
+            );
+        }
+
+        if (
+            ay_len($icerik["baslik"]) > 150
+            || ay_len($icerik["aciklama"]) > 3000
+            || ay_len($icerik["buton_yazisi"]) > 80
+            || ay_len($ayar["duyuru"]) > 300
+        ) {
+            throw new RuntimeException("Karakter sınırlarını aşmayınız.");
+        }
+
+        if (!isset(aa_links()[$ayar["buton_linki"]])) {
+            throw new RuntimeException(
+                "Geçerli bir buton bağlantısı seçiniz."
+            );
+        }
+
+        if ($ayar["duyuru_aktif"] && $ayar["duyuru"] === "") {
+            throw new RuntimeException(
+                "Duyuru bandı açıkken duyuru metnini doldurunuz."
+            );
+        }
+
+        $secili = [];
+        $posted = $_POST["vitrin"] ?? [];
+
+        if (!is_array($posted)) {
+            throw new RuntimeException("Geçersiz vitrin seçimi.");
+        }
+
+        foreach ($posted as $value) {
+            if (!is_string($value)) {
                 continue;
             }
 
-            $id = filter_var($deger, FILTER_VALIDATE_INT);
+            $id = filter_var($value, FILTER_VALIDATE_INT);
 
-            if ($id && isset($onayli_ilanlar[$id])) {
+            if ($id && isset($onayli[$id])) {
                 $secili[] = $id;
             }
         }
-    }
 
-    $secili = array_values(array_unique($secili));
+        $secili = array_values(array_unique($secili));
 
-    if (
-        !is_string($token)
-        || !hash_equals($_SESSION["anasayfa_token"], $token)
-    ) {
-        $hata = "Sayfayı yenileyip tekrar deneyiniz.";
-    } elseif (
-        $icerik["baslik"] === ""
-        || $icerik["aciklama"] === ""
-        || $icerik["buton_yazisi"] === ""
-    ) {
-        $hata = "Başlık, açıklama ve buton yazısını doldurunuz.";
-    } elseif (
-        mb_strlen($icerik["baslik"], "UTF-8") > 150
-        || mb_strlen($icerik["aciklama"], "UTF-8") > 3000
-        || mb_strlen($icerik["buton_yazisi"], "UTF-8") > 80
-        || mb_strlen($ayar["duyuru"], "UTF-8") > 300
-    ) {
-        $hata = "Alanların karakter sınırlarını aşmayınız.";
-    } elseif (!isset($linkler[$ayar["buton_linki"]])) {
-        $hata = "Geçerli bir buton bağlantısı seçiniz.";
-    } elseif (
-        $ayar["duyuru_aktif"]
-        && $ayar["duyuru"] === ""
-    ) {
-        $hata = "Duyuru bandını açmak için duyuru yazınız.";
-    } elseif (count($secili) > 12) {
-        $hata = "En fazla 12 vitrin ilanı seçebilirsiniz.";
-    }
+        if (count($secili) > 12) {
+            throw new RuntimeException(
+                "En fazla 12 vitrin ilanı seçebilirsiniz."
+            );
+        }
 
-    $yeni_dosya = null;
+        $b = ay_clean(
+            aa_defaults(),
+            is_array($_POST["bolum"] ?? null) ? $_POST["bolum"] : [],
+            $b
+        );
 
-    if ($hata === "") {
-        $yukleme = $_FILES["kapak"] ?? null;
+        if (!isset(aa_links()[$b["davet"]["buton_linki"]])) {
+            throw new RuntimeException(
+                "Davet butonu için geçerli bir bağlantı seçiniz."
+            );
+        }
 
-        if ($yukleme) {
-            $yukleme_hatasi = $yukleme["error"] ?? null;
+        foreach (["degerler", "surec"] as $key) {
+            if (!$b[$key]["aktif"]) {
+                continue;
+            }
 
-            if (!is_int($yukleme_hatasi)) {
-                $hata = "Geçersiz görsel yüklemesi.";
-            } elseif ($yukleme_hatasi !== UPLOAD_ERR_NO_FILE) {
-                if ($yukleme_hatasi !== UPLOAD_ERR_OK) {
-                    $hata = "Görsel yüklenemedi. En fazla 5 MB görsel seçiniz.";
-                } elseif (
-                    $yukleme["size"] > 5 * 1024 * 1024
-                    || !is_uploaded_file($yukleme["tmp_name"])
-                ) {
-                    $hata = "Görsel en fazla 5 MB olabilir.";
-                } else {
-                    $mime = (new finfo(FILEINFO_MIME_TYPE))
-                        ->file($yukleme["tmp_name"]);
+            if ($key === "surec" && $b[$key]["baslik"] === "") {
+                throw new RuntimeException(
+                    "Sahiplenme adımları başlığını doldurunuz."
+                );
+            }
 
-                    $uzantilar = [
-                        "image/jpeg" => "jpg",
-                        "image/png" => "png",
-                        "image/webp" => "webp"
-                    ];
-
-                    $boyut = @getimagesize($yukleme["tmp_name"]);
-
-                    if (
-                        !isset($uzantilar[$mime])
-                        || !$boyut
-                        || $boyut[0] > 8000
-                        || $boyut[1] > 8000
-                    ) {
-                        $hata = "JPG, PNG veya WEBP seçiniz. Görsel en fazla 8000 piksel olabilir.";
-                    } else {
-                        $klasor = __DIR__ . "/../uploads";
-
-                        if (
-                            !is_dir($klasor)
-                            && !mkdir($klasor, 0755, true)
-                            && !is_dir($klasor)
-                        ) {
-                            $hata = "Görsel klasörü oluşturulamadı.";
-                        } else {
-                            $yeni_dosya = "kapak_"
-                                . bin2hex(random_bytes(16))
-                                . "." . $uzantilar[$mime];
-
-                            if (!move_uploaded_file(
-                                $yukleme["tmp_name"],
-                                $klasor . "/" . $yeni_dosya
-                            )) {
-                                $hata = "Görsel kaydedilemedi.";
-                                $yeni_dosya = null;
-                            }
-                        }
-                    }
+            foreach ($b[$key]["ogeler"] as $row) {
+                if ($row["baslik"] === "" || $row["aciklama"] === "") {
+                    throw new RuntimeException(
+                        $titles[$key]
+                        . " içindeki başlık ve açıklamaları doldurunuz."
+                    );
                 }
             }
         }
-    }
 
-    if ($hata === "") {
+        foreach (["sehir", "sss", "davet"] as $key) {
+            if ($b[$key]["aktif"] && $b[$key]["baslik"] === "") {
+                throw new RuntimeException(
+                    $titles[$key] . " başlığını doldurunuz."
+                );
+            }
+        }
+
+        foreach ($b["sss"]["ogeler"] as $row) {
+            if (
+                ($row["baslik"] === "")
+                !== ($row["aciklama"] === "")
+            ) {
+                throw new RuntimeException(
+                    "SSS satırlarında soru ve cevabı birlikte "
+                    . "doldurunuz veya ikisini de boş bırakınız."
+                );
+            }
+        }
+
+        $dolu_sorular = array_filter(
+            $b["sss"]["ogeler"],
+            function ($row) {
+                return $row["baslik"] !== "";
+            }
+        );
+
+        if ($b["sss"]["aktif"] && !$dolu_sorular) {
+            throw new RuntimeException(
+                "SSS bölümü için en az bir soru ve cevap giriniz."
+            );
+        }
+
+        if (
+            $ayar["kategoriler_aktif"]
+            && $b["kategoriler"]["baslik"] === ""
+        ) {
+            throw new RuntimeException("Kategori başlığını doldurunuz.");
+        }
+
+        if ($ayar["vitrin_aktif"] && $b["vitrin"]["baslik"] === "") {
+            throw new RuntimeException("Vitrin başlığını doldurunuz.");
+        }
+
+        $cities = aa_cities($b["sehir"]["liste"]);
+
+        if (count($cities) > 24) {
+            throw new RuntimeException(
+                "Ana sayfada en fazla 24 şehir gösterilebilir."
+            );
+        }
+
+        foreach ($cities as $city) {
+            if (ay_len($city) > 100) {
+                throw new RuntimeException(
+                    "Şehir adları en fazla 100 karakter olabilir."
+                );
+            }
+        }
+
+        if ($b["sehir"]["aktif"] && !$cities) {
+            throw new RuntimeException(
+                "Şehir bölümü için en az bir şehir giriniz."
+            );
+        }
+
+        if (
+            $b["davet"]["aktif"]
+            && $b["davet"]["buton_yazisi"] === ""
+        ) {
+            throw new RuntimeException(
+                "Davet butonunun yazısını doldurunuz."
+            );
+        }
+
         $kapak = isset($_POST["kapak_kaldir"])
             ? null
             : $ayar["kapak"];
 
-        if ($yeni_dosya !== null) {
-            $kapak = $yeni_dosya;
+        $upload = ay_upload("kapak", "kapak", $created);
+
+        if ($upload !== null) {
+            $kapak = $upload;
         }
 
-        $vitrin_json = json_encode($secili);
+        $i = 0;
+
+        foreach (aa_categories() as $name => $file) {
+            if (isset($_POST["kat_sifirla_" . $i])) {
+                $b["kategoriler"]["ogeler"][$name]["gorsel"]
+                    = "images/" . $file;
+            }
+
+            $upload = ay_upload("kat_" . $i, "kategori", $created);
+
+            if ($upload !== null) {
+                $b["kategoriler"]["ogeler"][$name]["gorsel"]
+                    = "uploads/" . $upload;
+            }
+
+            $i++;
+        }
+
+        $json = json_encode(
+            $b,
+            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
+
+        $vitrin_json = json_encode(
+            $secili,
+            JSON_THROW_ON_ERROR
+        );
 
         mysqli_begin_transaction($baglanti);
+        $transaction = true;
 
-        try {
-            $stmt = mysqli_prepare(
-                $baglanti,
-                "UPDATE anasayfa_icerik
-                 SET baslik = ?, aciklama = ?, buton_yazisi = ?
-                 WHERE id = 1"
-            );
+        $query = mysqli_prepare(
+            $baglanti,
+            "UPDATE anasayfa_icerik
+             SET baslik = ?, aciklama = ?, buton_yazisi = ?
+             WHERE id = 1"
+        );
 
-            mysqli_stmt_bind_param(
-                $stmt,
-                "sss",
-                $icerik["baslik"],
-                $icerik["aciklama"],
-                $icerik["buton_yazisi"]
-            );
+        mysqli_stmt_bind_param(
+            $query,
+            "sss",
+            $icerik["baslik"],
+            $icerik["aciklama"],
+            $icerik["buton_yazisi"]
+        );
 
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new RuntimeException("Kayıt başarısız.");
-            }
+        mysqli_stmt_execute($query);
+        mysqli_stmt_close($query);
 
-            mysqli_stmt_close($stmt);
+        $query = mysqli_prepare(
+            $baglanti,
+            "UPDATE anasayfa_ayarlar
+             SET buton_linki = ?,
+                 kapak = ?,
+                 duyuru = ?,
+                 duyuru_aktif = ?,
+                 tanitim_aktif = ?,
+                 kategoriler_aktif = ?,
+                 vitrin_aktif = ?,
+                 vitrin_idler = ?
+             WHERE id = 1"
+        );
 
-            $stmt = mysqli_prepare(
-                $baglanti,
-                "UPDATE anasayfa_ayarlar
-                 SET buton_linki = ?, kapak = ?, duyuru = ?,
-                     duyuru_aktif = ?, tanitim_aktif = ?,
-                     kategoriler_aktif = ?, vitrin_aktif = ?,
-                     vitrin_idler = ?
-                 WHERE id = 1"
-            );
+        mysqli_stmt_bind_param(
+            $query,
+            "sssiiiis",
+            $ayar["buton_linki"],
+            $kapak,
+            $ayar["duyuru"],
+            $ayar["duyuru_aktif"],
+            $ayar["tanitim_aktif"],
+            $ayar["kategoriler_aktif"],
+            $ayar["vitrin_aktif"],
+            $vitrin_json
+        );
 
-            mysqli_stmt_bind_param(
-                $stmt,
-                "sssiiiis",
-                $ayar["buton_linki"],
-                $kapak,
-                $ayar["duyuru"],
-                $ayar["duyuru_aktif"],
-                $ayar["tanitim_aktif"],
-                $ayar["kategoriler_aktif"],
-                $ayar["vitrin_aktif"],
-                $vitrin_json
-            );
+        mysqli_stmt_execute($query);
+        mysqli_stmt_close($query);
 
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new RuntimeException("Kayıt başarısız.");
-            }
+        $query = mysqli_prepare(
+            $baglanti,
+            "INSERT INTO anasayfa_bolumler (id, icerik_json)
+             VALUES (1, ?)
+             ON DUPLICATE KEY UPDATE
+             icerik_json = VALUES(icerik_json)"
+        );
 
-            mysqli_stmt_close($stmt);
-            mysqli_commit($baglanti);
+        mysqli_stmt_bind_param($query, "s", $json);
+        mysqli_stmt_execute($query);
+        mysqli_stmt_close($query);
 
-            $_SESSION["anasayfa_bildirim"] = "Ana sayfa ayarları kaydedildi.";
+        mysqli_commit($baglanti);
+        $transaction = false;
 
-            header("Location: admin-anasayfa.php", true, 303);
-            exit();
-        } catch (Throwable $e) {
+        $_SESSION["anasayfa_bildirim"]
+            = "Ana sayfa ayarları başarıyla güncellendi.";
+
+        header("Location: admin-anasayfa.php", true, 303);
+        exit();
+
+    } catch (Throwable $exception) {
+        if ($transaction) {
             mysqli_rollback($baglanti);
-
-            if ($yeni_dosya !== null) {
-                @unlink(__DIR__ . "/../uploads/" . $yeni_dosya);
-            }
-
-            $hata = "Değişiklikler kaydedilemedi. Lütfen tekrar deneyiniz.";
         }
+
+        foreach ($created as $path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        $hata = $exception instanceof mysqli_sql_exception
+            ? "Değişiklikler kaydedilemedi. Veritabanı bağlantısını kontrol ediniz."
+            : $exception->getMessage();
     }
 }
 
-$kapak_yolu = "";
-
-if (
-    !empty($ayar["kapak"])
-    && preg_match(
-        '/^kapak_[a-f0-9]{32}\.(jpg|png|webp)$/',
-        $ayar["kapak"]
-    )
-    && is_file(__DIR__ . "/../uploads/" . $ayar["kapak"])
-) {
-    $kapak_yolu = "../uploads/" . $ayar["kapak"];
-}
+$cover = aa_cover($ayar);
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Ana Sayfa Yönetimi | Aris Pati Yuvası</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=14">
-    <link rel="stylesheet" href="../css/anasayfa.css?v=2">
+    <link rel="stylesheet" href="admin-style.css?v=15">
 
     <style>
-        /* Admin ekranındaki kapak önizlemesi */
-
-        .ay-onizleme .ay-hero {
-            position: relative;
-            isolation: isolate;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 380px;
-            padding: 45px 24px;
-            overflow: hidden;
-            border: 0;
-            border-radius: 0;
-            background: #426b46;
-            text-align: center;
-        }
-
-        .ay-onizleme .ay-hero::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            background: rgba(22, 49, 30, 0.55);
-        }
-
-        .ay-onizleme .ay-hero.ay-gorselsiz::before {
-            background: transparent;
-        }
-
-        .ay-onizleme .ay-hero > div {
-            width: min(680px, 100%);
-        }
-
-        .ay-onizleme .ay-hero h2 {
-            margin: 0 0 18px;
-            color: #fffdf8;
-            font-size: 34px;
-            line-height: 1.25;
-        }
-
-        .ay-onizleme .ay-hero p {
-            margin: 0 0 24px;
-            color: #fffdf8;
-            font-size: 15px;
-            line-height: 1.8;
-        }
-
-        .ay-onizleme .ay-hero .ay-kapak {
-            position: absolute;
-            inset: 0;
-            z-index: -2;
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            object-fit: cover;
-        }
-
-        .ay-onizleme .ay-hero .ay-buton {
-            display: inline-block;
-            min-width: 220px;
-            max-width: 100%;
-            padding: 14px 24px;
-            border-radius: 8px;
-            background: #eee5d3;
+        .ay-panel {
+            min-width: 0;
             color: #284b32;
+        }
+
+        .ay-panel * {
+            box-sizing: border-box;
+        }
+
+        .ay-ust {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .ay-ust h2 {
+            margin: 0 0 8px;
+        }
+
+        .ay-ust p,
+        .ay-not {
+            color: #687361;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .ay-panel .ay-form {
+            display: block;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .ay-kart {
+            margin-bottom: 20px;
+            padding: 22px;
+            border: 1px solid #ded6c6;
+            border-radius: 13px;
+            background: #fffdf8;
+        }
+
+        .ay-kart h3 {
+            margin: 0 0 16px;
+            font-size: 19px;
+        }
+
+        .ay-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .ay-alan {
+            min-width: 0;
+        }
+
+        .ay-alan label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
             font-weight: bold;
         }
 
-        .ay-onizleme #on-link {
-            margin: 12px 0 0;
+        .ay-panel .ay-alan input,
+        .ay-panel .ay-alan textarea,
+        .ay-panel .ay-alan select {
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 11px;
+            border: 1px solid #ded6c6;
+            border-radius: 8px;
+            background: white;
+            color: #284b32;
+            font: normal 14px Arial, sans-serif;
+        }
+
+        .ay-alan textarea {
+            min-height: 95px;
+            resize: vertical;
+        }
+
+        .ay-secim {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 13px;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+
+        .ay-panel .ay-secim input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex-shrink: 0;
+            accent-color: #426b46;
+        }
+
+        .ay-toggle {
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #edf2e6;
+        }
+
+        .ay-alt-kart {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px solid #e2dfd2;
+            border-radius: 10px;
+            background: #f7f5ee;
+        }
+
+        .ay-alt-kart h4 {
+            margin: 0 0 13px;
+        }
+
+        .ay-kategoriler {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .ay-kategori {
+            min-width: 0;
+            padding: 15px;
+            border: 1px solid #e1dece;
+            border-radius: 10px;
+            background: #f7f5ee;
+        }
+
+        .ay-kategori img {
+            display: block;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 12px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .ay-kategori strong {
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .ay-panel input[type="file"] {
+            width: 100%;
+            margin-bottom: 10px;
             font-size: 12px;
         }
 
-        @media (max-width: 600px) {
-            .ay-onizleme .ay-hero {
-                min-height: 330px;
-                padding: 30px 18px;
+        .ay-kapak {
+            display: block;
+            width: min(440px, 100%);
+            max-height: 260px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: #e6eddf;
+            object-fit: contain;
+        }
+
+        .ay-vitrin {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            max-height: 330px;
+            overflow: auto;
+            padding: 4px;
+        }
+
+        .ay-vitrin label {
+            align-items: flex-start;
+            padding: 12px;
+            border: 1px solid #ded6c6;
+            border-radius: 8px;
+        }
+
+        .ay-vitrin small {
+            display: block;
+            color: #687361;
+        }
+
+        .ay-islemler {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .ay-panel .ay-buton {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            margin: 0;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 8px;
+            background: #426b46;
+            color: white;
+            font: normal 14px Arial, sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ay-panel .ay-buton.acik {
+            background: #eee5d3;
+            color: #284b32;
+        }
+
+        .ay-panel .ay-buton:hover {
+            background: #284b32;
+            color: white;
+        }
+
+        .ay-hata {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #deb4a9;
+            border-radius: 10px;
+            background: #f9e6e0;
+            color: #923e30;
+            line-height: 1.6;
+        }
+
+        .ay-basari {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            width: min(380px, calc(100% - 30px));
+            padding: 25px;
+            border: 1px solid #bdd1b2;
+            border-radius: 14px;
+            background: #fffdf8;
+            box-shadow: 0 12px 40px #284b3233;
+            text-align: center;
+            pointer-events: none;
+            animation: ay-kaybol 2s forwards;
+        }
+
+        .ay-basari b {
+            display: block;
+            margin-bottom: 10px;
+            color: #426b46;
+            font-size: 30px;
+        }
+
+        .ay-onizleme {
+            display: block;
+            width: 100%;
+            height: 650px;
+            border: 1px solid #ded6c6;
+            border-radius: 10px;
+            background: #f5f0e6;
+        }
+
+        .ay-panel :focus-visible {
+            outline: 2px solid #426b46;
+            outline-offset: 3px;
+        }
+
+        @keyframes ay-kaybol {
+            0%, 85% {
+                opacity: 1;
+                visibility: visible;
             }
 
-            .ay-onizleme .ay-hero h2 {
-                font-size: 27px;
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .ay-kategoriler,
+            .ay-vitrin {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            .ay-grid,
+            .ay-vitrin,
+            .ay-kategoriler {
+                grid-template-columns: 1fr;
             }
 
-            .ay-onizleme .ay-hero .ay-buton {
-                min-width: 0;
-                width: 100%;
+            .ay-kart {
+                padding: 17px;
+            }
+
+            .ay-onizleme {
+                height: 500px;
             }
         }
     </style>
 </head>
-
 <body>
 
 <?php require __DIR__ . "/admin-menu.php"; ?>
 
-<main class="icerik">
+<main class="icerik ay-panel">
 
-    <h2>Ana Sayfa Yönetimi</h2>
+    <div class="ay-ust">
+        <div>
+            <h2>Ana Sayfa Yönetimi</h2>
+            <p>Başlıkları, görselleri ve bölümleri bu ekrandan yönetin.</p>
+        </div>
+
+        <a
+            class="ay-buton acik"
+            href="../index.php"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            Ana Sayfayı Aç ↗
+        </a>
+    </div>
 
     <?php if ($basari !== ""): ?>
-        <div class="kayit-bildirimi" role="status">
-            <?php echo guvenli($basari); ?>
+        <div class="ay-basari" id="ay-basari" role="status">
+            <b aria-hidden="true">✓</b>
+            <?= aa_h($basari) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($hata !== ""): ?>
-        <div class="kayit-bildirimi hata" role="alert">
-            <?php echo guvenli($hata); ?>
+        <div class="ay-hata" role="alert">
+            <?= aa_h($hata) ?>
+            Dosya seçtiyseniz tekrar seçiniz.
         </div>
     <?php endif; ?>
 
     <form
-        id="ayar-form"
-        action="admin-anasayfa.php"
         method="POST"
+        action="admin-anasayfa.php"
         enctype="multipart/form-data"
-        class="ay-yonetim-form"
+        class="ay-form"
+        id="ayar-form"
     >
         <input
             type="hidden"
             name="token"
-            value="<?php echo guvenli($_SESSION["anasayfa_token"]); ?>"
+            value="<?= aa_h($_SESSION['anasayfa_token']) ?>"
         >
 
-        <section class="kart">
+        <section class="ay-kart">
             <h3>Karşılama Alanı</h3>
 
-            <div class="ay-alanlar">
+            <label class="ay-secim ay-toggle">
+                <input
+                    type="checkbox"
+                    name="tanitim_aktif"
+                    <?= $ayar["tanitim_aktif"] ? "checked" : "" ?>
+                >
+                Karşılama alanını göster
+            </label>
 
-                <div class="ay-alan ay-tam">
-                    <label for="baslik">Başlık</label>
-                    <input
-                        type="text"
-                        id="baslik"
-                        name="baslik"
-                        maxlength="150"
-                        value="<?php echo guvenli($icerik["baslik"]); ?>"
-                        required
-                    >
-                </div>
-
-                <div class="ay-alan ay-tam">
-                    <label for="aciklama">Açıklama</label>
-                    <textarea
-                        id="aciklama"
-                        name="aciklama"
-                        maxlength="3000"
-                        required
-                    ><?php echo guvenli($icerik["aciklama"]); ?></textarea>
-                </div>
+            <div class="ay-grid">
+                <?php
+                ay_field("baslik", "Başlık", $icerik["baslik"], false, 150);
+                ay_field(
+                    "buton_yazisi",
+                    "Buton yazısı",
+                    $icerik["buton_yazisi"],
+                    false,
+                    80
+                );
+                ay_field("aciklama", "Açıklama", $icerik["aciklama"], true);
+                ?>
 
                 <div class="ay-alan">
-                    <label for="buton_yazisi">Buton Yazısı</label>
-                    <input
-                        type="text"
-                        id="buton_yazisi"
-                        name="buton_yazisi"
-                        maxlength="80"
-                        value="<?php echo guvenli($icerik["buton_yazisi"]); ?>"
-                        required
-                    >
-                </div>
+                    <label for="buton-linki">Butonun açacağı sayfa</label>
 
-                <div class="ay-alan">
-                    <label for="buton_linki">Butonun Açacağı Sayfa</label>
-
-                    <select id="buton_linki" name="buton_linki">
-                        <?php foreach ($linkler as $adres => $etiket): ?>
+                    <select name="buton_linki" id="buton-linki">
+                        <?php foreach (aa_links() as $url => $name): ?>
                             <option
-                                value="<?php echo guvenli($adres); ?>"
-                                <?php echo $ayar["buton_linki"] === $adres ? "selected" : ""; ?>
+                                value="<?= aa_h($url) ?>"
+                                <?= $ayar["buton_linki"] === $url ? "selected" : "" ?>
                             >
-                                <?php echo guvenli($etiket); ?>
+                                <?= aa_h($name) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
             </div>
-        </section>
 
-        <section class="kart">
-            <h3>Kapak Görseli</h3>
+            <h4>Kapak Görseli</h4>
 
-            <label for="kapak">Görsel Seç</label>
+            <?php if ($cover !== ""): ?>
+                <img
+                    class="ay-kapak"
+                    src="../<?= aa_h($cover) ?>"
+                    alt="Mevcut kapak"
+                >
+            <?php endif; ?>
 
             <input
                 type="file"
-                id="kapak"
                 name="kapak"
                 accept="image/jpeg,image/png,image/webp"
             >
 
             <p class="ay-not">
-                Yatay bir görsel seçiniz. JPG, PNG veya WEBP;
-                en fazla 5 MB. Yazılar görselin ortasında gösterilir.
+                Görsel ana sayfada yazının sağında gösterilir.
+                Her görsel en fazla 5 MB olabilir.
+                Yeni görsel seçerseniz yüklediğiniz görsel kullanılır.
             </p>
 
             <label class="ay-secim">
-                <input
-                    type="checkbox"
-                    id="kapak_kaldir"
-                    name="kapak_kaldir"
-                >
-                Mevcut kapak görselini kaldır
+                <input type="checkbox" name="kapak_kaldir">
+                Yüklenen kapağı kaldır, images/anasayfa.png görseline dön
             </label>
         </section>
 
-        <section class="kart">
+        <section class="ay-kart">
             <h3>Duyuru Bandı</h3>
 
-            <label for="duyuru">Duyuru Metni</label>
+            <label class="ay-secim ay-toggle">
+                <input
+                    type="checkbox"
+                    name="duyuru_aktif"
+                    <?= $ayar["duyuru_aktif"] ? "checked" : "" ?>
+                >
+                Duyuru bandını göster
+            </label>
 
-            <textarea
-                id="duyuru"
-                name="duyuru"
-                maxlength="300"
-                placeholder="Örneğin: Satın alma, sahiplen!"
-            ><?php echo guvenli($ayar["duyuru"]); ?></textarea>
+            <?php
+            ay_field("duyuru", "Duyuru metni", $ayar["duyuru"], true, 300);
+            ?>
         </section>
 
-        <section class="kart">
-            <h3>Vitrin İlanları</h3>
+        <?php foreach ($titles as $key => $title): ?>
+            <?php $section = $b[$key]; ?>
 
-            <p class="ay-not">
-                En fazla 12 onaylı ilan seçiniz.
-                İlanlar en yeniden eskiye sıralanır.
-            </p>
+            <section class="ay-kart">
+                <h3><?= aa_h($title) ?></h3>
 
-            <?php if (!$onayli_ilanlar): ?>
-                <p>Henüz onaylanmış ilan bulunmuyor.</p>
-            <?php else: ?>
-
-                <div class="ay-vitrin-secimleri">
-                    <?php foreach ($onayli_ilanlar as $id => $ilan): ?>
-                        <label class="ay-secim">
-                            <input
-                                type="checkbox"
-                                name="vitrin[]"
-                                value="<?php echo $id; ?>"
-                                <?php echo in_array($id, $secili, true) ? "checked" : ""; ?>
-                            >
-
-                            <span>
-                                #<?php echo $id; ?>
-                                — <?php echo guvenli($ilan["hayvan_adi"]); ?>
-                                <br>
-                                <?php echo guvenli($ilan["tur"]); ?>
-                                · <?php echo guvenli($ilan["sehir"]); ?>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-
-            <?php endif; ?>
-        </section>
-
-        <section class="kart">
-            <h3>Bölümleri Göster / Gizle</h3>
-
-            <div class="ay-secimler">
-                <?php foreach ($bolumler as $alan => $etiket): ?>
-                    <label class="ay-secim">
+                <?php if (array_key_exists("aktif", $section)): ?>
+                    <label class="ay-secim ay-toggle">
                         <input
                             type="checkbox"
-                            id="<?php echo $alan; ?>"
-                            name="<?php echo $alan; ?>"
-                            <?php echo $ayar[$alan] ? "checked" : ""; ?>
+                            name="bolum[<?= aa_h($key) ?>][aktif]"
+                            <?= $section["aktif"] ? "checked" : "" ?>
                         >
-                        <?php echo guvenli($etiket); ?>
+                        Bu bölümü ana sayfada göster
                     </label>
-                <?php endforeach; ?>
-            </div>
-        </section>
+                <?php endif; ?>
 
-        <section class="kart">
-            <h3>Canlı Önizleme</h3>
+                <?php if ($key === "kategoriler" || $key === "vitrin"): ?>
+                    <?php
+                    $flag = $key === "kategoriler"
+                        ? "kategoriler_aktif"
+                        : "vitrin_aktif";
+                    ?>
 
-            <p class="ay-not">
-                Değişiklikleri burada görebilirsiniz.
-                Ziyaretçiler kaydettiğiniz hâlini görür.
-            </p>
-
-            <div class="ay-onizleme ay-kapsam">
-
-                <div id="on-duyuru" class="ay-duyuru"></div>
-
-                <section id="on-tanitim" class="ay-bolum">
-                    <div id="on-hero" class="ay-hero">
-
-                        <div>
-                            <h2 id="on-baslik"></h2>
-                            <p id="on-aciklama"></p>
-
-                            <span id="on-buton" class="ay-buton"></span>
-
-                            <p id="on-link"></p>
-                        </div>
-
-                        <img
-                            id="on-kapak"
-                            class="ay-kapak"
-                            alt="Kapak önizlemesi"
-                            <?php if ($kapak_yolu !== ""): ?>
-                                src="<?php echo guvenli($kapak_yolu); ?>"
-                            <?php else: ?>
-                                hidden
-                            <?php endif; ?>
+                    <label class="ay-secim ay-toggle">
+                        <input
+                            type="checkbox"
+                            name="<?= aa_h($flag) ?>"
+                            <?= $ayar[$flag] ? "checked" : "" ?>
                         >
+                        Bu bölümü ana sayfada göster
+                    </label>
+                <?php endif; ?>
 
-                    </div>
-                </section>
+                <div class="ay-grid">
+                    <?php
+                    foreach ($section as $field => $value) {
+                        if (
+                            is_array($value)
+                            || is_int($value)
+                            || $field === "buton_linki"
+                        ) {
+                            continue;
+                        }
 
-                <section id="on-kategoriler" class="ay-bolum">
-                    <h2>Hayvan Kategorileri</h2>
+                        $multi = in_array(
+                            $field,
+                            ["aciklama", "liste"],
+                            true
+                        ) || ($key === "davet" && $field === "baslik");
+
+                        $max = in_array(
+                            $field,
+                            ["aciklama", "liste"],
+                            true
+                        ) ? 3000 : 150;
+
+                        ay_field(
+                            "bolum[" . $key . "][" . $field . "]",
+                            $labels[$field] ?? $field,
+                            $value,
+                            $multi,
+                            $max
+                        );
+                    }
+                    ?>
+
+                    <?php if ($key === "davet"): ?>
+                        <div class="ay-alan">
+                            <label for="davet-link">
+                                Butonun açacağı sayfa
+                            </label>
+
+                            <select
+                                name="bolum[davet][buton_linki]"
+                                id="davet-link"
+                            >
+                                <?php foreach (aa_links() as $url => $name): ?>
+                                    <option
+                                        value="<?= aa_h($url) ?>"
+                                        <?= $section["buton_linki"] === $url ? "selected" : "" ?>
+                                    >
+                                        <?= aa_h($name) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($key === "sehir"): ?>
+                    <p class="ay-not">
+                        Her satıra bir şehir yazınız. En fazla 24 şehir
+                        ekleyebilirsiniz. Şehir düğmeleri ilgili şehrin
+                        ilanlarını açar.
+                    </p>
+                <?php endif; ?>
+
+                <?php if ($key === "kategoriler"): ?>
+                    <p class="ay-not">
+                        Yeni görsel seçmezseniz mevcut görsel korunur.
+                        Varsayılan görseller images klasöründeki
+                        hayvan resimleridir.
+                    </p>
 
                     <div class="ay-kategoriler">
-                        <?php foreach ($kategoriler as $kategori): ?>
-                            <div class="ay-kategori">
-                                <?php echo guvenli($kategori); ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
+                        <?php $i = 0; ?>
 
-                <section id="on-vitrin" class="ay-bolum">
-                    <h2>Yuva Arayan Dostlarımız</h2>
-
-                    <div class="ay-vitrin">
-                        <?php foreach ($onayli_ilanlar as $id => $ilan): ?>
-
+                        <?php foreach (aa_categories() as $name => $file): ?>
                             <?php
-                            $foto = basename((string)($ilan["fotograf"] ?? ""));
-
-                            $foto_var = preg_match(
-                                '/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i',
-                                $foto
-                            ) === 1
-                                && is_file(__DIR__ . "/../uploads/" . $foto);
+                            $img = aa_image(
+                                $section["ogeler"][$name]["gorsel"]
+                            ) ?: aa_image("images/" . $file);
                             ?>
 
-                            <article
-                                class="ay-ilan"
-                                data-on-ilan="<?php echo $id; ?>"
-                                hidden
-                            >
-                                <?php if ($foto_var): ?>
-                                    <img
-                                        src="../uploads/<?php echo guvenli($foto); ?>"
-                                        alt="<?php echo guvenli($ilan["hayvan_adi"]); ?>"
-                                        loading="lazy"
+                            <div class="ay-kategori">
+                                <img
+                                    src="../<?= aa_h($img ?: 'images/aris-logoo.png') ?>"
+                                    alt="<?= aa_h($name) ?>"
+                                >
+
+                                <strong><?= aa_h($name) ?></strong>
+
+                                <label for="kat-<?= $i ?>" class="ay-not">
+                                    Yeni görsel
+                                </label>
+
+                                <input
+                                    id="kat-<?= $i ?>"
+                                    type="file"
+                                    name="kat_<?= $i ?>"
+                                    accept="image/jpeg,image/png,image/webp"
+                                >
+
+                                <label class="ay-secim">
+                                    <input
+                                        type="checkbox"
+                                        name="kat_sifirla_<?= $i ?>"
                                     >
-                                <?php else: ?>
-                                    <div class="ay-foto-yok">🐾</div>
-                                <?php endif; ?>
+                                    Varsayılan görsele dön
+                                </label>
+                            </div>
 
-                                <div class="ay-ilan-bilgi">
-                                    <h3>
-                                        <?php echo guvenli($ilan["hayvan_adi"]); ?>
-                                    </h3>
-
-                                    <p>
-                                        <?php echo guvenli($ilan["tur"]); ?>
-                                        · <?php echo guvenli($ilan["sehir"]); ?>
-                                    </p>
-                                </div>
-                            </article>
-
+                            <?php $i++; ?>
                         <?php endforeach; ?>
                     </div>
 
-                    <p id="on-vitrin-bos" class="ay-not">
-                        Vitrin ilanı seçilmedi.
+                <?php elseif (isset($section["ogeler"])): ?>
+
+                    <?php if ($key === "sss"): ?>
+                        <p class="ay-not">
+                            Bir soruyu gizlemek için soru ve cevap
+                            alanlarını birlikte boş bırakınız.
+                        </p>
+                    <?php endif; ?>
+
+                    <?php foreach ($section["ogeler"] as $i => $row): ?>
+                        <div class="ay-alt-kart">
+                            <h4>
+                                <?php
+                                echo ($key === "sss"
+                                    ? "Soru "
+                                    : ($key === "surec" ? "Adım " : "Tanıtım "))
+                                    . ($i + 1);
+                                ?>
+                            </h4>
+
+                            <div class="ay-grid">
+                                <?php
+                                ay_field(
+                                    "bolum[" . $key . "][ogeler][" . $i . "][baslik]",
+                                    $key === "sss" ? "Soru" : "Başlık",
+                                    $row["baslik"],
+                                    false,
+                                    150
+                                );
+
+                                ay_field(
+                                    "bolum[" . $key . "][ogeler][" . $i . "][aciklama]",
+                                    $key === "sss" ? "Cevap" : "Açıklama",
+                                    $row["aciklama"],
+                                    true
+                                );
+                                ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+
+                <?php endif; ?>
+
+                <?php if ($key === "vitrin"): ?>
+                    <p class="ay-not">
+                        En fazla 12 onaylı ilan seçebilirsiniz.
+                        İlanlar en yeniden eskiye sıralanır.
+                        Onaydan kaldırılan ilan ana sayfada gösterilmez.
                     </p>
-                </section>
 
-            </div>
-        </section>
+                    <p id="vitrin-sayac" class="ay-not"></p>
 
-        <div class="ay-kaydet">
-            <button type="submit">Tüm Değişiklikleri Kaydet</button>
+                    <div class="ay-vitrin">
+                        <?php foreach ($onayli as $id => $ilan): ?>
+                            <label class="ay-secim">
+                                <input
+                                    type="checkbox"
+                                    name="vitrin[]"
+                                    value="<?= $id ?>"
+                                    <?= in_array($id, $secili, true) ? "checked" : "" ?>
+                                >
+
+                                <span>
+                                    #<?= $id ?> —
+                                    <?= aa_h($ilan["hayvan_adi"]) ?>
+
+                                    <small>
+                                        <?= aa_h($ilan["tur"]) ?>
+                                        ·
+                                        <?= aa_h($ilan["sehir"]) ?>
+                                    </small>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if (!$onayli): ?>
+                        <p>Henüz onaylanmış ilan yok.</p>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+            </section>
+        <?php endforeach; ?>
+
+        <div class="ay-kart ay-islemler">
+            <button type="submit" class="ay-buton">
+                Tüm Değişiklikleri Kaydet
+            </button>
 
             <a
                 href="../index.php"
-                class="filtre-temizle"
                 target="_blank"
                 rel="noopener noreferrer"
+                class="ay-buton acik"
             >
-                Kaydedilmiş Ana Sayfayı Aç
+                Ana Sayfayı Aç ↗
             </a>
-        </div>
 
+            <span class="ay-not">
+                Değişiklikler kaydedildikten sonra ziyaretçilere yansır.
+            </span>
+        </div>
     </form>
+
+    <section class="ay-kart">
+        <h3>Kaydedilmiş Ana Sayfa Önizlemesi</h3>
+
+        <p class="ay-not">
+            Bu alan gerçek ana sayfayı gösterir.
+            Değişiklikleri kaydedince önizleme yenilenir.
+        </p>
+
+        <iframe
+            class="ay-onizleme"
+            src="../index.php?onizleme=<?= time() ?>"
+            title="Kaydedilmiş ana sayfa önizlemesi"
+            loading="lazy"
+        ></iframe>
+    </section>
+
 </main>
 
 <script>
-const form = document.getElementById("ayar-form");
-const kapakInput = document.getElementById("kapak");
-const kapakResim = document.getElementById("on-kapak");
-const eskiKapak = kapakResim.getAttribute("src") || "";
+    const form = document.getElementById("ayar-form");
+    const count = document.getElementById("vitrin-sayac");
 
-let geciciKapak = "";
+    function secilenleriSay() {
+        const adet = form.querySelectorAll(
+            'input[name="vitrin[]"]:checked'
+        ).length;
 
-function onizle() {
-    document.getElementById("on-baslik").textContent =
-        document.getElementById("baslik").value;
+        count.textContent = adet + " / 12 ilan seçildi";
 
-    document.getElementById("on-aciklama").textContent =
-        document.getElementById("aciklama").value;
+        return adet;
+    }
 
-    document.getElementById("on-buton").textContent =
-        document.getElementById("buton_yazisi").value;
+    form.addEventListener("change", secilenleriSay);
 
-    const link = document.getElementById("buton_linki");
-
-    document.getElementById("on-link").textContent =
-        "Butonun açacağı sayfa: "
-        + link.options[link.selectedIndex].text;
-
-    const duyuru = document.getElementById("duyuru").value;
-
-    document.getElementById("on-duyuru").textContent = duyuru;
-
-    document.getElementById("on-duyuru").hidden =
-        !document.getElementById("duyuru_aktif").checked
-        || !duyuru.trim();
-
-    document.getElementById("on-tanitim").hidden =
-        !document.getElementById("tanitim_aktif").checked;
-
-    document.getElementById("on-kategoriler").hidden =
-        !document.getElementById("kategoriler_aktif").checked;
-
-    document.getElementById("on-vitrin").hidden =
-        !document.getElementById("vitrin_aktif").checked;
-
-    const secilenler = new Set(
-        Array.from(
-            form.querySelectorAll('input[name="vitrin[]"]:checked')
-        ).map(input => input.value)
-    );
-
-    document.querySelectorAll("[data-on-ilan]").forEach(kart => {
-        kart.hidden = !secilenler.has(kart.dataset.onIlan);
+    form.addEventListener("submit", function (event) {
+        if (secilenleriSay() > 12) {
+            event.preventDefault();
+            alert("En fazla 12 vitrin ilanı seçebilirsiniz.");
+        }
     });
 
-    document.getElementById("on-vitrin-bos").hidden =
-        secilenler.size > 0;
+    secilenleriSay();
 
-    const kaldir = document.getElementById("kapak_kaldir").checked;
-    const kaynak = geciciKapak || (kaldir ? "" : eskiKapak);
+    const bildirim = document.getElementById("ay-basari");
 
-    kapakResim.hidden = !kaynak;
-
-    if (kaynak) {
-        kapakResim.src = kaynak;
-    } else {
-        kapakResim.removeAttribute("src");
+    if (bildirim) {
+        setTimeout(function () {
+            bildirim.remove();
+        }, 2000);
     }
-
-    document.getElementById("on-hero")
-        .classList.toggle("ay-gorselsiz", !kaynak);
-}
-
-kapakInput.addEventListener("change", () => {
-    if (geciciKapak) {
-        URL.revokeObjectURL(geciciKapak);
-        geciciKapak = "";
-    }
-
-    kapakInput.setCustomValidity("");
-
-    const dosya = kapakInput.files[0];
-
-    if (dosya) {
-        const turler = ["image/jpeg", "image/png", "image/webp"];
-
-        if (
-            !turler.includes(dosya.type)
-            || dosya.size > 5 * 1024 * 1024
-        ) {
-            kapakInput.setCustomValidity(
-                "En fazla 5 MB JPG, PNG veya WEBP seçiniz."
-            );
-
-            kapakInput.reportValidity();
-        } else {
-            geciciKapak = URL.createObjectURL(dosya);
-        }
-    }
-
-    onizle();
-});
-
-form.addEventListener("input", onizle);
-form.addEventListener("change", onizle);
-
-form.addEventListener("submit", event => {
-    const sayi = form.querySelectorAll(
-        'input[name="vitrin[]"]:checked'
-    ).length;
-
-    if (sayi > 12) {
-        event.preventDefault();
-        alert("En fazla 12 vitrin ilanı seçebilirsiniz.");
-        return;
-    }
-
-    if (!confirm(
-        "Ana sayfa değişikliklerini kaydetmek istediğinize emin misiniz?"
-    )) {
-        event.preventDefault();
-    }
-});
-
-onizle();
 </script>
 
 </body>

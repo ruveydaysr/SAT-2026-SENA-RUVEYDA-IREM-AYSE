@@ -8,11 +8,16 @@ if (!isset($_SESSION["uye_id"])) {
 
 require_once __DIR__ . "/baglanti.php";
 
-$uye_id = (int)$_SESSION["uye_id"];
+$uye_id = (int) $_SESSION["uye_id"];
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
+}
+
+function post_degeri($alan)
+{
+    return is_string($_POST[$alan] ?? null) ? $_POST[$alan] : "";
 }
 
 function filtre_degeri($alan)
@@ -32,6 +37,7 @@ function veri_getir($baglanti, $sql, $tipler, ...$degerler)
     $veriler = mysqli_fetch_all($sonuc, MYSQLI_ASSOC);
 
     mysqli_stmt_close($sorgu);
+
     return $veriler;
 }
 
@@ -48,7 +54,7 @@ function durum_sinifi($durum)
 
 function profil_fotografi($fotograf)
 {
-    $fotograf = (string)$fotograf;
+    $fotograf = (string) $fotograf;
     $dosya = basename($fotograf);
 
     if (
@@ -70,6 +76,216 @@ function profil_fotografi($fotograf)
 
     return "";
 }
+
+function sayfa_linki($sayfa, $arama, $durum, $siralama)
+{
+    return "profil.php?" . http_build_query([
+        "arama" => $arama,
+        "durum" => $durum,
+        "siralama" => $siralama,
+        "sayfa" => $sayfa
+    ]);
+}
+
+/* Kullanıcı bilgileri */
+
+$uyeler = veri_getir(
+    $baglanti,
+    "SELECT id, ad_soyad, email, telefon, sifre
+     FROM uyeler WHERE id = ? LIMIT 1",
+    "i",
+    $uye_id
+);
+
+if (!$uyeler) {
+    unset(
+        $_SESSION["uye_id"],
+        $_SESSION["uye_adsoyad"],
+        $_SESSION["uye_email"]
+    );
+
+    header("Location: giris.php");
+    exit;
+}
+
+$uye = $uyeler[0];
+
+if (
+    !isset($_SESSION["profil_csrf"])
+    || !is_string($_SESSION["profil_csrf"])
+) {
+    $_SESSION["profil_csrf"] = bin2hex(random_bytes(32));
+}
+
+$bilgi_hata = "";
+$sifre_hata = "";
+
+$basari = is_string($_SESSION["profil_basari"] ?? null)
+    ? $_SESSION["profil_basari"]
+    : "";
+
+unset($_SESSION["profil_basari"]);
+
+$form_ad = $uye["ad_soyad"];
+$form_email = $uye["email"];
+$form_telefon = $uye["telefon"];
+
+/* Bilgi ve şifre güncelleme */
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $islem = post_degeri("islem");
+    $token = post_degeri("csrf_token");
+
+    if ($islem === "bilgi_guncelle") {
+        $form_ad = trim(post_degeri("ad_soyad"));
+        $form_email = trim(post_degeri("email"));
+        $form_telefon = trim(post_degeri("telefon"));
+    }
+
+    if (!hash_equals($_SESSION["profil_csrf"], $token)) {
+        $mesaj = "İşlem doğrulanamadı. Sayfayı yenileyip tekrar deneyiniz.";
+
+        if ($islem === "sifre_degistir") {
+            $sifre_hata = $mesaj;
+        } else {
+            $bilgi_hata = $mesaj;
+        }
+    } elseif ($islem === "bilgi_guncelle") {
+        $mevcut_sifre = post_degeri("bilgi_sifre");
+
+        if (
+            $form_ad === ""
+            || $form_email === ""
+            || $form_telefon === ""
+            || $mevcut_sifre === ""
+        ) {
+            $bilgi_hata = "Lütfen tüm alanları doldurunuz.";
+        } elseif (!filter_var($form_email, FILTER_VALIDATE_EMAIL)) {
+            $bilgi_hata = "Geçerli bir e-posta adresi giriniz.";
+        } elseif (!preg_match('/^05[0-9]{9}$/', $form_telefon)) {
+            $bilgi_hata = "Telefon numarası 05 ile başlamalı ve 11 haneli olmalıdır.";
+        } elseif (!password_verify($mevcut_sifre, $uye["sifre"])) {
+            $bilgi_hata = "Mevcut şifreniz yanlış.";
+        } else {
+            $ayni_email = veri_getir(
+                $baglanti,
+                "SELECT id FROM uyeler
+                 WHERE email = ? AND id <> ? LIMIT 1",
+                "si",
+                $form_email,
+                $uye_id
+            );
+
+            if ($ayni_email) {
+                $bilgi_hata = "Bu e-posta adresi başka bir hesap tarafından kullanılıyor.";
+            } else {
+                try {
+                    $sorgu = mysqli_prepare(
+                        $baglanti,
+                        "UPDATE uyeler
+                         SET ad_soyad = ?, email = ?, telefon = ?
+                         WHERE id = ?"
+                    );
+
+                    mysqli_stmt_bind_param(
+                        $sorgu,
+                        "sssi",
+                        $form_ad,
+                        $form_email,
+                        $form_telefon,
+                        $uye_id
+                    );
+
+                    $kaydedildi = mysqli_stmt_execute($sorgu);
+                    mysqli_stmt_close($sorgu);
+
+                    if ($kaydedildi) {
+                        $_SESSION["uye_adsoyad"] = $form_ad;
+                        $_SESSION["uye_email"] = $form_email;
+
+                        $_SESSION["profil_basari"] =
+                            "Bilgileriniz başarıyla güncellendi.";
+
+                        header("Location: profil.php#bilgilerim");
+                        exit;
+                    }
+
+                    $bilgi_hata = "Bilgiler kaydedilemedi. Tekrar deneyiniz.";
+                } catch (mysqli_sql_exception $e) {
+                    $bilgi_hata = "Bilgiler kaydedilemedi. Girdiğiniz bilgileri kontrol ediniz.";
+                }
+            }
+        }
+    } elseif ($islem === "sifre_degistir") {
+        $mevcut_sifre = post_degeri("mevcut_sifre");
+        $yeni_sifre = post_degeri("yeni_sifre");
+        $sifre_tekrar = post_degeri("sifre_tekrar");
+
+        if (
+            $mevcut_sifre === ""
+            || $yeni_sifre === ""
+            || $sifre_tekrar === ""
+        ) {
+            $sifre_hata = "Lütfen tüm şifre alanlarını doldurunuz.";
+        } elseif (!password_verify($mevcut_sifre, $uye["sifre"])) {
+            $sifre_hata = "Mevcut şifreniz yanlış.";
+        } elseif (strlen($yeni_sifre) < 8) {
+            $sifre_hata = "Yeni şifreniz en az 8 karakter olmalıdır.";
+        } elseif (strlen($yeni_sifre) > 72) {
+            $sifre_hata = "Yeni şifreniz çok uzun. Daha kısa bir şifre giriniz.";
+        } elseif ($yeni_sifre !== $sifre_tekrar) {
+            $sifre_hata = "Yeni şifreler birbiriyle eşleşmiyor.";
+        } elseif (password_verify($yeni_sifre, $uye["sifre"])) {
+            $sifre_hata = "Yeni şifreniz mevcut şifrenizden farklı olmalıdır.";
+        } else {
+            $yeni_hash = password_hash($yeni_sifre, PASSWORD_DEFAULT);
+
+            try {
+                $sorgu = mysqli_prepare(
+                    $baglanti,
+                    "UPDATE uyeler
+                     SET sifre = ?
+                     WHERE id = ? AND sifre = ?"
+                );
+
+                mysqli_stmt_bind_param(
+                    $sorgu,
+                    "sis",
+                    $yeni_hash,
+                    $uye_id,
+                    $uye["sifre"]
+                );
+
+                $kaydedildi = mysqli_stmt_execute($sorgu);
+                $degisen = mysqli_stmt_affected_rows($sorgu);
+
+                mysqli_stmt_close($sorgu);
+
+                if ($kaydedildi && $degisen === 1) {
+                    session_regenerate_id(true);
+
+                    $_SESSION["profil_csrf"] = bin2hex(random_bytes(32));
+                    $_SESSION["profil_basari"] =
+                        "Şifreniz başarıyla değiştirildi.";
+
+                    header("Location: profil.php#sifre");
+                    exit;
+                }
+
+                $sifre_hata = "Şifre değiştirilemedi. Sayfayı yenileyip tekrar deneyiniz.";
+            } catch (mysqli_sql_exception $e) {
+                $sifre_hata = "Şifre değiştirilemedi. Tekrar deneyiniz.";
+            }
+        }
+    } else {
+        $bilgi_hata = "Geçersiz işlem.";
+    }
+}
+
+$_SESSION["uye_adsoyad"] = $uye["ad_soyad"];
+$_SESSION["uye_email"] = $uye["email"];
+
+/* İlanlar ve sayfalama */
 
 $arama = filtre_degeri("arama");
 $siralama = filtre_degeri("siralama");
@@ -93,7 +309,6 @@ $where = "uye_id = ?
           AND (hayvan_adi LIKE ? OR ilan_basligi LIKE ?)";
 
 $arama_kelimesi = "%" . $arama . "%";
-
 $parametreler = [$uye_id, $arama_kelimesi, $arama_kelimesi];
 $tipler = "iss";
 
@@ -110,8 +325,8 @@ $sayim = veri_getir(
     ...$parametreler
 );
 
-$toplam_ilan = (int)$sayim[0]["toplam"];
-$toplam_sayfa = max(1, (int)ceil($toplam_ilan / $limit));
+$toplam_ilan = (int) $sayim[0]["toplam"];
+$toplam_sayfa = max(1, (int) ceil($toplam_ilan / $limit));
 $sayfa = min($sayfa, $toplam_sayfa);
 $baslangic = ($sayfa - 1) * $limit;
 
@@ -152,17 +367,17 @@ $favoriler = veri_getir(
     $uye_id
 );
 
-function sayfa_linki($sayfa, $arama, $durum, $siralama)
-{
-    return "profil.php?" . http_build_query([
-        "arama" => $arama,
-        "durum" => $durum,
-        "siralama" => $siralama,
-        "sayfa" => $sayfa
-    ]);
-}
+$menu_kategorileri = [
+    "Kedi" => "🐱",
+    "Köpek" => "🐶",
+    "Kuş" => "🐦",
+    "Balık" => "🐠",
+    "Tavşan" => "🐰",
+    "Kemirgen" => "🐹",
+    "Sürüngen" => "🦎",
+    "Diğer" => "🐾"
+];
 ?>
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -188,7 +403,9 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
 
         /* Üst menü */
 
-        .ilan-ust {
+        #aris-ortak-ust {
+            position: relative;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -196,14 +413,14 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             gap: 24px;
             min-height: 88px;
             padding: 16px 24px;
-            background: #426b46;
             border-bottom: 1px solid #35583b;
+            background: #426b46;
         }
 
         .ilan-logo {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex-shrink: 0;
             color: white;
             text-decoration: none;
@@ -211,6 +428,7 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
 
         .ilan-logo img {
             display: block;
+            flex-shrink: 0;
             width: 54px;
             height: 54px;
             padding: 5px;
@@ -242,66 +460,135 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             margin-left: auto;
         }
 
-        .ilan-menu a {
+        .ilan-menu > a,
+        .kategori-baslik {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             min-height: 40px;
             padding: 10px;
+            border: 0;
             border-radius: 8px;
+            background: transparent;
             color: white;
-            font-size: 14px;
-            line-height: 20px;
+            font: normal 14px/20px Arial, sans-serif;
             text-decoration: none;
             white-space: nowrap;
+            cursor: pointer;
         }
 
-        .ilan-menu a:hover,
-        .ilan-menu a:focus-visible {
+        .ilan-menu > a:hover,
+        .ilan-menu > a:focus-visible,
+        .kategori-menu:hover .kategori-baslik,
+        .kategori-menu:focus-within .kategori-baslik {
             background: #284b32;
         }
 
-        .ilan-menu a[aria-current="page"] {
+        .ilan-menu > a[aria-current="page"] {
             background: #eee5d3;
             color: #284b32;
             font-weight: bold;
         }
 
-        /* Profil bölümleri */
+        .kategori-menu {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .kategori-acilir {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 200;
+            display: none;
+            width: 205px;
+            max-width: calc(100vw - 36px);
+            padding: 8px;
+            border: 1px solid #ded6c6;
+            border-radius: 12px;
+            background: #fffdf8;
+            box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
+        }
+
+        .kategori-menu:hover .kategori-acilir,
+        .kategori-menu:focus-within .kategori-acilir {
+            display: block;
+        }
+
+        .kategori-acilir a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 40px;
+            padding: 10px 12px;
+            border-radius: 7px;
+            color: #284b32;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .kategori-acilir a:hover,
+        .kategori-acilir a:focus-visible {
+            background: #426b46;
+            color: white;
+        }
+
+        /* Sayfa düzeni */
 
         main {
-            width: min(1000px, 92%);
-            margin: 30px auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+            gap: 18px;
+            width: min(1100px, 94%);
+            margin: 24px auto;
+        }
+
+        main > .profil-bolum {
+            grid-column: 1 / -1;
+            min-width: 0;
+        }
+
+        main > #bilgilerim {
+            grid-column: 1;
+        }
+
+        main > #sifre {
+            grid-column: 2;
         }
 
         .profil-bolum {
-            margin-bottom: 24px;
-            padding: 26px;
+            padding: 20px;
             border: 1px solid #ded6c6;
-            border-radius: 14px;
+            border-radius: 12px;
             background: #fffdf8;
+            scroll-margin-top: 20px;
         }
 
         .profil-bolum h1,
         .profil-bolum h2 {
-            margin: 0 0 20px;
-            font-size: 23px;
+            margin: 0 0 14px;
+            font-size: 20px;
         }
 
         .profil-bolum > p {
+            margin: 0 0 16px;
             color: #687361;
-            line-height: 1.7;
+            font-size: 13px;
+            line-height: 1.5;
             overflow-wrap: anywhere;
         }
 
         .profil-bilgileri {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
         }
 
         .profil-bilgileri p {
             margin: 0;
+            font-size: 14px;
             line-height: 1.7;
             overflow-wrap: anywhere;
         }
@@ -319,7 +606,7 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .bolum-baslik h2 {
@@ -331,33 +618,118 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             font-size: 13px;
         }
 
-        /* Filtreler */
+        /* Formlar */
+
+        .hesap-form {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .form-grup label,
+        .filtre-grup label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .form-grup input,
+        .filtre-grup input,
+        .filtre-grup select {
+            width: 100%;
+            min-height: 39px;
+            padding: 9px 11px;
+            border: 1px solid #ded6c6;
+            border-radius: 8px;
+            background: white;
+            color: #284b32;
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .alan-notu {
+            display: block;
+            margin-top: 5px;
+            color: #687361;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .form-islemler {
+            margin-top: 2px;
+        }
+
+        .bildirim.hata {
+            margin-bottom: 16px;
+            padding: 12px 15px;
+            border: 1px solid #e1b4ad;
+            border-radius: 9px;
+            background: #f8e1dd;
+            color: #9b3b33;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        /* Ortada görünen başarı kutusu */
+
+        .basari-kutusu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            width: min(380px, calc(100% - 40px));
+            padding: 25px;
+            border: 1px solid #b7d2ad;
+            border-radius: 14px;
+            background: #fffdf8;
+            color: #284b32;
+            box-shadow: 0 12px 45px rgba(0, 0, 0, .22);
+            text-align: center;
+            pointer-events: none;
+            animation: basari-kaybol 2s forwards;
+        }
+
+        .basari-isaret {
+            display: block;
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            background: #e0edda;
+            color: #426b46;
+            font-size: 28px;
+            font-weight: bold;
+            line-height: 44px;
+        }
+
+        .basari-kutusu p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        @keyframes basari-kaybol {
+            0%, 85% {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* İlan filtreleri */
 
         .profil-filtre {
             display: grid;
             grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
             gap: 12px;
             margin-bottom: 22px;
-        }
-
-        .filtre-grup label {
-            display: block;
-            margin-bottom: 7px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .filtre-grup input,
-        .filtre-grup select {
-            width: 100%;
-            height: 42px;
-            padding: 10px;
-            border: 1px solid #ded6c6;
-            border-radius: 8px;
-            background: white;
-            color: #284b32;
-            font: inherit;
-            font-size: 14px;
         }
 
         .filtre-islemler {
@@ -371,7 +743,7 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
 
         .profil-kart {
             margin-bottom: 16px;
-            padding: 20px;
+            padding: 16px;
             border: 1px solid #ded6c6;
             border-radius: 12px;
             background: #f7f5ee;
@@ -419,8 +791,8 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 8px;
+            margin-top: 14px;
         }
 
         .kart-islemler form {
@@ -431,8 +803,8 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 39px;
-            padding: 10px 17px;
+            min-height: 36px;
+            padding: 9px 13px;
             border: 0;
             border-radius: 8px;
             background: #426b46;
@@ -516,9 +888,9 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
         }
 
         .profil-sayfalama a[aria-current="page"] {
+            border-color: #426b46;
             background: #426b46;
             color: white;
-            border-color: #426b46;
         }
 
         footer {
@@ -536,7 +908,8 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             outline-offset: 3px;
         }
 
-        .ilan-menu a:focus-visible {
+        .ilan-menu > a:focus-visible,
+        .kategori-baslik:focus-visible {
             outline-color: #eee5d3;
         }
 
@@ -546,26 +919,41 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             }
         }
 
-        @media (max-width: 700px) {
-            .ilan-menu a {
-                padding: 8px;
-                font-size: 13px;
+        @media (max-width: 760px) {
+            main {
+                grid-template-columns: 1fr;
+                gap: 14px;
             }
 
+            main > #bilgilerim,
+            main > #sifre {
+                grid-column: 1 / -1;
+            }
+
+            .profil-bilgileri,
             .profil-filtre {
                 grid-template-columns: 1fr;
+            }
+
+            .profil-bolum {
+                padding: 17px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            #aris-ortak-ust {
+                gap: 16px;
+                padding: 15px 18px;
+            }
+
+            .ilan-menu > a,
+            .kategori-baslik {
+                padding: 8px;
+                font-size: 13px;
             }
         }
 
         @media (max-width: 600px) {
-            .profil-bolum {
-                padding: 18px;
-            }
-
-            .profil-bilgileri {
-                grid-template-columns: 1fr;
-            }
-
             .kart-icerik {
                 flex-direction: column;
                 gap: 15px;
@@ -577,226 +965,16 @@ function sayfa_linki($sayfa, $arama, $durum, $siralama)
             }
         }
     </style>
-    <style>
-    html {
-        scrollbar-gutter: stable;
-    }
-
-    #aris-ortak-ust,
-    #aris-ortak-ust * {
-        box-sizing: border-box;
-    }
-
-    html body > header#aris-ortak-ust {
-        position: relative;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 24px;
-        width: 100%;
-        min-height: 88px;
-        margin: 0;
-        padding: 16px 24px;
-        border-bottom: 1px solid #35583b !important;
-        background: #426b46 !important;
-        text-align: left;
-        overflow: visible;
-    }
-
-    #aris-ortak-ust > a.ilan-logo {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
-        flex-shrink: 0;
-        width: auto;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        color: #fff !important;
-        text-decoration: none;
-    }
-
-    #aris-ortak-ust .ilan-logo img {
-        display: block;
-        flex-shrink: 0;
-        width: 54px;
-        height: 54px;
-        margin: 0;
-        padding: 5px;
-        border: 1px solid #eee5d3;
-        border-radius: 12px;
-        background: #fffdf8;
-        object-fit: contain;
-    }
-
-    #aris-ortak-ust .ilan-logo strong {
-        display: block;
-        margin: 0;
-        color: #fff !important;
-        font: bold 20px/1.3 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust .ilan-logo small {
-        display: block;
-        margin: 5px 0 0;
-        color: #fff !important;
-        font: normal 11px/1.4 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust > nav.ilan-menu {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 4px;
-        width: auto;
-        margin: 0 0 0 auto;
-        padding: 0;
-        background: transparent;
-    }
-
-    #aris-ortak-ust .ilan-menu > a,
-    #aris-ortak-ust .kategori-baslik {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        width: auto;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent !important;
-        color: #fff !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: center;
-        text-decoration: none;
-        white-space: nowrap;
-        cursor: pointer;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:hover,
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-menu:hover .kategori-baslik,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-baslik {
-        background: #284b32 !important;
-        color: #fff !important;
-    }
-
-    #aris-ortak-ust .ilan-menu > a[aria-current="page"],
-    #aris-ortak-ust .ilan-menu > a.menu-aktif {
-        background: #eee5d3 !important;
-        color: #284b32 !important;
-        font-weight: bold;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-baslik:focus-visible {
-        outline: 2px solid #eee5d3;
-        outline-offset: 3px;
-    }
-
-    #aris-ortak-ust .kategori-menu {
-        position: relative;
-        flex-shrink: 0;
-        margin: 0;
-        padding: 0;
-    }
-
-    #aris-ortak-ust .kategori-acilir {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        z-index: 200;
-        display: none;
-        width: 205px;
-        max-width: calc(100vw - 36px);
-        margin: 0;
-        padding: 8px;
-        border: 1px solid #ded6c6;
-        border-radius: 12px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
-    }
-
-    #aris-ortak-ust .kategori-menu:hover .kategori-acilir,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-acilir {
-        display: block;
-    }
-
-    #aris-ortak-ust .kategori-acilir a {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px 12px;
-        border: 0;
-        border-radius: 7px;
-        background: transparent !important;
-        color: #284b32 !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: left;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    #aris-ortak-ust .kategori-acilir a:hover,
-    #aris-ortak-ust .kategori-acilir a:focus-visible {
-        background: #426b46 !important;
-        color: #fff !important;
-    }
-
-    @media (max-width: 1100px) {
-        #aris-ortak-ust > nav.ilan-menu {
-            width: 100%;
-            justify-content: flex-end;
-        }
-    }
-
-    @media (max-width: 700px) {
-        html body > header#aris-ortak-ust {
-            gap: 16px;
-            padding: 15px 18px;
-        }
-
-        #aris-ortak-ust .ilan-menu > a,
-        #aris-ortak-ust .kategori-baslik {
-            padding: 8px;
-            font-size: 13px;
-        }
-    }
-</style>
 </head>
 
 <body>
-<?php
-$aktif_sayfa = basename($_SERVER["SCRIPT_NAME"] ?? "");
 
-$menu_kategorileri = [
-    "Kedi" => "🐱",
-    "Köpek" => "🐶",
-    "Kuş" => "🐦",
-    "Balık" => "🐠",
-    "Tavşan" => "🐰",
-    "Kemirgen" => "🐹",
-    "Sürüngen" => "🦎",
-    "Diğer" => "🐾"
-];
-
-$menu_baglantilari = [
-    "ilan-ver.php" => "İlan Ver",
-    "hakkimizda.php" => "Hakkımızda",
-    "iletisim.php" => "İletişim"
-];
-?>
+<?php if ($basari !== ""): ?>
+    <div class="basari-kutusu" id="basari-kutusu" role="status">
+        <span class="basari-isaret" aria-hidden="true">✓</span>
+        <p><?= guvenli($basari) ?></p>
+    </div>
+<?php endif; ?>
 
 <header class="ilan-ust" id="aris-ortak-ust">
     <a href="index.php" class="ilan-logo">
@@ -806,7 +984,6 @@ $menu_baglantilari = [
             width="54"
             height="54"
         >
-
         <span>
             <strong>Aris Pati Yuvası</strong>
             <small>Her can dostuna bir yuva</small>
@@ -814,16 +991,8 @@ $menu_baglantilari = [
     </a>
 
     <nav class="ilan-menu" aria-label="Ana menü">
-        <a
-            href="index.php"
-            <?= $aktif_sayfa === "index.php" ? 'aria-current="page"' : "" ?>
-        >Ana Sayfa</a>
-
-        <a
-            href="ilanlar.php"
-            <?= $aktif_sayfa === "ilanlar.php" ? 'aria-current="page"' : "" ?>
-            <?= $aktif_sayfa === "ilan-detay.php" ? 'class="menu-aktif"' : "" ?>
-        >İlanlar</a>
+        <a href="index.php">Ana Sayfa</a>
+        <a href="ilanlar.php">İlanlar</a>
 
         <div class="kategori-menu">
             <button
@@ -836,54 +1005,25 @@ $menu_baglantilari = [
             </button>
 
             <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $kategori_simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span aria-hidden="true"><?= $kategori_simge ?></span>
-                        <span><?= htmlspecialchars(
-                            $kategori_adi,
-                            ENT_QUOTES,
-                            "UTF-8"
-                        ) ?></span>
+                <?php foreach ($menu_kategorileri as $ad => $simge): ?>
+                    <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
+                        <span aria-hidden="true"><?= $simge ?></span>
+                        <span><?= guvenli($ad) ?></span>
                     </a>
                 <?php endforeach; ?>
             </div>
         </div>
 
-        <?php foreach ($menu_baglantilari as $menu_dosyasi => $menu_yazisi): ?>
-            <a
-                href="<?= htmlspecialchars($menu_dosyasi, ENT_QUOTES, "UTF-8") ?>"
-                <?= $aktif_sayfa === $menu_dosyasi ? 'aria-current="page"' : "" ?>
-            ><?= htmlspecialchars($menu_yazisi, ENT_QUOTES, "UTF-8") ?></a>
-        <?php endforeach; ?>
+        <a href="ilan-ver.php">İlan Ver</a>
+        <a href="hakkimizda.php">Hakkımızda</a>
+        <a href="iletisim.php">İletişim</a>
+        <a href="mesajlar.php">Mesajlarım</a>
+        <a href="profil.php" aria-current="page">Profilim</a>
 
-        <?php if ((int) ($_SESSION["uye_id"] ?? 0) > 0): ?>
-            <a
-                href="mesajlar.php"
-                <?= $aktif_sayfa === "mesajlar.php" ? 'aria-current="page"' : "" ?>
-            >Mesajlarım</a>
-
-            <a
-                href="profil.php"
-                <?= $aktif_sayfa === "profil.php" ? 'aria-current="page"' : "" ?>
-            >Profilim</a>
-
-            <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a
-                href="giris.php"
-                <?= $aktif_sayfa === "giris.php" ? 'aria-current="page"' : "" ?>
-            >Giriş Yap</a>
-        <?php endif; ?>
-
-        <?php if (
-            isset($_SESSION["admin"])
-            && $aktif_sayfa === "ilan-detay.php"
-        ): ?>
-            <a href="admin/admin-panel.php">İlan Yönetimi</a>
-        <?php endif; ?>
+        <a
+            href="cikis.php"
+            onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
+        >Çıkış Yap</a>
     </nav>
 </header>
 
@@ -894,25 +1034,168 @@ $menu_baglantilari = [
         <div class="profil-bilgileri">
             <p>
                 <strong>Ad Soyad</strong>
-                <?php echo guvenli($_SESSION["uye_adsoyad"] ?? ""); ?>
+                <?= guvenli($uye["ad_soyad"]) ?>
             </p>
-
             <p>
                 <strong>E-posta</strong>
-                <?php echo guvenli($_SESSION["uye_email"] ?? ""); ?>
+                <?= guvenli($uye["email"]) ?>
+            </p>
+            <p>
+                <strong>Telefon</strong>
+                <?= guvenli($uye["telefon"]) ?>
             </p>
         </div>
 
         <div class="kart-islemler">
-            <a href="mesajlar.php" class="buton">Mesajlarımı Gör</a>
+            <a href="#bilgilerim" class="buton">Bilgilerimi Düzenle</a>
+            <a href="#sifre" class="buton acik">Şifremi Değiştir</a>
+            <a href="mesajlar.php" class="buton acik">Mesajlarımı Gör</a>
             <a href="ilan-ver.php" class="buton acik">Yeni İlan Ver</a>
         </div>
+    </section>
+
+    <section class="profil-bolum" id="bilgilerim">
+        <h2>Bilgilerimi Düzenle</h2>
+        <p>Bilgilerinizi güncellemek için mevcut şifrenizi giriniz.</p>
+
+        <?php if ($bilgi_hata !== ""): ?>
+            <div class="bildirim hata" role="alert">
+                <?= guvenli($bilgi_hata) ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="profil.php#bilgilerim" method="POST" class="hesap-form">
+            <input type="hidden" name="islem" value="bilgi_guncelle">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?= guvenli($_SESSION["profil_csrf"]) ?>"
+            >
+
+            <div class="form-grup">
+                <label for="ad_soyad">Ad Soyad</label>
+                <input
+                    type="text"
+                    id="ad_soyad"
+                    name="ad_soyad"
+                    value="<?= guvenli($form_ad) ?>"
+                    autocomplete="name"
+                    required
+                >
+            </div>
+
+            <div class="form-grup">
+                <label for="email">E-posta Adresi</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="<?= guvenli($form_email) ?>"
+                    autocomplete="email"
+                    required
+                >
+            </div>
+
+            <div class="form-grup">
+                <label for="telefon">Telefon Numarası</label>
+                <input
+                    type="tel"
+                    id="telefon"
+                    name="telefon"
+                    value="<?= guvenli($form_telefon) ?>"
+                    placeholder="05XXXXXXXXX"
+                    pattern="05[0-9]{9}"
+                    maxlength="11"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                    aria-describedby="telefon-notu"
+                    required
+                >
+                <small class="alan-notu" id="telefon-notu">
+                    05 ile başlayan 11 haneli numaranızı boşluksuz yazınız.
+                </small>
+            </div>
+
+            <div class="form-grup">
+                <label for="bilgi_sifre">Mevcut Şifreniz</label>
+                <input
+                    type="password"
+                    id="bilgi_sifre"
+                    name="bilgi_sifre"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <div class="form-islemler">
+                <button type="submit" class="buton">Bilgilerimi Kaydet</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="profil-bolum" id="sifre">
+        <h2>Şifremi Değiştir</h2>
+        <p>Yeni şifreniz en az 8 karakter olmalıdır.</p>
+
+        <?php if ($sifre_hata !== ""): ?>
+            <div class="bildirim hata" role="alert">
+                <?= guvenli($sifre_hata) ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="profil.php#sifre" method="POST" class="hesap-form">
+            <input type="hidden" name="islem" value="sifre_degistir">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?= guvenli($_SESSION["profil_csrf"]) ?>"
+            >
+
+            <div class="form-grup">
+                <label for="mevcut_sifre">Mevcut Şifre</label>
+                <input
+                    type="password"
+                    id="mevcut_sifre"
+                    name="mevcut_sifre"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <div class="form-grup">
+                <label for="yeni_sifre">Yeni Şifre</label>
+                <input
+                    type="password"
+                    id="yeni_sifre"
+                    name="yeni_sifre"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+
+            <div class="form-grup">
+                <label for="sifre_tekrar">Yeni Şifre Tekrarı</label>
+                <input
+                    type="password"
+                    id="sifre_tekrar"
+                    name="sifre_tekrar"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+
+            <div class="form-islemler">
+                <button type="submit" class="buton">Şifremi Değiştir</button>
+            </div>
+        </form>
     </section>
 
     <section class="profil-bolum">
         <div class="bolum-baslik">
             <h2>İlanlarım</h2>
-            <span class="sayac"><?php echo $toplam_ilan; ?> ilan bulundu</span>
+            <span class="sayac"><?= $toplam_ilan ?> ilan bulundu</span>
         </div>
 
         <form method="GET" action="profil.php" class="profil-filtre">
@@ -923,7 +1206,7 @@ $menu_baglantilari = [
                     id="arama"
                     name="arama"
                     placeholder="Hayvan adı veya ilan başlığı..."
-                    value="<?php echo guvenli($arama); ?>"
+                    value="<?= guvenli($arama) ?>"
                 >
             </div>
 
@@ -931,14 +1214,11 @@ $menu_baglantilari = [
                 <label for="durum">İlan Durumu</label>
                 <select id="durum" name="durum">
                     <option value="">Tüm Durumlar</option>
-
                     <?php foreach ($gecerli_durumlar as $secenek): ?>
                         <option
-                            value="<?php echo guvenli($secenek); ?>"
-                            <?php echo $durum === $secenek ? "selected" : ""; ?>
-                        >
-                            <?php echo guvenli($secenek); ?>
-                        </option>
+                            value="<?= guvenli($secenek) ?>"
+                            <?= $durum === $secenek ? "selected" : "" ?>
+                        ><?= guvenli($secenek) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -946,12 +1226,14 @@ $menu_baglantilari = [
             <div class="filtre-grup">
                 <label for="siralama">Sıralama</label>
                 <select id="siralama" name="siralama">
-                    <option value="yeni" <?php echo $siralama === "yeni" ? "selected" : ""; ?>>
-                        En Yeni
-                    </option>
-                    <option value="eski" <?php echo $siralama === "eski" ? "selected" : ""; ?>>
-                        En Eski
-                    </option>
+                    <option
+                        value="yeni"
+                        <?= $siralama === "yeni" ? "selected" : "" ?>
+                    >En Yeni</option>
+                    <option
+                        value="eski"
+                        <?= $siralama === "eski" ? "selected" : "" ?>
+                    >En Eski</option>
                 </select>
             </div>
 
@@ -963,69 +1245,63 @@ $menu_baglantilari = [
 
         <?php if ($ilanlar): ?>
             <?php foreach ($ilanlar as $ilan): ?>
-                <?php
-                $foto = profil_fotografi($ilan["fotograf"] ?? "");
-                ?>
+                <?php $foto = profil_fotografi($ilan["fotograf"] ?? ""); ?>
 
                 <article class="profil-kart">
                     <div class="kart-icerik">
                         <?php if ($foto !== ""): ?>
                             <img
-                                src="<?php echo guvenli($foto); ?>"
-                                alt="<?php echo guvenli($ilan["hayvan_adi"]); ?>"
+                                src="<?= guvenli($foto) ?>"
+                                alt="<?= guvenli($ilan["hayvan_adi"]) ?>"
                                 class="profil-fotograf"
                                 loading="lazy"
                             >
                         <?php endif; ?>
 
                         <div class="kart-bilgi">
-                            <h3><?php echo guvenli(
+                            <h3><?= guvenli(
                                 $ilan["ilan_basligi"] ?: $ilan["hayvan_adi"]
-                            ); ?></h3>
+                            ) ?></h3>
 
                             <p>
                                 <strong>Hayvan Adı:</strong>
-                                <?php echo guvenli($ilan["hayvan_adi"]); ?>
+                                <?= guvenli($ilan["hayvan_adi"]) ?>
                             </p>
                             <p>
                                 <strong>Tür:</strong>
-                                <?php echo guvenli($ilan["tur"]); ?>
+                                <?= guvenli($ilan["tur"]) ?>
                                 · <strong>Yaş:</strong>
-                                <?php echo (int)$ilan["yas"]; ?>
+                                <?= (int) $ilan["yas"] ?>
                             </p>
                             <p>
                                 <strong>Şehir:</strong>
-                                <?php echo guvenli($ilan["sehir"]); ?>
+                                <?= guvenli($ilan["sehir"]) ?>
                             </p>
                             <p>
                                 <strong>Durum:</strong>
-                                <span class="profil-durum <?php echo durum_sinifi($ilan["durum"]); ?>">
-                                    <?php echo guvenli($ilan["durum"]); ?>
+                                <span class="profil-durum <?= durum_sinifi($ilan["durum"]) ?>">
+                                    <?= guvenli($ilan["durum"]) ?>
                                 </span>
                             </p>
 
                             <?php if ($ilan["durum"] === "Reddedildi"): ?>
                                 <p class="red-nedeni">
                                     <strong>Reddedilme Nedeni:</strong>
-                                    <?php echo guvenli($ilan["red_nedeni"] ?? ""); ?>
+                                    <?= guvenli($ilan["red_nedeni"] ?? "") ?>
                                 </p>
                             <?php endif; ?>
 
                             <div class="kart-islemler">
                                 <a
-                                    href="ilan-duzenle.php?id=<?php echo (int)$ilan["id"]; ?>"
+                                    href="ilan-duzenle.php?id=<?= (int) $ilan["id"] ?>"
                                     class="buton"
-                                >
-                                    Düzenle
-                                </a>
+                                >Düzenle</a>
 
                                 <a
-                                    href="ilan-sil.php?id=<?php echo (int)$ilan["id"]; ?>"
+                                    href="ilan-sil.php?id=<?= (int) $ilan["id"] ?>"
                                     class="buton sil"
                                     onclick="return confirm('Bu ilanı silmek istediğinize emin misiniz?');"
-                                >
-                                    Sil
-                                </a>
+                                >Sil</a>
                             </div>
                         </div>
                     </div>
@@ -1038,9 +1314,9 @@ $menu_baglantilari = [
         <?php if ($toplam_sayfa > 1): ?>
             <nav class="profil-sayfalama" aria-label="İlanlarım sayfaları">
                 <?php if ($sayfa > 1): ?>
-                    <a href="<?php echo guvenli(
+                    <a href="<?= guvenli(
                         sayfa_linki($sayfa - 1, $arama, $durum, $siralama)
-                    ); ?>">← Önceki</a>
+                    ) ?>">← Önceki</a>
                 <?php endif; ?>
 
                 <?php
@@ -1051,19 +1327,17 @@ $menu_baglantilari = [
 
                 <?php for ($i = $ilk; $i <= $son; $i++): ?>
                     <a
-                        href="<?php echo guvenli(
+                        href="<?= guvenli(
                             sayfa_linki($i, $arama, $durum, $siralama)
-                        ); ?>"
-                        <?php echo $i === $sayfa ? 'aria-current="page"' : ""; ?>
-                    >
-                        <?php echo $i; ?>
-                    </a>
+                        ) ?>"
+                        <?= $i === $sayfa ? 'aria-current="page"' : "" ?>
+                    ><?= $i ?></a>
                 <?php endfor; ?>
 
                 <?php if ($sayfa < $toplam_sayfa): ?>
-                    <a href="<?php echo guvenli(
+                    <a href="<?= guvenli(
                         sayfa_linki($sayfa + 1, $arama, $durum, $siralama)
-                    ); ?>">Sonraki →</a>
+                    ) ?>">Sonraki →</a>
                 <?php endif; ?>
             </nav>
         <?php endif; ?>
@@ -1075,30 +1349,30 @@ $menu_baglantilari = [
         <?php if ($basvurular): ?>
             <?php foreach ($basvurular as $basvuru): ?>
                 <article class="profil-kart">
-                    <h3><?php echo guvenli(
+                    <h3><?= guvenli(
                         $basvuru["hayvan_adi"] ?? "İlan silinmiş"
-                    ); ?></h3>
+                    ) ?></h3>
 
                     <p>
                         <strong>Başvuru No:</strong>
-                        <?php echo (int)$basvuru["id"]; ?>
+                        <?= (int) $basvuru["id"] ?>
                     </p>
                     <p>
                         <strong>Hayvan Türü:</strong>
-                        <?php echo guvenli($basvuru["tur"] ?? "-"); ?>
+                        <?= guvenli($basvuru["tur"] ?? "-") ?>
                     </p>
                     <p>
                         <strong>Şehir:</strong>
-                        <?php echo guvenli($basvuru["sehir"] ?? "-"); ?>
+                        <?= guvenli($basvuru["sehir"] ?? "-") ?>
                     </p>
                     <p>
                         <strong>Başvuru Tarihi:</strong>
-                        <?php echo guvenli($basvuru["basvuru_tarihi"]); ?>
+                        <?= guvenli($basvuru["basvuru_tarihi"]) ?>
                     </p>
                     <p>
                         <strong>Başvuru Durumu:</strong>
-                        <span class="profil-durum <?php echo durum_sinifi($basvuru["durum"]); ?>">
-                            <?php echo guvenli($basvuru["durum"]); ?>
+                        <span class="profil-durum <?= durum_sinifi($basvuru["durum"]) ?>">
+                            <?= guvenli($basvuru["durum"]) ?>
                         </span>
                     </p>
                 </article>
@@ -1114,38 +1388,36 @@ $menu_baglantilari = [
         <?php if ($favoriler): ?>
             <?php foreach ($favoriler as $favori): ?>
                 <article class="profil-kart">
-                    <h3><?php echo guvenli(
+                    <h3><?= guvenli(
                         $favori["ilan_basligi"] ?: "Hayvan Sahiplendirme İlanı"
-                    ); ?></h3>
+                    ) ?></h3>
 
                     <p>
                         <strong>Hayvan Adı:</strong>
-                        <?php echo guvenli($favori["hayvan_adi"]); ?>
+                        <?= guvenli($favori["hayvan_adi"]) ?>
                     </p>
                     <p>
                         <strong>Tür:</strong>
-                        <?php echo guvenli($favori["tur"]); ?>
+                        <?= guvenli($favori["tur"]) ?>
                         · <strong>Yaş:</strong>
-                        <?php echo (int)$favori["yas"]; ?>
+                        <?= (int) $favori["yas"] ?>
                     </p>
                     <p>
                         <strong>Şehir:</strong>
-                        <?php echo guvenli($favori["sehir"]); ?>
+                        <?= guvenli($favori["sehir"]) ?>
                     </p>
 
                     <div class="kart-islemler">
                         <a
-                            href="ilan-detay.php?id=<?php echo (int)$favori["id"]; ?>"
+                            href="ilan-detay.php?id=<?= (int) $favori["id"] ?>"
                             class="buton"
-                        >
-                            İlanı İncele
-                        </a>
+                        >İlanı İncele</a>
 
                         <form action="favori-sil.php" method="POST">
                             <input
                                 type="hidden"
                                 name="ilan_id"
-                                value="<?php echo (int)$favori["id"]; ?>"
+                                value="<?= (int) $favori["id"] ?>"
                             >
                             <button type="submit" class="buton acik">
                                 ♡ Favorilerden Çıkar
@@ -1163,5 +1435,16 @@ $menu_baglantilari = [
 <footer>
     <p>© 2026 Aris Pati Yuvası · Hayvan Sahiplendirme Platformu</p>
 </footer>
+
+<script>
+    const basariKutusu = document.getElementById("basari-kutusu");
+
+    if (basariKutusu) {
+        setTimeout(function () {
+            basariKutusu.remove();
+        }, 2000);
+    }
+</script>
+
 </body>
 </html>
