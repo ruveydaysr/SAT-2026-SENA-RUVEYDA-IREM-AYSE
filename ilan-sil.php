@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -17,7 +16,7 @@ if (!$ilan_id || $ilan_id < 1) {
     exit();
 }
 
-// İlanın giriş yapan kullanıcıya ait olduğunu kontrol et
+// İlanın giriş yapan kullanıcıya ait olduğunu kontrol et.
 $sql = "SELECT id, hayvan_adi FROM ilanlar
         WHERE id = ? AND uye_id = ?";
 
@@ -35,18 +34,23 @@ if (!$ilan) {
     exit("Bu ilanı silme yetkiniz yok veya ilan bulunamadı.");
 }
 
-// Silme formunun güvenlik anahtarı
+// Silme formunun güvenlik anahtarı.
 if (empty($_SESSION["ilan_sil_token"])) {
     $_SESSION["ilan_sil_token"] = bin2hex(random_bytes(32));
 }
 
-
 $hata = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $gelen_token = is_string($_POST["token"] ?? null)
+        ? $_POST["token"]
+        : "";
 
-    $gelen_token = $_POST["token"] ?? "";
-    $gelen_id = filter_input(INPUT_POST, "ilan_id", FILTER_VALIDATE_INT);
+    $gelen_id = filter_input(
+        INPUT_POST,
+        "ilan_id",
+        FILTER_VALIDATE_INT
+    );
 
     if (
         !hash_equals($_SESSION["ilan_sil_token"], $gelen_token)
@@ -54,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ) {
         $hata = "Geçersiz silme isteği.";
     } else {
-
         $sql = "DELETE FROM ilanlar WHERE id = ? AND uye_id = ?";
         $sil = mysqli_prepare($baglanti, $sql);
 
@@ -74,89 +77,86 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         mysqli_stmt_close($sil);
     }
 }
-
 ?>
 
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İlan Sil</title>
     <link rel="stylesheet" href="css/style.css">
-    
-<style>
-    body {
-        background-color: #f5f8f5;
-    }
 
-    .sil-kutusu {
-        max-width: 550px;
-        margin: 70px auto;
-        padding: 40px;
-        background-color: white;
-        border: 1px solid #dce8df;
-        border-radius: 16px;
-        text-align: center;
-    }
+    <style>
+        body {
+            background-color: #f5f8f5;
+        }
 
-    .sil-kutusu h2 {
-        color: #184f3c;
-        font-size: 28px;
-        margin-bottom: 20px;
-    }
+        .sil-kutusu {
+            max-width: 550px;
+            margin: 70px auto;
+            padding: 40px;
+            background-color: white;
+            border: 1px solid #dce8df;
+            border-radius: 16px;
+            text-align: center;
+        }
 
-    .sil-kutusu p {
-        color: #526b5a;
-        line-height: 1.8;
-        margin-bottom: 25px;
-    }
+        .sil-kutusu h2 {
+            color: #184f3c;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
 
-    .sil-butonlari {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-top: 25px;
-    }
+        .sil-kutusu p {
+            color: #526b5a;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
 
-    .btn-sil {
-        background-color: #b94b4b;
-        color: white;
-        padding: 12px 22px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-    }
+        .sil-butonlari {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
 
-    .btn-sil:hover {
-        background-color: #963636;
-    }
+        .btn-sil {
+            background-color: #b94b4b;
+            color: white;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
 
-    .btn-vazgec {
-        display: inline-block;
-        background-color: #347a53;
-        color: white;
-        padding: 12px 22px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-size: 14px;
-    }
+        .btn-sil:hover {
+            background-color: #963636;
+        }
 
-    .btn-vazgec:hover {
-        background-color: #245c3d;
-    }
-    .sil-kutusu .btn-vazgec {
-    background-color: #347a53;
-    color: white;
-}
-</style>
+        .btn-vazgec {
+            display: inline-block;
+            background-color: #347a53;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
 
+        .btn-vazgec:hover {
+            background-color: #245c3d;
+        }
+
+        .sil-kutusu .btn-vazgec {
+            background-color: #347a53;
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
-
 
 <header class="ilan-ust">
     <a href="index.php" class="ilan-logo">
@@ -171,6 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
+        <a href="blog.php">Blog</a>
         <a href="hakkimizda.php">Hakkımızda</a>
         <a href="iletisim.php">İletişim</a>
         <a href="profil.php">Profilim</a>
@@ -179,43 +180,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </header>
 
 <main>
-<div class="sil-kutusu">
-    <h2>İlan Silme Onayı</h2>
+    <div class="sil-kutusu">
+        <h2>İlan Silme Onayı</h2>
 
-    <p>
-        <strong>
-            <?php echo htmlspecialchars($ilan["hayvan_adi"], ENT_QUOTES, "UTF-8"); ?>
-        </strong>
-        isimli ilanı silmek istediğinize emin misiniz?
-    </p>
-
-    <?php if ($hata !== ""): ?>
-        <p style="color: red;">
-            <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
+        <p>
+            <strong>
+                <?= htmlspecialchars(
+                    $ilan["hayvan_adi"],
+                    ENT_QUOTES,
+                    "UTF-8"
+                ) ?>
+            </strong>
+            isimli ilanı silmek istediğinize emin misiniz?
         </p>
-    <?php endif; ?>
 
-    <form method="POST">
+        <?php if ($hata !== ""): ?>
+            <p style="color: red;" role="alert">
+                <?= htmlspecialchars($hata, ENT_QUOTES, "UTF-8") ?>
+            </p>
+        <?php endif; ?>
 
-        <input type="hidden" name="ilan_id"
-               value="<?php echo (int)$ilan_id; ?>">
+        <form method="POST">
+            <input
+                type="hidden"
+                name="ilan_id"
+                value="<?= (int) $ilan_id ?>"
+            >
 
-        <input type="hidden" name="token"
-               value="<?php echo htmlspecialchars(
-                   $_SESSION["ilan_sil_token"],
-                   ENT_QUOTES,
-                   "UTF-8"
-               ); ?>">
+            <input
+                type="hidden"
+                name="token"
+                value="<?= htmlspecialchars(
+                    $_SESSION["ilan_sil_token"],
+                    ENT_QUOTES,
+                    "UTF-8"
+                ) ?>"
+            >
 
-      <div class="sil-butonlari">
-    <button type="submit" class="btn-sil">Evet, İlanı Sil</button>
-    <a href="profil.php" class="btn-vazgec">Vazgeç</a>
-</form>
+            <div class="sil-butonlari">
+                <button type="submit" class="btn-sil">
+                    Evet, İlanı Sil
+                </button>
 
-</div>
-
+                <a href="profil.php" class="btn-vazgec">
+                    Vazgeç
+                </a>
+            </div>
+        </form>
+    </div>
 </main>
 
 </body>
 </html>
-

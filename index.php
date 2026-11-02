@@ -3,9 +3,24 @@ session_start();
 
 require_once __DIR__ . "/baglanti.php";
 
+/* Dil tercihi */
+if (
+    is_string($_GET["lang"] ?? null)
+    && in_array($_GET["lang"], ["tr", "en"], true)
+) {
+    $_SESSION["dil"] = $_GET["lang"];
+
+    header("Location: index.php");
+    exit();
+}
+
+$dil = in_array($_SESSION["dil"] ?? "", ["tr", "en"], true)
+    ? $_SESSION["dil"]
+    : "tr";
+
 function aa_h($value)
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
 }
 
 function guvenli($value)
@@ -13,13 +28,39 @@ function guvenli($value)
     return aa_h($value);
 }
 
+function aa_t($tr, $en)
+{
+    global $dil;
+
+    return $dil === "en" ? $en : $tr;
+}
+
+function aa_category_name($name)
+{
+    global $dil;
+
+    $names = [
+        "Kedi" => "Cat",
+        "Köpek" => "Dog",
+        "Kuş" => "Bird",
+        "Balık" => "Fish",
+        "Tavşan" => "Rabbit",
+        "Kemirgen" => "Rodent",
+        "Sürüngen" => "Reptile",
+        "Diğer" => "Other"
+    ];
+
+    return $dil === "en" ? ($names[$name] ?? $name) : $name;
+}
+
 function aa_links()
 {
     return [
-        "ilanlar.php" => "İlanlar",
-        "ilan-ver.php" => "İlan Ver",
-        "hakkimizda.php" => "Hakkımızda",
-        "iletisim.php" => "İletişim"
+        "ilanlar.php" => aa_t("İlanlar", "Listings"),
+        "ilan-ver.php" => aa_t("İlan Ver", "Post a Listing"),
+        "blog.php" => "Blog",
+        "hakkimizda.php" => aa_t("Hakkımızda", "About Us"),
+        "iletisim.php" => aa_t("İletişim", "Contact")
     ];
 }
 
@@ -49,32 +90,54 @@ function aa_defaults()
         "degerler" => [
             "aktif" => 1,
             "ogeler" => [
-                ["baslik" => "Bir dostluk başlasın", "aciklama" => "Hayatına sevgi dolu bir arkadaş kat."],
-                ["baslik" => "Bir yuva umut olsun", "aciklama" => "Yuva arayan bir dostun hikâyesini değiştir."],
-                ["baslik" => "Sorumlulukla sahiplen", "aciklama" => "Ömür boyu sürecek bir bağ için adım at."]
+                [
+                    "baslik" => "Bir dostluk başlasın",
+                    "aciklama" => "Hayatına sevgi dolu bir arkadaş kat."
+                ],
+                [
+                    "baslik" => "Bir yuva umut olsun",
+                    "aciklama" => "Yuva arayan bir dostun hikâyesini değiştir."
+                ],
+                [
+                    "baslik" => "Sorumlulukla sahiplen",
+                    "aciklama" => "Ömür boyu sürecek bir bağ için adım at."
+                ]
             ]
         ],
+
         "kategoriler" => [
             "etiket" => "Yeni arkadaşın seni bekliyor",
             "baslik" => "Hangi dostumuzla tanışmak istersin?",
             "ogeler" => $cats
         ],
+
         "vitrin" => [
             "etiket" => "Belki de aradığın dost burada",
             "baslik" => "Yuva arayan dostlarımız",
             "aciklama" => "Her birinin farklı bir hikâyesi, aynı güzel hayali var: sevgi dolu bir yuva."
         ],
+
         "surec" => [
             "aktif" => 1,
             "etiket" => "Dostluğa giden yol",
             "baslik" => "Yeni bir başlangıç için üç adım",
             "aciklama" => "Sana ve yaşamına uygun dostunu bul, onu tanı ve sahiplenme başvurunu oluştur.",
             "ogeler" => [
-                ["baslik" => "Dostunu keşfet", "aciklama" => "İlanları incele. Tür ve şehir seçeneklerini kullanarak sana uygun dostlarımızı keşfet."],
-                ["baslik" => "Onu daha yakından tanı", "aciklama" => "İlan detaylarını oku. İlan sahibiyle iletişime geçerek dostumuzun ihtiyaçları hakkında bilgi al."],
-                ["baslik" => "Başvurunu oluştur", "aciklama" => "Hesabına giriş yapıp sahiplenme başvurunu gönder. Başvurunun durumunu profilinden takip et."]
+                [
+                    "baslik" => "Dostunu keşfet",
+                    "aciklama" => "İlanları incele. Tür ve şehir seçeneklerini kullanarak sana uygun dostlarımızı keşfet."
+                ],
+                [
+                    "baslik" => "Onu daha yakından tanı",
+                    "aciklama" => "İlan detaylarını oku. İlan sahibiyle iletişime geçerek dostumuzun ihtiyaçları hakkında bilgi al."
+                ],
+                [
+                    "baslik" => "Başvurunu oluştur",
+                    "aciklama" => "Hesabına giriş yapıp sahiplenme başvurunu gönder. Başvurunun durumunu profilinden takip et."
+                ]
             ]
         ],
+
         "sehir" => [
             "aktif" => 1,
             "etiket" => "Güzel bir karşılaşma çok yakında",
@@ -82,18 +145,32 @@ function aa_defaults()
             "aciklama" => "Şehrindeki sahiplendirme ilanlarını incele. Belki de yeni arkadaşın düşündüğünden daha yakındadır.",
             "liste" => "İstanbul\nAnkara\nİzmir\nBursa\nAntalya\nEskişehir"
         ],
+
         "sss" => [
             "aktif" => 1,
             "etiket" => "Aklındaki sorular",
             "baslik" => "Sahiplenmeden önce merak ettiklerin.",
             "aciklama" => "Yeni bir dost edinmek güzel bir başlangıçtır. Bu kararı onun ihtiyaçlarını ve kendi yaşam koşullarını düşünerek vermelisin.",
             "ogeler" => [
-                ["baslik" => "Sahiplenmek için üye olmam gerekiyor mu?", "aciklama" => "İlanları üye olmadan inceleyebilirsin. Sahiplenme başvurusu göndermek için hesabına giriş yapmalısın."],
-                ["baslik" => "İlan sahibiyle nasıl iletişim kurabilirim?", "aciklama" => "İlgilendiğin ilanın detay sayfasındaki mesajlaşma alanını kullanabilirsin. Mesaj göndermek için hesabına giriş yapmalısın."],
-                ["baslik" => "Başvurumu nereden takip edebilirim?", "aciklama" => "Profilim sayfasındaki Sahiplenme Başvurularım bölümünden başvurunun durumunu görebilirsin."],
-                ["baslik" => "Sahiplenmeden önce neleri düşünmeliyim?", "aciklama" => "Dostumuzun bakımına ayırabileceğin zamanı, yaşam alanını, veteriner ve beslenme ihtiyaçlarını değerlendir. Birlikte yaşayacağın kişilerle de bu sorumluluğu konuş."]
+                [
+                    "baslik" => "Sahiplenmek için üye olmam gerekiyor mu?",
+                    "aciklama" => "İlanları üye olmadan inceleyebilirsin. Sahiplenme başvurusu göndermek için hesabına giriş yapmalısın."
+                ],
+                [
+                    "baslik" => "İlan sahibiyle nasıl iletişim kurabilirim?",
+                    "aciklama" => "İlgilendiğin ilanın detay sayfasındaki mesajlaşma alanını kullanabilirsin. Mesaj göndermek için hesabına giriş yapmalısın."
+                ],
+                [
+                    "baslik" => "Başvurumu nereden takip edebilirim?",
+                    "aciklama" => "Profilim sayfasındaki Sahiplenme Başvurularım bölümünden başvurunun durumunu görebilirsin."
+                ],
+                [
+                    "baslik" => "Sahiplenmeden önce neleri düşünmeliyim?",
+                    "aciklama" => "Dostumuzun bakımına ayırabileceğin zamanı, yaşam alanını, veteriner ve beslenme ihtiyaçlarını değerlendir. Birlikte yaşayacağın kişilerle de bu sorumluluğu konuş."
+                ]
             ]
         ],
+
         "davet" => [
             "aktif" => 1,
             "baslik" => "Senin için bir dost,\nonun için bütün bir dünya.",
@@ -101,6 +178,7 @@ function aa_defaults()
             "buton_yazisi" => "Sahiplendirme İlanı Ver",
             "buton_linki" => "ilan-ver.php"
         ],
+
         "footer" => [
             "aciklama" => "Yuva arayan hayvanlarla onlara sevgiyle bakmak isteyen insanları bir araya getiriyoruz. Her can dostuna bir yuva."
         ]
@@ -140,13 +218,114 @@ function aa_read($db)
 
     $result = mysqli_query(
         $db,
-        "SELECT icerik_json FROM anasayfa_bolumler WHERE id = 1"
+        "SELECT icerik_json
+         FROM anasayfa_bolumler
+         WHERE id = 1"
     );
 
     $row = mysqli_fetch_assoc($result);
-    $data = json_decode((string) ($row["icerik_json"] ?? ""), true);
 
-    return aa_merge($defaults, is_array($data) ? $data : []);
+    $data = json_decode(
+        (string)($row["icerik_json"] ?? ""),
+        true
+    );
+
+    return aa_merge(
+        $defaults,
+        is_array($data) ? $data : []
+    );
+}
+
+/*
+ * İngilizce metinler.
+ * Bölümlerin aktiflik, görsel, şehir ve bağlantı ayarları korunur.
+ */
+function aa_english_sections($sections)
+{
+    $sections["degerler"]["ogeler"] = [
+        [
+            "baslik" => "Let a friendship begin",
+            "aciklama" => "Welcome a loving companion into your life."
+        ],
+        [
+            "baslik" => "Give hope a home",
+            "aciklama" => "Change the story of a pet looking for a family."
+        ],
+        [
+            "baslik" => "Adopt responsibly",
+            "aciklama" => "Take the first step towards a lifelong bond."
+        ]
+    ];
+
+    $sections["kategoriler"]["etiket"] = "Your new friend is waiting";
+    $sections["kategoriler"]["baslik"] = "Who would you like to meet?";
+
+    $sections["vitrin"]["etiket"] = "Your next companion could be here";
+    $sections["vitrin"]["baslik"] = "Friends looking for a home";
+    $sections["vitrin"]["aciklama"] =
+        "Different stories, one shared dream: a loving home.";
+
+    $sections["surec"]["etiket"] = "The path to friendship";
+    $sections["surec"]["baslik"] = "Three steps to a new beginning";
+    $sections["surec"]["aciklama"] =
+        "Find a companion who suits your life, get to know them and send your adoption application.";
+
+    $sections["surec"]["ogeler"] = [
+        [
+            "baslik" => "Find your companion",
+            "aciklama" => "Browse the listings. Filter by animal type and city to discover a suitable companion."
+        ],
+        [
+            "baslik" => "Get to know them",
+            "aciklama" => "Read the listing details and contact the person caring for the animal to learn about their needs."
+        ],
+        [
+            "baslik" => "Send your application",
+            "aciklama" => "Sign in and submit an adoption application. Follow its status from your profile."
+        ]
+    ];
+
+    $sections["sehir"]["etiket"] = "A wonderful meeting could be nearby";
+    $sections["sehir"]["baslik"] = "Find a friend near you.";
+    $sections["sehir"]["aciklama"] =
+        "Explore adoption listings in your city. Your new companion may be closer than you think.";
+
+    $sections["sss"]["etiket"] = "Your questions answered";
+    $sections["sss"]["baslik"] = "Before you adopt.";
+    $sections["sss"]["aciklama"] =
+        "Welcoming a companion is a wonderful beginning. Consider their needs and your living arrangements before making a decision.";
+
+    $sections["sss"]["ogeler"] = [
+        [
+            "baslik" => "Do I need an account to adopt?",
+            "aciklama" => "You can browse listings without an account. You need to sign in to send an adoption application."
+        ],
+        [
+            "baslik" => "How can I contact the listing owner?",
+            "aciklama" => "Use the messaging option on the listing details page. You need to sign in to send a message."
+        ],
+        [
+            "baslik" => "Where can I follow my application?",
+            "aciklama" => "You can check its status in the My Adoption Applications section of your profile."
+        ],
+        [
+            "baslik" => "What should I consider before adopting?",
+            "aciklama" => "Think about your available time, living space, veterinary care and feeding needs. Discuss these responsibilities with the people you live with."
+        ]
+    ];
+
+    $sections["davet"]["baslik"] =
+        "A friend for you,\na whole world for them.";
+
+    $sections["davet"]["aciklama"] =
+        "Create a listing for a pet looking for a home and help them meet their new family.";
+
+    $sections["davet"]["buton_yazisi"] = "Post an Adoption Listing";
+
+    $sections["footer"]["aciklama"] =
+        "We bring together animals looking for a home and people ready to care for them. A home for every companion.";
+
+    return $sections;
 }
 
 function aa_image($path)
@@ -182,7 +361,7 @@ function aa_cover($ayar)
 
 function aa_listing_image($fotograf)
 {
-    $fotograf = (string) $fotograf;
+    $fotograf = (string)$fotograf;
     $base = basename($fotograf);
 
     if (
@@ -207,7 +386,7 @@ function aa_listing_image($fotograf)
 
 function aa_cities($text)
 {
-    $lines = preg_split('/\R/u', (string) $text);
+    $lines = preg_split('/\R/u', (string)$text);
 
     return array_values(
         array_unique(
@@ -221,9 +400,8 @@ function aa_cities($text)
     );
 }
 
-/* Okunmamış mesaj bildirimi. */
-
-$uye_id = (int) ($_SESSION["uye_id"] ?? 0);
+/* Okunmamış mesaj bildirimi */
+$uye_id = (int)($_SESSION["uye_id"] ?? 0);
 $okunmamis_mesaj_var = false;
 
 if ($uye_id > 0) {
@@ -245,8 +423,7 @@ if ($uye_id > 0) {
     mysqli_stmt_close($query);
 }
 
-/* Yönetim panelinde kaydedilen bilgiler. */
-
+/* Yönetim panelindeki ana sayfa içeriği */
 $result = mysqli_query(
     $baglanti,
     "SELECT baslik, aciklama, buton_yazisi
@@ -285,9 +462,18 @@ $buton_linki = isset(aa_links()[$ayar["buton_linki"]])
 
 $kapak_yolu = aa_cover($ayar);
 
-/* Vitrin ilanları. */
+if ($dil === "en") {
+    $bolumler = aa_english_sections($bolumler);
 
-$ids = json_decode((string) $ayar["vitrin_idler"], true);
+    $icerik = [
+        "baslik" => "Find a friend, change a life.",
+        "aciklama" => "Meet our companions looking for a loving home.",
+        "buton_yazisi" => aa_links()[$buton_linki]
+    ];
+}
+
+/* Vitrin ilanları */
+$ids = json_decode((string)$ayar["vitrin_idler"], true);
 $temiz_idler = [];
 
 foreach (is_array($ids) ? $ids : [] as $value) {
@@ -328,18 +514,27 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
     }
 }
 ?>
+
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= aa_h($dil) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <meta
         name="description"
-        content="Aris Pati Yuvası ile yuva arayan dostlarımızla tanış. Sahiplendirme ilanlarını incele, şehrindeki yeni dostunu bul."
+        content="<?= aa_h(aa_t(
+            "Aris Pati Yuvası ile yuva arayan dostlarımızla tanış. Sahiplendirme ilanlarını incele, şehrindeki yeni dostunu bul.",
+            "Meet pets looking for a loving home with Aris Pati Yuvası. Browse adoption listings and find a companion in your city."
+        )) ?>"
     >
+
     <meta name="theme-color" content="#426b46">
 
-    <title>Aris Pati Yuvası | Bir Dost, Yeni Bir Başlangıç</title>
+    <title><?= aa_h(aa_t(
+        "Aris Pati Yuvası | Bir Dost, Yeni Bir Başlangıç",
+        "Aris Pati Yuvası | A Friend, A New Beginning"
+    )) ?></title>
 
     <style>
         :root {
@@ -444,6 +639,47 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
             margin-top: 5px;
             color: #e3ebdd;
             font-size: 11px;
+        }
+
+        .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dil-secici {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid rgba(255, 255, 255, .35);
+            border-radius: 8px;
+        }
+
+        .dil-secici a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 37px;
+            min-height: 30px;
+            padding: 5px 9px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .dil-secici a:hover {
+            background: var(--koyu);
+        }
+
+        .dil-secici a[aria-current="true"] {
+            background: var(--krem);
+            color: var(--koyu);
         }
 
         .ilan-menu {
@@ -740,8 +976,6 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
             text-decoration: underline;
             text-underline-offset: 5px;
         }
-
-        /* Kategori görselleri */
 
         .kategori-grid {
             display: grid;
@@ -1146,9 +1380,8 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
         .footer-taban a { text-decoration: none; }
 
-        /* Tablet ve telefon */
-
         @media (max-width: 1100px) {
+            .ust-sag { flex-basis: 100%; }
             .ilan-menu { width: 100%; }
             .hero-kutu { padding: 32px; gap: 25px; }
             .hero h1 { font-size: 43px; }
@@ -1279,99 +1512,171 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
 <body>
 
-<a class="atla" href="#ana-icerik">İçeriğe geç</a>
+<a href="#ana-icerik" class="atla">
+    <?= aa_h(aa_t("Ana içeriğe geç", "Skip to main content")) ?>
+</a>
 
 <header class="ilan-ust" id="aris-ortak-ust">
     <a href="index.php" class="ilan-logo">
         <img
             src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
+            alt="<?= aa_h(aa_t(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            )) ?>"
             width="54"
             height="54"
         >
+
         <span>
             <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
+            <small>
+                <?= aa_h(aa_t(
+                    "Her can dostuna bir yuva",
+                    "A home for every companion"
+                )) ?>
+            </small>
         </span>
     </a>
 
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a href="index.php" aria-current="page">Ana Sayfa</a>
-        <a href="ilanlar.php">İlanlar</a>
-
-        <div class="kategori-menu">
-            <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="aris-kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
-
-            <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($kategoriler as $ad => $dosya): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
-                        <img
-                            src="<?= aa_h(aa_image($bolumler['kategoriler']['ogeler'][$ad]['gorsel']) ?: 'images/' . $dosya) ?>"
-                            alt=""
-                            width="32"
-                            height="32"
-                            loading="lazy"
-                        >
-                        <span><?= guvenli($ad) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-
-        <?php if ($uye_id > 0): ?>
-            <a href="mesajlar.php">
-                Mesajlarım
-
-                <?php if ($okunmamis_mesaj_var): ?>
-                    <span
-                        class="mesaj-bildirim"
-                        role="img"
-                        aria-label="Okunmamış mesajınız var"
-                    ></span>
-                <?php endif; ?>
-            </a>
-
-            <a href="profil.php">Profilim</a>
+    <div class="ust-sag">
+        <nav
+            class="dil-secici"
+            aria-label="<?= aa_h(aa_t("Dil seçimi", "Language selection")) ?>"
+        >
+            <a
+                href="index.php?lang=tr"
+                lang="tr"
+                hreflang="tr"
+                aria-label="Türkçe"
+                <?= $dil === "tr" ? 'aria-current="true"' : '' ?>
+            >TR</a>
 
             <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a href="giris.php">Giriş Yap</a>
-        <?php endif; ?>
-    </nav>
+                href="index.php?lang=en"
+                lang="en"
+                hreflang="en"
+                aria-label="English"
+                <?= $dil === "en" ? 'aria-current="true"' : '' ?>
+            >EN</a>
+        </nav>
+
+        <nav
+            class="ilan-menu"
+            aria-label="<?= aa_h(aa_t("Ana menü", "Main navigation")) ?>"
+        >
+            <a href="index.php" aria-current="page">
+                <?= aa_h(aa_t("Ana Sayfa", "Home")) ?>
+            </a>
+
+            <a href="ilanlar.php">
+                <?= aa_h(aa_t("İlanlar", "Listings")) ?>
+            </a>
+
+            <div class="kategori-menu">
+                <button
+                    type="button"
+                    class="kategori-baslik"
+                    aria-controls="aris-kategori-listesi"
+                >
+                    <?= aa_h(aa_t("Hayvan Kategorileri", "Animal Categories")) ?>
+                    <span aria-hidden="true">▾</span>
+                </button>
+
+                <div class="kategori-acilir" id="aris-kategori-listesi">
+                    <?php foreach ($kategoriler as $ad => $dosya): ?>
+                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
+                            <img
+                                src="<?= aa_h(
+                                    aa_image(
+                                        $bolumler["kategoriler"]["ogeler"][$ad]["gorsel"]
+                                    ) ?: "images/" . $dosya
+                                ) ?>"
+                                alt=""
+                                width="32"
+                                height="32"
+                                loading="lazy"
+                            >
+
+                            <span><?= aa_h(aa_category_name($ad)) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <a href="ilan-ver.php">
+                <?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?>
+            </a>
+
+            <a href="blog.php">Blog</a>
+
+            <a href="hakkimizda.php">
+                <?= aa_h(aa_t("Hakkımızda", "About Us")) ?>
+            </a>
+
+            <a href="iletisim.php">
+                <?= aa_h(aa_t("İletişim", "Contact")) ?>
+            </a>
+
+            <?php if ($uye_id > 0): ?>
+                <a href="mesajlar.php">
+                    <?= aa_h(aa_t("Mesajlarım", "Messages")) ?>
+
+                    <?php if ($okunmamis_mesaj_var): ?>
+                        <span
+                            class="mesaj-bildirim"
+                            role="img"
+                            aria-label="<?= aa_h(aa_t(
+                                "Okunmamış mesajınız var",
+                                "You have unread messages"
+                            )) ?>"
+                        ></span>
+                    <?php endif; ?>
+                </a>
+
+                <a href="profil.php">
+                    <?= aa_h(aa_t("Profilim", "My Profile")) ?>
+                </a>
+
+                <a
+                    href="cikis.php"
+                    onclick="return confirm(<?= aa_h(json_encode(
+                        aa_t(
+                            "Çıkış yapmak istediğinize emin misiniz?",
+                            "Are you sure you want to sign out?"
+                        ),
+                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                    )) ?>);"
+                >
+                    <?= aa_h(aa_t("Çıkış Yap", "Sign Out")) ?>
+                </a>
+            <?php else: ?>
+                <a href="giris.php">
+                    <?= aa_h(aa_t("Giriş Yap", "Sign In")) ?>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
 </header>
 
 <main id="ana-icerik">
 
     <?php if (
         $ayar["duyuru_aktif"]
-        && trim((string) $ayar["duyuru"]) !== ""
+        && trim((string)$ayar["duyuru"]) !== ""
     ): ?>
-        <div class="duyuru">
-            <?= aa_h($ayar["duyuru"]) ?>
-        </div>
+        <div class="duyuru" lang="tr"><?= aa_h($ayar["duyuru"]) ?></div>
     <?php endif; ?>
 
     <?php if ($ayar["tanitim_aktif"]): ?>
         <section class="hero kapsayici">
             <div class="hero-kutu">
-
                 <div class="hero-yazi">
                     <span class="etiket">
-                        Bir yuva, yeni bir başlangıç
+                        <?= aa_h(aa_t(
+                            "Bir yuva, yeni bir başlangıç",
+                            "A home, a new beginning"
+                        )) ?>
                     </span>
 
                     <h1><?= aa_h($icerik["baslik"]) ?></h1>
@@ -1385,28 +1690,36 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                         </a>
 
                         <?php if ($bolumler["surec"]["aktif"]): ?>
-                            <a
-                                href="#nasil-sahiplenirim"
-                                class="buton ikincil"
-                            >
-                                Nasıl Sahiplenirim?
+                            <a href="#nasil-sahiplenirim" class="buton ikincil">
+                                <?= aa_h(aa_t(
+                                    "Nasıl Sahiplenirim?",
+                                    "How Do I Adopt?"
+                                )) ?>
                             </a>
                         <?php endif; ?>
                     </div>
 
                     <p class="hero-not">
-                        Küçük bir adım, ömür boyu sürecek bir dostluk.
+                        <?= aa_h(aa_t(
+                            "Küçük bir adım, ömür boyu sürecek bir dostluk.",
+                            "One small step towards a lifelong friendship."
+                        )) ?>
                     </p>
                 </div>
 
                 <div class="hero-gorsel">
                     <img
-                        src="<?= aa_h($kapak_yolu ?: 'images/aris-logoo.png') ?>"
-                        alt="Aris Pati Yuvası: kedi ve köpek"
+                        src="<?= aa_h(
+                            $kapak_yolu ?: "images/aris-logoo.png"
+                        ) ?>"
+                        alt="<?= aa_h(aa_t(
+                            "Aris Pati Yuvası: kedi ve köpek",
+                            "Aris Pati Yuvası: a cat and a dog"
+                        )) ?>"
+                        class="<?= $kapak_yolu === "" ? "kapak-yok" : "" ?>"
                         fetchpriority="high"
                     >
                 </div>
-
             </div>
         </section>
     <?php endif; ?>
@@ -1430,10 +1743,7 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
         <section class="bolum kapsayici">
             <div class="bolum-baslik">
                 <div>
-                    <span class="etiket">
-                        <?= aa_h($bolum["etiket"]) ?>
-                    </span>
-
+                    <span class="etiket"><?= aa_h($bolum["etiket"]) ?></span>
                     <h2><?= aa_h($bolum["baslik"]) ?></h2>
                 </div>
             </div>
@@ -1451,7 +1761,9 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                         class="kategori-kart"
                     >
                         <img
-                            src="<?= aa_h($gorsel ?: 'images/aris-logoo.png') ?>"
+                            src="<?= aa_h(
+                                $gorsel ?: "images/aris-logoo.png"
+                            ) ?>"
                             alt=""
                             class="kategori-fotograf"
                             width="90"
@@ -1459,7 +1771,7 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                             loading="lazy"
                         >
 
-                        <strong><?= aa_h($ad) ?></strong>
+                        <strong><?= aa_h(aa_category_name($ad)) ?></strong>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -1472,17 +1784,16 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
         <section class="bolum vitrin-bolumu kapsayici">
             <div class="bolum-baslik">
                 <div>
-                    <span class="etiket">
-                        <?= aa_h($bolum["etiket"]) ?>
-                    </span>
-
+                    <span class="etiket"><?= aa_h($bolum["etiket"]) ?></span>
                     <h2><?= aa_h($bolum["baslik"]) ?></h2>
-
                     <p><?= aa_h($bolum["aciklama"]) ?></p>
                 </div>
 
                 <a href="ilanlar.php" class="metin-link">
-                    Tüm ilanları gör →
+                    <?= aa_h(aa_t(
+                        "Tüm ilanları gör",
+                        "View all listings"
+                    )) ?> →
                 </a>
             </div>
 
@@ -1494,33 +1805,41 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                     ?>
 
                     <a
-                        href="ilan-detay.php?id=<?= (int) $ilan['id'] ?>"
+                        href="ilan-detay.php?id=<?= (int)$ilan["id"] ?>"
                         class="ilan-kart"
                     >
                         <div class="ilan-gorsel">
                             <img
                                 src="<?= aa_h($foto) ?>"
-                                alt="<?= aa_h($ilan['hayvan_adi']) ?>"
-                                class="<?= $foto === 'images/aris-logoo.png' ? 'logo-yedek' : '' ?>"
+                                alt="<?= aa_h($ilan["hayvan_adi"]) ?>"
+                                class="<?= $foto === "images/aris-logoo.png"
+                                    ? "logo-yedek" : "" ?>"
                                 loading="lazy"
                                 width="400"
                                 height="350"
                             >
 
-                            <span class="ilan-rozet">Yuva arıyor</span>
+                            <span class="ilan-rozet">
+                                <?= aa_h(aa_t(
+                                    "Yuva arıyor",
+                                    "Looking for a home"
+                                )) ?>
+                            </span>
                         </div>
 
                         <div class="ilan-bilgi">
                             <h3><?= aa_h($ilan["hayvan_adi"]) ?></h3>
 
                             <p>
-                                <?= aa_h($ilan["tur"]) ?>
+                                <?= aa_h(aa_category_name($ilan["tur"])) ?>
                                 ·
                                 <?= aa_h($ilan["sehir"]) ?>
                             </p>
 
                             <div class="ilan-alt">
-                                <span>Benimle tanış</span>
+                                <span>
+                                    <?= aa_h(aa_t("Benimle tanış", "Meet me")) ?>
+                                </span>
                                 <span aria-hidden="true">↗</span>
                             </div>
                         </div>
@@ -1535,14 +1854,9 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
         <section class="bolum surec" id="nasil-sahiplenirim">
             <div class="kapsayici">
-
                 <div class="surec-baslik">
-                    <span class="etiket">
-                        <?= aa_h($bolum["etiket"]) ?>
-                    </span>
-
+                    <span class="etiket"><?= aa_h($bolum["etiket"]) ?></span>
                     <h2><?= aa_h($bolum["baslik"]) ?></h2>
-
                     <p><?= aa_h($bolum["aciklama"]) ?></p>
                 </div>
 
@@ -1554,12 +1868,10 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                             </span>
 
                             <h3><?= aa_h($oge["baslik"]) ?></h3>
-
                             <p><?= aa_h($oge["aciklama"]) ?></p>
                         </article>
                     <?php endforeach; ?>
                 </div>
-
             </div>
         </section>
     <?php endif; ?>
@@ -1569,33 +1881,28 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
         <section class="sehir-alani">
             <div class="kapsayici sehir-icerik">
-
                 <div>
-                    <span class="etiket">
-                        <?= aa_h($bolum["etiket"]) ?>
-                    </span>
-
+                    <span class="etiket"><?= aa_h($bolum["etiket"]) ?></span>
                     <h2><?= aa_h($bolum["baslik"]) ?></h2>
-
                     <p><?= aa_h($bolum["aciklama"]) ?></p>
                 </div>
 
                 <div>
                     <div class="sehirler">
                         <?php foreach (aa_cities($bolum["liste"]) as $sehir): ?>
-                            <a
-                                href="ilanlar.php?sehir=<?= rawurlencode($sehir) ?>"
-                            >
+                            <a href="ilanlar.php?sehir=<?= rawurlencode($sehir) ?>">
                                 <?= aa_h($sehir) ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
 
                     <a href="ilanlar.php" class="sehir-link">
-                        Tüm şehirlerdeki ilanları incele →
+                        <?= aa_h(aa_t(
+                            "Tüm şehirlerdeki ilanları incele",
+                            "Browse listings in all cities"
+                        )) ?> →
                     </a>
                 </div>
-
             </div>
         </section>
     <?php endif; ?>
@@ -1605,18 +1912,13 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
         <section class="bolum kapsayici">
             <div class="sss-duzen">
-
                 <div class="sss-giris">
-                    <span class="etiket">
-                        <?= aa_h($bolum["etiket"]) ?>
-                    </span>
-
+                    <span class="etiket"><?= aa_h($bolum["etiket"]) ?></span>
                     <h2><?= aa_h($bolum["baslik"]) ?></h2>
-
                     <p><?= aa_h($bolum["aciklama"]) ?></p>
 
                     <a href="iletisim.php" class="metin-link">
-                        Bize ulaş →
+                        <?= aa_h(aa_t("Bize ulaş", "Contact us")) ?> →
                     </a>
                 </div>
 
@@ -1632,15 +1934,11 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                         ?>
 
                         <details>
-                            <summary>
-                                <?= aa_h($oge["baslik"]) ?>
-                            </summary>
-
+                            <summary><?= aa_h($oge["baslik"]) ?></summary>
                             <p><?= aa_h($oge["aciklama"]) ?></p>
                         </details>
                     <?php endforeach; ?>
                 </div>
-
             </div>
         </section>
     <?php endif; ?>
@@ -1657,7 +1955,6 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
         <section class="davet kapsayici">
             <div>
                 <h2 style="white-space: pre-line"><?= aa_h($bolum["baslik"]) ?></h2>
-
                 <p><?= aa_h($bolum["aciklama"]) ?></p>
             </div>
 
@@ -1680,46 +1977,93 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                     width="48"
                     height="48"
                 >
+
                 <strong>Aris Pati Yuvası</strong>
             </a>
 
             <p class="footer-tanitim">
-    <?= aa_h($bolumler["footer"]["aciklama"]) ?>
-
-                Yuva arayan hayvanlarla onlara sevgiyle
-                bakmak isteyen insanları bir araya getiriyoruz.
-                Her can dostuna bir yuva.
+                <?= aa_h($bolumler["footer"]["aciklama"]) ?>
             </p>
         </div>
 
         <div>
-            <h3>Keşfet</h3>
-            <nav class="footer-linkler" aria-label="Alt menü">
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ilanlar.php">Sahiplendirme İlanları</a>
-                <a href="ilan-ver.php">İlan Ver</a>
+            <h3><?= aa_h(aa_t("Keşfet", "Explore")) ?></h3>
+
+            <nav
+                class="footer-linkler"
+                aria-label="<?= aa_h(aa_t("Alt menü", "Footer navigation")) ?>"
+            >
+                <a href="index.php">
+                    <?= aa_h(aa_t("Ana Sayfa", "Home")) ?>
+                </a>
+
+                <a href="ilanlar.php">
+                    <?= aa_h(aa_t(
+                        "Sahiplendirme İlanları",
+                        "Adoption Listings"
+                    )) ?>
+                </a>
+
+                <a href="blog.php">Blog</a>
+
+                <a href="ilan-ver.php">
+                    <?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?>
+                </a>
+
                 <?php if ($bolumler["surec"]["aktif"]): ?>
-    <a href="#nasil-sahiplenirim">Nasıl Sahiplenirim?</a>
-<?php endif; ?>
+                    <a href="#nasil-sahiplenirim">
+                        <?= aa_h(aa_t(
+                            "Nasıl Sahiplenirim?",
+                            "How Do I Adopt?"
+                        )) ?>
+                    </a>
+                <?php endif; ?>
             </nav>
         </div>
 
         <div>
-            <h3>Dostlarımız</h3>
-            <nav class="footer-linkler" aria-label="Hayvan türleri">
-                <a href="ilanlar.php?tur=<?= rawurlencode('Kedi') ?>">Kedi İlanları</a>
-                <a href="ilanlar.php?tur=<?= rawurlencode('Köpek') ?>">Köpek İlanları</a>
-                <a href="ilanlar.php?tur=<?= rawurlencode('Kuş') ?>">Kuş İlanları</a>
-                <a href="ilanlar.php">Tüm Dostlarımız</a>
+            <h3><?= aa_h(aa_t("Dostlarımız", "Our Companions")) ?></h3>
+
+            <nav
+                class="footer-linkler"
+                aria-label="<?= aa_h(aa_t("Hayvan türleri", "Animal types")) ?>"
+            >
+                <a href="ilanlar.php?tur=<?= rawurlencode("Kedi") ?>">
+                    <?= aa_h(aa_t("Kedi İlanları", "Cat Listings")) ?>
+                </a>
+
+                <a href="ilanlar.php?tur=<?= rawurlencode("Köpek") ?>">
+                    <?= aa_h(aa_t("Köpek İlanları", "Dog Listings")) ?>
+                </a>
+
+                <a href="ilanlar.php?tur=<?= rawurlencode("Kuş") ?>">
+                    <?= aa_h(aa_t("Kuş İlanları", "Bird Listings")) ?>
+                </a>
+
+                <a href="ilanlar.php">
+                    <?= aa_h(aa_t("Tüm Dostlarımız", "All Companions")) ?>
+                </a>
             </nav>
         </div>
 
         <div>
-            <h3>Bizi Tanıyın</h3>
-            <nav class="footer-linkler" aria-label="Bilgi menüsü">
-                <a href="hakkimizda.php">Hakkımızda</a>
-                <a href="iletisim.php">Bize Ulaşın</a>
-                <a href="fotograf-kaynaklari.html">Fotoğraf Kaynakları</a>
+            <h3><?= aa_h(aa_t("Bizi Tanıyın", "Get to Know Us")) ?></h3>
+
+            <nav
+                class="footer-linkler"
+                aria-label="<?= aa_h(aa_t("Bilgi menüsü", "Information")) ?>"
+            >
+                <a href="hakkimizda.php">
+                    <?= aa_h(aa_t("Hakkımızda", "About Us")) ?>
+                </a>
+
+                <a href="iletisim.php">
+                    <?= aa_h(aa_t("Bize Ulaşın", "Contact Us")) ?>
+                </a>
+
+                <a href="fotograf-kaynaklari.html">
+                    <?= aa_h(aa_t("Fotoğraf Kaynakları", "Photo Credits")) ?>
+                </a>
             </nav>
         </div>
     </div>
@@ -1727,8 +2071,17 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
     <div class="footer-taban">
         <div class="kapsayici">
             <span>© <?= date("Y") ?> Aris Pati Yuvası</span>
-            <span>Satın alma, sahiplen.</span>
-            <a href="#aris-ortak-ust">Yukarı dön ↑</a>
+
+            <span>
+                <?= aa_h(aa_t(
+                    "Satın alma, sahiplen.",
+                    "Adopt, don't shop."
+                )) ?>
+            </span>
+
+            <a href="#aris-ortak-ust">
+                <?= aa_h(aa_t("Yukarı dön", "Back to top")) ?> ↑
+            </a>
         </div>
     </div>
 </footer>

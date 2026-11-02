@@ -312,6 +312,7 @@ mysqli_stmt_bind_param(
         <a href="index.php">Ana Sayfa</a>
         <a href="ilanlar.php">İlanlar</a>
         <a href="ilan-ver.php">İlan Ver</a>
+        <a href="blog.php">Blog</a>
         <a href="hakkimizda.php">Hakkımızda</a>
         <a href="iletisim.php">İletişim</a>
         <a href="profil.php">Profilim</a>

@@ -1,47 +1,105 @@
 <?php
+session_start();
+
 require_once __DIR__ . "/baglanti.php";
 
-$mesaj = "";
-$adsoyad = "";
-$email = "";
-$telefon = "";
+/* Dil tercihi */
+$post_istegi = $_SERVER["REQUEST_METHOD"] === "POST";
+
+$istenen_dil = $post_istegi
+    ? ($_POST["dil_secimi"] ?? null)
+    : ($_GET["lang"] ?? null);
+
+$dil_degisti = is_string($istenen_dil)
+    && in_array($istenen_dil, ["tr", "en"], true);
+
+if ($dil_degisti) {
+    $_SESSION["dil"] = $istenen_dil;
+
+    if (!$post_istegi) {
+        header("Location: kayit.php");
+        exit();
+    }
+}
+
+$dil = in_array($_SESSION["dil"] ?? "", ["tr", "en"], true)
+    ? $_SESSION["dil"]
+    : "tr";
 
 function guvenli($deger)
 {
     return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+function ceviri($tr, $en)
+{
+    global $dil;
 
-    $adsoyad = is_string($_POST["adsoyad"] ?? null)
-        ? trim($_POST["adsoyad"])
+    return $dil === "en" ? $en : $tr;
+}
+
+function form_degeri($alan)
+{
+    return is_string($_POST[$alan] ?? null)
+        ? trim($_POST[$alan])
         : "";
+}
 
-    $email = is_string($_POST["email"] ?? null)
-        ? trim($_POST["email"])
-        : "";
+$mesaj = "";
+$adsoyad = form_degeri("adsoyad");
+$email = form_degeri("email");
+$telefon = form_degeri("telefon");
 
-    $telefon = is_string($_POST["telefon"] ?? null)
-        ? trim($_POST["telefon"])
-        : "";
+if (
+    !isset($_SESSION["kayit_token"])
+    || !is_string($_SESSION["kayit_token"])
+    || $_SESSION["kayit_token"] === ""
+) {
+    $_SESSION["kayit_token"] = bin2hex(random_bytes(32));
+}
 
+/* Dil değiştirme isteği hesap oluşturmaz. */
+if ($post_istegi && !$dil_degisti) {
     $sifre = is_string($_POST["sifre"] ?? null)
         ? $_POST["sifre"]
         : "";
 
-    if ($adsoyad === "" || $sifre === "") {
+    $token = $_POST["token"] ?? "";
 
-        $mesaj = "Lütfen tüm alanları doldurunuz.";
-
+    if (
+        !is_string($token)
+        || !hash_equals($_SESSION["kayit_token"], $token)
+    ) {
+        $mesaj = ceviri(
+            "Sayfayı yenileyip tekrar deneyiniz.",
+            "Please refresh the page and try again."
+        );
+    } elseif ($adsoyad === "" || $sifre === "") {
+        $mesaj = ceviri(
+            "Lütfen tüm alanları doldurunuz.",
+            "Please complete all fields."
+        );
+    } elseif (
+        mb_strlen($adsoyad, "UTF-8") > 100
+        || mb_strlen($email, "UTF-8") > 150
+    ) {
+        $mesaj = ceviri(
+            "Ad soyad veya e-posta adresi izin verilen uzunluğu aşıyor.",
+            "Your full name or email address exceeds the allowed length."
+        );
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-
-        $mesaj = "Lütfen geçerli bir e-posta adresi giriniz.";
-
+        $mesaj = ceviri(
+            "Lütfen geçerli bir e-posta adresi giriniz.",
+            "Please enter a valid email address."
+        );
     } elseif (!preg_match('/\A05[0-9]{9}\z/', $telefon)) {
-
-        $mesaj = "Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır.";
-
+        $mesaj = ceviri(
+            "Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır.",
+            "The phone number must start with 05 and contain 11 digits."
+        );
     } else {
+        $kontrol = null;
+        $sorgu = null;
 
         try {
             $kontrol = mysqli_prepare(
@@ -49,71 +107,111 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "SELECT id FROM uyeler WHERE email = ? LIMIT 1"
             );
 
-            mysqli_stmt_bind_param($kontrol, "s", $email);
-            mysqli_stmt_execute($kontrol);
-
-            $sonuc = mysqli_stmt_get_result($kontrol);
-            $email_kayitli = mysqli_num_rows($sonuc) > 0;
-
-            mysqli_stmt_close($kontrol);
-
-            if ($email_kayitli) {
-
-                $mesaj = "Bu e-posta adresi zaten kullanılıyor.";
-
+            if (!$kontrol) {
+                $mesaj = ceviri(
+                    "Kayıt oluşturulamadı. Lütfen tekrar deneyiniz.",
+                    "Your account could not be created. Please try again."
+                );
             } else {
+                mysqli_stmt_bind_param($kontrol, "s", $email);
+                mysqli_stmt_execute($kontrol);
 
-                $sifre_hash = password_hash($sifre, PASSWORD_DEFAULT);
+                $sonuc = mysqli_stmt_get_result($kontrol);
+                $email_kayitli = mysqli_num_rows($sonuc) > 0;
 
-                $sorgu = mysqli_prepare(
-                    $baglanti,
-                    "INSERT INTO uyeler
-                        (ad_soyad, email, telefon, sifre)
-                     VALUES (?, ?, ?, ?)"
-                );
+                mysqli_stmt_close($kontrol);
+                $kontrol = null;
 
-                mysqli_stmt_bind_param(
-                    $sorgu,
-                    "ssss",
-                    $adsoyad,
-                    $email,
-                    $telefon,
-                    $sifre_hash
-                );
+                if ($email_kayitli) {
+                    $mesaj = ceviri(
+                        "Bu e-posta adresi zaten kullanılıyor.",
+                        "This email address is already in use."
+                    );
+                } else {
+                    $sifre_hash = password_hash(
+                        $sifre,
+                        PASSWORD_DEFAULT
+                    );
 
-                $kaydedildi = mysqli_stmt_execute($sorgu);
-                mysqli_stmt_close($sorgu);
+                    $sorgu = mysqli_prepare(
+                        $baglanti,
+                        "INSERT INTO uyeler
+                            (ad_soyad, email, telefon, sifre)
+                         VALUES (?, ?, ?, ?)"
+                    );
 
-                if ($kaydedildi) {
-                    header("Location: giris.php");
-                    exit();
+                    $kaydedildi = false;
+
+                    if ($sorgu) {
+                        mysqli_stmt_bind_param(
+                            $sorgu,
+                            "ssss",
+                            $adsoyad,
+                            $email,
+                            $telefon,
+                            $sifre_hash
+                        );
+
+                        $kaydedildi = mysqli_stmt_execute($sorgu);
+
+                        mysqli_stmt_close($sorgu);
+                        $sorgu = null;
+                    }
+
+                    if ($kaydedildi) {
+                        unset($_SESSION["kayit_token"]);
+
+                        header("Location: giris.php");
+                        exit();
+                    }
+
+                    $mesaj = ceviri(
+                        "Kayıt oluşturulamadı. Lütfen tekrar deneyiniz.",
+                        "Your account could not be created. Please try again."
+                    );
                 }
-
-                $mesaj = "Kayıt oluşturulamadı. Lütfen tekrar deneyiniz.";
+            }
+        } catch (mysqli_sql_exception $hata) {
+            $mesaj = (int)$hata->getCode() === 1062
+                ? ceviri(
+                    "Bu bilgilerle zaten bir hesap bulunuyor.",
+                    "An account with these details already exists."
+                )
+                : ceviri(
+                    "Kayıt oluşturulamadı. Lütfen tekrar deneyiniz.",
+                    "Your account could not be created. Please try again."
+                );
+        } finally {
+            if ($kontrol instanceof mysqli_stmt) {
+                mysqli_stmt_close($kontrol);
             }
 
-        } catch (mysqli_sql_exception $hata) {
-
-            $mesaj = (int)$hata->getCode() === 1062
-                ? "Bu bilgilerle zaten bir hesap bulunuyor."
-                : "Kayıt oluşturulamadı. Lütfen tekrar deneyiniz.";
+            if ($sorgu instanceof mysqli_stmt) {
+                mysqli_stmt_close($sorgu);
+            }
         }
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
-
+<html lang="<?= guvenli($dil) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Kayıt Ol | Aris Pati Yuvası</title>
+    <title><?= guvenli(ceviri(
+        "Kayıt Ol | Aris Pati Yuvası",
+        "Sign Up | Aris Pati Yuvası"
+    )) ?></title>
 
     <style>
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scrollbar-gutter: stable;
         }
 
         body {
@@ -165,10 +263,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-size: 11px;
         }
 
+        .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dil-secici {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid #cbd7c3;
+            border-radius: 8px;
+        }
+
+        .dil-secici button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 37px;
+            min-height: 30px;
+            margin: 0;
+            padding: 5px 9px;
+            border: 0;
+            border-radius: 5px;
+            background: transparent;
+            color: #284b32;
+            font: bold 12px Arial, sans-serif;
+            cursor: pointer;
+        }
+
+        .dil-secici button:hover {
+            background: #e6eddf;
+        }
+
+        .dil-secici button[aria-current="true"] {
+            background: #426b46;
+            color: white;
+        }
+
         .kayit-menu {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
             flex-wrap: wrap;
             gap: 6px;
         }
@@ -201,7 +341,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-radius: 18px;
             background: #fffdf8;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(40, 75, 50, 0.08);
+            box-shadow: 0 10px 30px rgba(40,75,50,.08);
         }
 
         .kayit-kart-logo {
@@ -236,13 +376,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-weight: bold;
         }
 
-        .kayit-kart input {
+        .kayit-kart input:not([type="hidden"]) {
             width: 100%;
             margin-bottom: 20px;
             padding: 13px 14px;
             border: 1px solid #d6d9c9;
             border-radius: 9px;
-            background: #fff;
+            background: white;
             color: #284b32;
             font: inherit;
         }
@@ -252,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             outline-offset: 2px;
         }
 
-        #telefon {
+        .kayit-kart #telefon {
             margin-bottom: 8px;
         }
 
@@ -270,7 +410,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border: 0;
             border-radius: 9px;
             background: #426b46;
-            color: #fff;
+            color: white;
             font: inherit;
             font-weight: bold;
             cursor: pointer;
@@ -295,6 +435,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             color: #a63c35;
             font-size: 14px;
             line-height: 1.5;
+        }
+
+        .kayit-bilgi {
+            margin: 0 0 20px;
+            padding: 12px;
+            border: 1px solid #c8d9bc;
+            border-radius: 8px;
+            background: #eaf2e4;
+            color: #35583b;
+            font-size: 13px;
+            line-height: 1.6;
         }
 
         .kayit-giris {
@@ -322,14 +473,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-align: center;
         }
 
-        @media (max-width: 650px) {
-            .kayit-ust {
-                justify-content: center;
-                padding: 16px;
+        @media (max-width: 1100px) {
+            .ust-sag {
+                flex-basis: 100%;
             }
 
             .kayit-menu {
                 width: 100%;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .kayit-ust {
+                padding: 16px;
             }
 
             .kayit-menu a {
@@ -350,136 +506,257 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
 
-    <header class="kayit-ust">
-        <a href="index.php" class="kayit-logo">
-            <img
-                src="images/aris-logoo.png"
-                alt="Aris Pati Yuvası logosu"
-                width="48"
-                height="48"
-            >
+<header class="kayit-ust">
+    <a href="index.php" class="kayit-logo">
+        <img
+            src="images/aris-logoo.png"
+            alt="<?= guvenli(ceviri(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            )) ?>"
+            width="48"
+            height="48"
+        >
 
-            <span>
-                <strong>Aris Pati Yuvası</strong>
-                <small>Her can dostuna bir yuva</small>
-            </span>
-        </a>
+        <span>
+            <strong>Aris Pati Yuvası</strong>
+            <small>
+                <?= guvenli(ceviri(
+                    "Her can dostuna bir yuva",
+                    "A home for every companion"
+                )) ?>
+            </small>
+        </span>
+    </a>
 
-        <nav class="kayit-menu" aria-label="Site menüsü">
-            <a href="index.php">Ana Sayfa</a>
-            <a href="ilanlar.php">İlanlar</a>
-            <a href="ilan-ver.php">İlan Ver</a>
-            <a href="hakkimizda.php">Hakkımızda</a>
-            <a href="iletisim.php">İletişim</a>
-            <a href="giris.php">Giriş Yap</a>
+    <div class="ust-sag">
+        <nav
+            class="dil-secici"
+            aria-label="<?= guvenli(ceviri(
+                "Dil seçimi",
+                "Language selection"
+            )) ?>"
+        >
+            <button
+                type="submit"
+                form="kayit-form"
+                name="dil_secimi"
+                value="tr"
+                formnovalidate
+                lang="tr"
+                aria-label="Türkçe"
+                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
+            >TR</button>
+
+            <button
+                type="submit"
+                form="kayit-form"
+                name="dil_secimi"
+                value="en"
+                formnovalidate
+                lang="en"
+                aria-label="English"
+                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
+            >EN</button>
         </nav>
-    </header>
 
-    <main class="kayit-alani">
+        <nav
+            class="kayit-menu"
+            aria-label="<?= guvenli(ceviri(
+                "Site menüsü",
+                "Site navigation"
+            )) ?>"
+        >
+            <a href="index.php">
+                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
+            </a>
 
-        <section class="kayit-kart" aria-labelledby="kayit-baslik">
+            <a href="ilanlar.php">
+                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
+            </a>
 
-            <img
-                src="images/aris-logoo.png"
-                alt=""
-                class="kayit-kart-logo"
-                width="80"
-                height="80"
+            <a href="ilan-ver.php">
+                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
+            </a>
+
+            <a href="blog.php">Blog</a>
+
+            <a href="hakkimizda.php">
+                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
+            </a>
+
+            <a href="iletisim.php">
+                <?= guvenli(ceviri("İletişim", "Contact")) ?>
+            </a>
+
+            <a href="giris.php">
+                <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+            </a>
+        </nav>
+    </div>
+</header>
+
+<main class="kayit-alani">
+    <section class="kayit-kart" aria-labelledby="kayit-baslik">
+        <img
+            src="images/aris-logoo.png"
+            alt=""
+            class="kayit-kart-logo"
+            width="80"
+            height="80"
+        >
+
+        <h1 id="kayit-baslik">
+            <?= guvenli(ceviri("Aramıza Katıl!", "Join Us!")) ?>
+        </h1>
+
+        <p class="kayit-aciklama">
+            <?= guvenli(ceviri(
+                "Aris Pati Yuvası ailesine katılmak için bilgilerinizi doldurun.",
+                "Complete your details to join the Aris Pati Yuvası family."
+            )) ?>
+        </p>
+
+        <?php if ($mesaj !== ""): ?>
+            <p class="kayit-mesaj" role="alert">
+                <?= guvenli($mesaj) ?>
+            </p>
+        <?php endif; ?>
+
+        <?php if ($dil_degisti && $post_istegi): ?>
+            <p class="kayit-bilgi" role="status">
+                <?= guvenli(ceviri(
+                    "Dil değiştirildi. Bilgileriniz korundu. Lütfen şifrenizi yeniden giriniz.",
+                    "Language changed. Your details have been kept. Please enter your password again."
+                )) ?>
+            </p>
+        <?php endif; ?>
+
+        <form id="kayit-form" action="kayit.php" method="POST">
+            <input
+                type="hidden"
+                name="token"
+                value="<?= guvenli($_SESSION["kayit_token"]) ?>"
             >
 
-            <h1 id="kayit-baslik">Aramıza Katıl!</h1>
+            <label for="adsoyad">
+                <?= guvenli(ceviri("Ad Soyad", "Full Name")) ?>
+            </label>
 
-            <p class="kayit-aciklama">
-                Aris Pati Yuvası ailesine katılmak için
-                bilgilerinizi doldurun.
-            </p>
+            <input
+                type="text"
+                id="adsoyad"
+                name="adsoyad"
+                placeholder="<?= guvenli(ceviri(
+                    "Adınızı ve soyadınızı giriniz",
+                    "Enter your full name"
+                )) ?>"
+                maxlength="100"
+                autocomplete="name"
+                value="<?= guvenli($adsoyad) ?>"
+                required
+            >
 
-            <?php if ($mesaj !== ""): ?>
-                <p class="kayit-mesaj" role="alert">
-                    <?php echo guvenli($mesaj); ?>
-                </p>
-            <?php endif; ?>
+            <label for="email">
+                <?= guvenli(ceviri(
+                    "E-posta Adresi",
+                    "Email Address"
+                )) ?>
+            </label>
 
-            <form action="kayit.php" method="POST">
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="<?= guvenli(ceviri(
+                    "E-posta adresinizi giriniz",
+                    "Enter your email address"
+                )) ?>"
+                maxlength="150"
+                autocomplete="email"
+                value="<?= guvenli($email) ?>"
+                required
+            >
 
-                <label for="adsoyad">Ad Soyad</label>
-                <input
-                    type="text"
-                    id="adsoyad"
-                    name="adsoyad"
-                    placeholder="Adınızı ve soyadınızı giriniz"
-                    maxlength="100"
-                    autocomplete="name"
-                    value="<?php echo guvenli($adsoyad); ?>"
-                    required
-                >
+            <label for="telefon">
+                <?= guvenli(ceviri(
+                    "Telefon Numarası",
+                    "Phone Number"
+                )) ?>
+            </label>
 
-                <label for="email">E-posta Adresi</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="E-posta adresinizi giriniz"
-                    maxlength="150"
-                    autocomplete="email"
-                    value="<?php echo guvenli($email); ?>"
-                    required
-                >
+            <input
+                type="tel"
+                id="telefon"
+                name="telefon"
+                placeholder="05XXXXXXXXX"
+                inputmode="numeric"
+                autocomplete="tel-national"
+                minlength="11"
+                maxlength="11"
+                pattern="05[0-9]{9}"
+                title="<?= guvenli(ceviri(
+                    "Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır.",
+                    "The phone number must start with 05 and contain 11 digits."
+                )) ?>"
+                aria-describedby="telefon-aciklama"
+                value="<?= guvenli($telefon) ?>"
+                required
+            >
 
-                <label for="telefon">Telefon Numarası</label>
-                <input
-                    type="tel"
-                    id="telefon"
-                    name="telefon"
-                    placeholder="05XXXXXXXXX"
-                    inputmode="numeric"
-                    autocomplete="tel-national"
-                    minlength="11"
-                    maxlength="11"
-                    pattern="05[0-9]{9}"
-                    title="Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır."
-                    aria-describedby="telefon-aciklama"
-                    value="<?php echo guvenli($telefon); ?>"
-                    required
-                >
+            <small id="telefon-aciklama">
+                <?= guvenli(ceviri(
+                    "Başındaki 0 dahil, boşluksuz 11 rakam giriniz.",
+                    "Enter 11 digits without spaces, including the initial 0."
+                )) ?>
+            </small>
 
-                <small id="telefon-aciklama">
-                    Başındaki 0 dahil, boşluksuz 11 rakam giriniz.
-                </small>
+            <label for="sifre">
+                <?= guvenli(ceviri("Şifre", "Password")) ?>
+            </label>
 
-                <label for="sifre">Şifre</label>
-                <input
-                    type="password"
-                    id="sifre"
-                    name="sifre"
-                    placeholder="Şifrenizi oluşturunuz"
-                    autocomplete="new-password"
-                    required
-                >
+            <input
+                type="password"
+                id="sifre"
+                name="sifre"
+                placeholder="<?= guvenli(ceviri(
+                    "Şifrenizi oluşturunuz",
+                    "Create your password"
+                )) ?>"
+                autocomplete="new-password"
+                required
+            >
 
-                <button
-                    type="submit"
-                    name="kayit"
-                    value="1"
-                    class="kayit-buton"
-                >
-                    Kayıt Ol
-                </button>
+            <button
+                type="submit"
+                name="kayit"
+                value="1"
+                class="kayit-buton"
+            >
+                <?= guvenli(ceviri("Kayıt Ol", "Sign Up")) ?>
+            </button>
+        </form>
 
-            </form>
+        <p class="kayit-giris">
+            <?= guvenli(ceviri(
+                "Zaten hesabınız var mı?",
+                "Already have an account?"
+            )) ?>
 
-            <p class="kayit-giris">
-                Zaten hesabınız var mı?
-                <a href="giris.php">Giriş Yap</a>
-            </p>
+            <a href="giris.php">
+                <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+            </a>
+        </p>
+    </section>
+</main>
 
-        </section>
-
-    </main>
-
-    <footer class="kayit-alt">
-        © 2026 Aris Pati Yuvası · Her can dostu sevgi dolu bir yuvayı hak eder.
-    </footer>
+<footer class="kayit-alt">
+    © <?= date("Y") ?> Aris Pati Yuvası ·
+    <?= guvenli(ceviri(
+        "Her can dostu sevgi dolu bir yuvayı hak eder.",
+        "Every companion deserves a loving home."
+    )) ?>
+</footer>
 
 </body>
 </html>

@@ -115,18 +115,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (!$sohbet) {
         $hata = "Geçerli bir sohbet seçiniz.";
+
     } elseif (
         !is_string($token)
         || !hash_equals($_SESSION["sohbet_token"], $token)
     ) {
         $hata = "Sayfayı yenileyip tekrar deneyiniz.";
+
     } elseif ($sohbet["durum"] !== "Onaylandı") {
         $hata = "İlan yayında olmadığı için yeni mesaj gönderilemiyor.";
+
     } elseif (
         $metin === ""
         || mb_strlen($metin, "UTF-8") > 5000
     ) {
         $hata = "Mesajınız 1 ile 5000 karakter arasında olmalıdır.";
+
     } else {
         try {
             sorgula(
@@ -148,6 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 . "&kisi=" . $kisi . "#son"
             );
             exit;
+
         } catch (mysqli_sql_exception | RuntimeException $e) {
             $hata = "Mesaj gönderilemedi. Lütfen tekrar deneyiniz.";
         }
@@ -268,6 +273,7 @@ $menu_kategorileri = [
     "Diğer" => "🐾"
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -686,6 +692,7 @@ $menu_kategorileri = [
         }
     </style>
 </head>
+
 <body>
 
 <header class="ilan-ust" id="aris-ortak-ust">
@@ -727,6 +734,7 @@ $menu_kategorileri = [
         </div>
 
         <a href="ilan-ver.php">İlan Ver</a>
+        <a href="blog.php">Blog</a>
         <a href="hakkimizda.php">Hakkımızda</a>
         <a href="iletisim.php">İletişim</a>
 

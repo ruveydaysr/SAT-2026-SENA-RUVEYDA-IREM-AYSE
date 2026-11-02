@@ -1,25 +1,80 @@
 <?php
 session_start();
 
+$post_istegi = $_SERVER["REQUEST_METHOD"] === "POST";
+
+$istenen_dil = $post_istegi
+    ? ($_POST["dil_secimi"] ?? null)
+    : ($_GET["lang"] ?? null);
+
+$dil_degisti = is_string($istenen_dil)
+    && in_array($istenen_dil, ["tr", "en"], true);
+
+if ($dil_degisti) {
+    $_SESSION["dil"] = $istenen_dil;
+
+    if (!$post_istegi) {
+        header("Location: iletisim.php");
+        exit();
+    }
+}
+
+$dil = $_SESSION["dil"] ?? "tr";
+
+if (!is_string($dil) || !in_array($dil, ["tr", "en"], true)) {
+    $dil = "tr";
+}
+
+$_SESSION["dil"] = $dil;
+
 require_once __DIR__ . "/baglanti.php";
 
-function guvenli($deger)
+/* Bu sayfaya özel adlar, diğer dosyalardaki fonksiyonlarla çakışmaz. */
+function iletisim_guvenli($deger)
 {
     return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
 }
 
+function iletisim_ceviri($turkce, $ingilizce)
+{
+    global $dil;
+    return $dil === "en" ? $ingilizce : $turkce;
+}
+
+$kategoriler = [
+    ["Kedi", "Cat", "🐱"],
+    ["Köpek", "Dog", "🐶"],
+    ["Kuş", "Bird", "🐦"],
+    ["Balık", "Fish", "🐠"],
+    ["Tavşan", "Rabbit", "🐰"],
+    ["Kemirgen", "Rodent", "🐹"],
+    ["Sürüngen", "Reptile", "🦎"],
+    ["Diğer", "Other", "🐾"]
+];
+
 $bildirim = "";
 $basarili = false;
 
-$ad = trim((string)($_SESSION["uye_adsoyad"] ?? ""));
-$eposta = trim((string)($_SESSION["uye_email"] ?? ""));
+$ad = is_string($_SESSION["uye_adsoyad"] ?? null)
+    ? trim($_SESSION["uye_adsoyad"])
+    : "";
+
+$eposta = is_string($_SESSION["uye_email"] ?? null)
+    ? trim($_SESSION["uye_email"])
+    : "";
+
 $mesaj = "";
 
-if (empty($_SESSION["iletisim_token"])) {
+if (
+    !isset($_SESSION["iletisim_token"])
+    || !is_string($_SESSION["iletisim_token"])
+    || $_SESSION["iletisim_token"] === ""
+) {
     $_SESSION["iletisim_token"] = bin2hex(random_bytes(32));
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+/* Dil değiştirildiğinde de formdaki bilgileri koru. */
+if ($post_istegi) {
     $ad = is_string($_POST["ad"] ?? null)
         ? trim($_POST["ad"])
         : "";
@@ -31,25 +86,43 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $mesaj = is_string($_POST["mesaj"] ?? null)
         ? trim($_POST["mesaj"])
         : "";
+}
 
+/* Dil seçimi mesaj gönderme işlemini çalıştırmaz. */
+if ($post_istegi && !$dil_degisti) {
     $token = $_POST["token"] ?? "";
 
     if (
         !is_string($token)
         || !hash_equals($_SESSION["iletisim_token"], $token)
     ) {
-        $bildirim = "Sayfayı yenileyip tekrar deneyiniz.";
+        $bildirim = iletisim_ceviri(
+            "Sayfayı yenileyip tekrar deneyiniz.",
+            "Please refresh the page and try again."
+        );
     } elseif ($ad === "" || $eposta === "" || $mesaj === "") {
-        $bildirim = "Lütfen ad soyad, e-posta ve mesaj alanlarını doldurunuz.";
+        $bildirim = iletisim_ceviri(
+            "Lütfen ad soyad, e-posta ve mesaj alanlarını doldurunuz.",
+            "Please enter your full name, email address and message."
+        );
     } elseif (mb_strlen($ad, "UTF-8") > 100) {
-        $bildirim = "Ad soyad en fazla 100 karakter olabilir.";
+        $bildirim = iletisim_ceviri(
+            "Ad soyad en fazla 100 karakter olabilir.",
+            "Your full name cannot exceed 100 characters."
+        );
     } elseif (
         strlen($eposta) > 150
         || !filter_var($eposta, FILTER_VALIDATE_EMAIL)
     ) {
-        $bildirim = "Lütfen geçerli bir e-posta adresi yazınız.";
+        $bildirim = iletisim_ceviri(
+            "Lütfen geçerli bir e-posta adresi yazınız.",
+            "Please enter a valid email address."
+        );
     } elseif (mb_strlen($mesaj, "UTF-8") > 5000) {
-        $bildirim = "Mesajınız en fazla 5000 karakter olabilir.";
+        $bildirim = iletisim_ceviri(
+            "Mesajınız en fazla 5000 karakter olabilir.",
+            "Your message cannot exceed 5,000 characters."
+        );
     } else {
         $uye_id = isset($_SESSION["uye_id"])
             ? (int)$_SESSION["uye_id"]
@@ -57,11 +130,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $sorgu = null;
 
+        $hata_mesaji = iletisim_ceviri(
+            "Mesaj gönderilemedi. Lütfen tekrar deneyiniz.",
+            "Your message could not be sent. Please try again."
+        );
+
         try {
             $sorgu = mysqli_prepare(
                 $baglanti,
                 "INSERT INTO mesajlar
-                    (uye_id, ad_soyad, email, mesaj)
+                 (uye_id, ad_soyad, email, mesaj)
                  VALUES (?, ?, ?, ?)"
             );
 
@@ -76,19 +154,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 );
 
                 if (mysqli_stmt_execute($sorgu)) {
-                    $bildirim = "Mesajınız yöneticiye gönderildi.";
+                    $bildirim = iletisim_ceviri(
+                        "Mesajınız yöneticiye gönderildi.",
+                        "Your message has been sent to the administrator."
+                    );
+
                     $basarili = true;
                     $mesaj = "";
 
                     $_SESSION["iletisim_token"] = bin2hex(random_bytes(32));
                 } else {
-                    $bildirim = "Mesaj gönderilemedi. Lütfen tekrar deneyiniz.";
+                    $bildirim = $hata_mesaji;
                 }
             } else {
-                $bildirim = "Mesaj gönderilemedi. Lütfen tekrar deneyiniz.";
+                $bildirim = $hata_mesaji;
             }
         } catch (mysqli_sql_exception $e) {
-            $bildirim = "Mesaj gönderilemedi. Lütfen tekrar deneyiniz.";
+            $bildirim = $hata_mesaji;
         } finally {
             if ($sorgu instanceof mysqli_stmt) {
                 mysqli_stmt_close($sorgu);
@@ -97,13 +179,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 ?>
-
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?php echo iletisim_guvenli($dil); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İletişim | Aris Pati Yuvası</title>
+
+    <title><?php echo iletisim_ceviri("İletişim", "Contact"); ?> | Aris Pati Yuvası</title>
 
     <style>
         * {
@@ -121,9 +203,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-family: Arial, sans-serif;
         }
 
-        /* Üst menü */
-
-        .ilan-ust {
+        #aris-ortak-ust {
+            position: relative;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -135,17 +217,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-bottom: 1px solid #35583b;
         }
 
-        .ilan-logo {
-            display: flex;
+        #aris-ortak-ust .ilan-logo {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex-shrink: 0;
             color: white;
             text-decoration: none;
         }
 
-        .ilan-logo img {
-            display: block;
+        #aris-ortak-ust .ilan-logo img {
             width: 54px;
             height: 54px;
             padding: 5px;
@@ -155,20 +236,60 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             object-fit: contain;
         }
 
-        .ilan-logo strong {
+        #aris-ortak-ust .ilan-logo strong {
             display: block;
             font-size: 20px;
             line-height: 1.3;
         }
 
-        .ilan-logo small {
+        #aris-ortak-ust .ilan-logo small {
             display: block;
             margin-top: 5px;
             font-size: 11px;
             line-height: 1.4;
         }
 
-        .ilan-menu {
+        #aris-ortak-ust .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        #aris-ortak-ust .dil-secici {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 8px;
+        }
+
+        #aris-ortak-ust .dil-secici button {
+            min-width: 37px;
+            min-height: 30px;
+            padding: 5px 9px;
+            border: 0;
+            border-radius: 5px;
+            background: transparent;
+            color: white;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #aris-ortak-ust .dil-secici button:hover {
+            background: #35583b;
+        }
+
+        #aris-ortak-ust .dil-secici button.aktif {
+            background: #eee5d3;
+            color: #284b32;
+        }
+
+        #aris-ortak-ust .ilan-menu {
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -177,32 +298,78 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             margin-left: auto;
         }
 
-        .ilan-menu a {
+        #aris-ortak-ust .ilan-menu > a,
+        #aris-ortak-ust .kategori-buton {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             min-height: 40px;
+            margin: 0;
             padding: 10px;
+            border: 0;
             border-radius: 8px;
+            background: transparent;
             color: white;
-            font-size: 14px;
-            line-height: 20px;
-            text-decoration: none;
+            font: normal 14px/20px Arial, sans-serif;
             white-space: nowrap;
+            text-decoration: none;
+            cursor: pointer;
         }
 
-        .ilan-menu a:hover,
-        .ilan-menu a:focus-visible {
-            background: #284b32;
+        #aris-ortak-ust .ilan-menu > a:hover,
+        #aris-ortak-ust .kategori-buton:hover {
+            background: #35583b;
         }
 
-        .ilan-menu a[aria-current="page"] {
+        #aris-ortak-ust .ilan-menu > a[aria-current="page"] {
             background: #eee5d3;
             color: #284b32;
             font-weight: bold;
         }
 
-        /* İletişim formu */
+        #aris-ortak-ust .kategori-menu {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        #aris-ortak-ust .kategori-acilir {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 200;
+            display: none;
+            width: 205px;
+            max-width: calc(100vw - 36px);
+            padding: 8px;
+            border: 1px solid #ded6c6;
+            border-radius: 12px;
+            background: #fffdf8;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        #aris-ortak-ust .kategori-menu:hover .kategori-acilir,
+        #aris-ortak-ust .kategori-menu:focus-within .kategori-acilir {
+            display: block;
+        }
+
+        #aris-ortak-ust .kategori-acilir a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 40px;
+            padding: 10px 12px;
+            border-radius: 7px;
+            color: #284b32;
+            font-size: 14px;
+            line-height: 20px;
+            text-decoration: none;
+        }
+
+        #aris-ortak-ust .kategori-acilir a:hover {
+            background: #426b46;
+            color: white;
+        }
 
         main {
             width: min(650px, 92%);
@@ -253,7 +420,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-radius: 8px;
             background: white;
             color: #284b32;
-            font: inherit;
+            font-family: inherit;
             font-size: 14px;
         }
 
@@ -280,13 +447,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-radius: 8px;
             background: #426b46;
             color: white;
-            font: inherit;
+            font-family: inherit;
             font-size: 14px;
             cursor: pointer;
         }
 
         .btn-gonder:hover {
-            background: #284b32;
+            background: #35583b;
         }
 
         .iletisim .bildirim {
@@ -296,12 +463,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             overflow-wrap: anywhere;
         }
 
-        .iletisim .bildirim.basarili {
+        .iletisim .basarili {
             background: #e6eddf;
             color: #284b32;
         }
 
-        .iletisim .bildirim.hata {
+        .iletisim .hata {
             background: #f9ecea;
             color: #a63c35;
         }
@@ -314,7 +481,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             outline-offset: 3px;
         }
 
-        .ilan-menu a:focus-visible {
+        #aris-ortak-ust a:focus-visible,
+        #aris-ortak-ust button:focus-visible {
             outline-color: #eee5d3;
         }
 
@@ -326,13 +494,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         @media (max-width: 1100px) {
-            .ilan-menu {
+            #aris-ortak-ust .ust-sag {
+                flex-basis: 100%;
+            }
+
+            #aris-ortak-ust .ilan-menu {
                 width: 100%;
             }
         }
 
         @media (max-width: 700px) {
-            .ilan-menu a {
+            #aris-ortak-ust {
+                gap: 16px;
+                padding: 15px 18px;
+            }
+
+            #aris-ortak-ust .ilan-menu > a,
+            #aris-ortak-ust .kategori-buton {
                 padding: 8px;
                 font-size: 13px;
             }
@@ -352,337 +530,180 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
     </style>
-    <style>
-    html {
-        scrollbar-gutter: stable;
-    }
-
-    #aris-ortak-ust,
-    #aris-ortak-ust * {
-        box-sizing: border-box;
-    }
-
-    html body > header#aris-ortak-ust {
-        position: relative;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 24px;
-        width: 100%;
-        min-height: 88px;
-        margin: 0;
-        padding: 16px 24px;
-        border-bottom: 1px solid #35583b !important;
-        background: #426b46 !important;
-        text-align: left;
-        overflow: visible;
-    }
-
-    #aris-ortak-ust > a.ilan-logo {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
-        flex-shrink: 0;
-        width: auto;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        color: #fff !important;
-        text-decoration: none;
-    }
-
-    #aris-ortak-ust .ilan-logo img {
-        display: block;
-        flex-shrink: 0;
-        width: 54px;
-        height: 54px;
-        margin: 0;
-        padding: 5px;
-        border: 1px solid #eee5d3;
-        border-radius: 12px;
-        background: #fffdf8;
-        object-fit: contain;
-    }
-
-    #aris-ortak-ust .ilan-logo strong {
-        display: block;
-        margin: 0;
-        color: #fff !important;
-        font: bold 20px/1.3 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust .ilan-logo small {
-        display: block;
-        margin: 5px 0 0;
-        color: #fff !important;
-        font: normal 11px/1.4 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust > nav.ilan-menu {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 4px;
-        width: auto;
-        margin: 0 0 0 auto;
-        padding: 0;
-        background: transparent;
-    }
-
-    #aris-ortak-ust .ilan-menu > a,
-    #aris-ortak-ust .kategori-baslik {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        width: auto;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent !important;
-        color: #fff !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: center;
-        text-decoration: none;
-        white-space: nowrap;
-        cursor: pointer;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:hover,
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-menu:hover .kategori-baslik,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-baslik {
-        background: #284b32 !important;
-        color: #fff !important;
-    }
-
-    #aris-ortak-ust .ilan-menu > a[aria-current="page"],
-    #aris-ortak-ust .ilan-menu > a.menu-aktif {
-        background: #eee5d3 !important;
-        color: #284b32 !important;
-        font-weight: bold;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-baslik:focus-visible {
-        outline: 2px solid #eee5d3;
-        outline-offset: 3px;
-    }
-
-    #aris-ortak-ust .kategori-menu {
-        position: relative;
-        flex-shrink: 0;
-        margin: 0;
-        padding: 0;
-    }
-
-    #aris-ortak-ust .kategori-acilir {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        z-index: 200;
-        display: none;
-        width: 205px;
-        max-width: calc(100vw - 36px);
-        margin: 0;
-        padding: 8px;
-        border: 1px solid #ded6c6;
-        border-radius: 12px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
-    }
-
-    #aris-ortak-ust .kategori-menu:hover .kategori-acilir,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-acilir {
-        display: block;
-    }
-
-    #aris-ortak-ust .kategori-acilir a {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px 12px;
-        border: 0;
-        border-radius: 7px;
-        background: transparent !important;
-        color: #284b32 !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: left;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    #aris-ortak-ust .kategori-acilir a:hover,
-    #aris-ortak-ust .kategori-acilir a:focus-visible {
-        background: #426b46 !important;
-        color: #fff !important;
-    }
-
-    @media (max-width: 1100px) {
-        #aris-ortak-ust > nav.ilan-menu {
-            width: 100%;
-            justify-content: flex-end;
-        }
-    }
-
-    @media (max-width: 700px) {
-        html body > header#aris-ortak-ust {
-            gap: 16px;
-            padding: 15px 18px;
-        }
-
-        #aris-ortak-ust .ilan-menu > a,
-        #aris-ortak-ust .kategori-baslik {
-            padding: 8px;
-            font-size: 13px;
-        }
-    }
-</style>
 </head>
 
 <body>
-<?php
-$aktif_sayfa = basename($_SERVER["SCRIPT_NAME"] ?? "");
-
-$menu_kategorileri = [
-    "Kedi" => "🐱",
-    "Köpek" => "🐶",
-    "Kuş" => "🐦",
-    "Balık" => "🐠",
-    "Tavşan" => "🐰",
-    "Kemirgen" => "🐹",
-    "Sürüngen" => "🦎",
-    "Diğer" => "🐾"
-];
-
-$menu_baglantilari = [
-    "ilan-ver.php" => "İlan Ver",
-    "hakkimizda.php" => "Hakkımızda",
-    "iletisim.php" => "İletişim"
-];
-?>
 
 <header class="ilan-ust" id="aris-ortak-ust">
     <a href="index.php" class="ilan-logo">
         <img
             src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
-            width="54"
-            height="54"
+            alt="<?php echo iletisim_ceviri(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            ); ?>"
         >
 
         <span>
             <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
+            <small>
+                <?php echo iletisim_ceviri(
+                    "Her can dostuna bir yuva",
+                    "A loving home for every pet"
+                ); ?>
+            </small>
         </span>
     </a>
 
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a
-            href="index.php"
-            <?= $aktif_sayfa === "index.php" ? 'aria-current="page"' : "" ?>
-        >Ana Sayfa</a>
-
-        <a
-            href="ilanlar.php"
-            <?= $aktif_sayfa === "ilanlar.php" ? 'aria-current="page"' : "" ?>
-            <?= $aktif_sayfa === "ilan-detay.php" ? 'class="menu-aktif"' : "" ?>
-        >İlanlar</a>
-
-        <div class="kategori-menu">
+    <div class="ust-sag">
+        <div
+            class="dil-secici"
+            role="group"
+            aria-label="<?php echo iletisim_ceviri(
+                "Dil seçimi",
+                "Language selection"
+            ); ?>"
+        >
             <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="aris-kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
+                type="submit"
+                form="iletisim-form"
+                name="dil_secimi"
+                value="tr"
+                lang="tr"
+                class="<?php echo $dil === "tr" ? "aktif" : ""; ?>"
+                aria-pressed="<?php echo $dil === "tr" ? "true" : "false"; ?>"
+                aria-label="Türkçe"
+                formnovalidate
+            >TR</button>
 
-            <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $kategori_simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span aria-hidden="true"><?= $kategori_simge ?></span>
-                        <span><?= htmlspecialchars(
-                            $kategori_adi,
-                            ENT_QUOTES,
-                            "UTF-8"
-                        ) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
+            <button
+                type="submit"
+                form="iletisim-form"
+                name="dil_secimi"
+                value="en"
+                lang="en"
+                class="<?php echo $dil === "en" ? "aktif" : ""; ?>"
+                aria-pressed="<?php echo $dil === "en" ? "true" : "false"; ?>"
+                aria-label="English"
+                formnovalidate
+            >EN</button>
         </div>
 
-        <?php foreach ($menu_baglantilari as $menu_dosyasi => $menu_yazisi): ?>
-            <a
-                href="<?= htmlspecialchars($menu_dosyasi, ENT_QUOTES, "UTF-8") ?>"
-                <?= $aktif_sayfa === $menu_dosyasi ? 'aria-current="page"' : "" ?>
-            ><?= htmlspecialchars($menu_yazisi, ENT_QUOTES, "UTF-8") ?></a>
-        <?php endforeach; ?>
+        <nav
+            class="ilan-menu"
+            aria-label="<?php echo iletisim_ceviri(
+                "Ana menü",
+                "Main navigation"
+            ); ?>"
+        >
+            <a href="index.php">
+                <?php echo iletisim_ceviri("Ana Sayfa", "Home"); ?>
+            </a>
 
-        <?php if ((int) ($_SESSION["uye_id"] ?? 0) > 0): ?>
-            <a
-                href="mesajlar.php"
-                <?= $aktif_sayfa === "mesajlar.php" ? 'aria-current="page"' : "" ?>
-            >Mesajlarım</a>
+            <a href="ilanlar.php">
+                <?php echo iletisim_ceviri("İlanlar", "Listings"); ?>
+            </a>
 
-            <a
-                href="profil.php"
-                <?= $aktif_sayfa === "profil.php" ? 'aria-current="page"' : "" ?>
-            >Profilim</a>
+            <div class="kategori-menu">
+                <button type="button" class="kategori-buton">
+                    <?php echo iletisim_ceviri("Kategoriler", "Categories"); ?>
+                    <span aria-hidden="true">▾</span>
+                </button>
 
-            <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a
-                href="giris.php"
-                <?= $aktif_sayfa === "giris.php" ? 'aria-current="page"' : "" ?>
-            >Giriş Yap</a>
-        <?php endif; ?>
+                <div class="kategori-acilir">
+                    <?php foreach ($kategoriler as $kategori): ?>
+                        <a href="ilanlar.php?tur=<?php echo rawurlencode($kategori[0]); ?>">
+                            <span aria-hidden="true">
+                                <?php echo $kategori[2]; ?>
+                            </span>
 
-        <?php if (
-            isset($_SESSION["admin"])
-            && $aktif_sayfa === "ilan-detay.php"
-        ): ?>
-            <a href="admin/admin-panel.php">İlan Yönetimi</a>
-        <?php endif; ?>
-    </nav>
+                            <?php echo iletisim_guvenli(
+                                iletisim_ceviri($kategori[0], $kategori[1])
+                            ); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <a href="ilan-ver.php">
+                <?php echo iletisim_ceviri("İlan Ver", "Post a Listing"); ?>
+            </a>
+
+            <a href="blog.php">Blog</a>
+
+            <a href="hakkimizda.php">
+                <?php echo iletisim_ceviri("Hakkımızda", "About Us"); ?>
+            </a>
+
+            <a href="iletisim.php" aria-current="page">
+                <?php echo iletisim_ceviri("İletişim", "Contact"); ?>
+            </a>
+
+            <?php if ((int)($_SESSION["uye_id"] ?? 0) > 0): ?>
+                <a href="mesajlar.php">
+                    <?php echo iletisim_ceviri("Mesajlarım", "My Messages"); ?>
+                </a>
+
+                <a href="profil.php">
+                    <?php echo iletisim_ceviri("Profilim", "My Profile"); ?>
+                </a>
+
+                <a
+                    href="cikis.php"
+                    onclick="return confirm('<?php echo iletisim_ceviri(
+                        "Çıkış yapmak istediğinize emin misiniz?",
+                        "Are you sure you want to log out?"
+                    ); ?>');"
+                >
+                    <?php echo iletisim_ceviri("Çıkış Yap", "Log Out"); ?>
+                </a>
+            <?php else: ?>
+                <a href="giris.php">
+                    <?php echo iletisim_ceviri("Giriş Yap", "Log In"); ?>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
 </header>
+
 <main>
     <section class="iletisim">
-        <h1>Bir Mesajınız mı Var? 🐾</h1>
+        <h1>
+            <?php echo iletisim_ceviri(
+                "Bir Mesajınız mı Var? 🐾",
+                "Have a Message for Us? 🐾"
+            ); ?>
+        </h1>
 
         <p>
-            Aris Pati Yuvası olarak sizlerden haber almak bizi mutlu eder!
-            Minik dostlarımızla ilgili merak ettikleriniz,
-            önerileriniz veya bizimle paylaşmak istediğiniz
-            düşünceleriniz varsa buradayız.
+            <?php echo iletisim_ceviri(
+                "Aris Pati Yuvası olarak sizlerden haber almak bizi mutlu eder! Minik dostlarımızla ilgili merak ettikleriniz, önerileriniz veya bizimle paylaşmak istediğiniz düşünceleriniz varsa buradayız.",
+                "We love hearing from you at Aris Pati Yuvası! Whether you have questions about our animal friends, suggestions or thoughts you would like to share, we are here to listen."
+            ); ?>
         </p>
 
         <p>
-            Üye olmadan da aşağıdaki formu doldurarak bize ulaşabilirsiniz.
-            Her mesajınız bizim için değerli. 💚
+            <?php echo iletisim_ceviri(
+                "Üye olmadan da aşağıdaki formu doldurarak bize ulaşabilirsiniz. Her mesajınız bizim için değerli. 💚",
+                "You can contact us using the form below, even without an account. Every message matters to us. 💚"
+            ); ?>
         </p>
+
+        <?php if ($dil_degisti && $post_istegi): ?>
+            <p class="bildirim basarili" role="status">
+                <?php echo iletisim_ceviri(
+                    "Dil değiştirildi. Form bilgileriniz korundu.",
+                    "Language changed. Your form details have been kept."
+                ); ?>
+            </p>
+        <?php endif; ?>
 
         <?php if ($bildirim !== ""): ?>
             <p
-                class="bildirim <?php echo $basarili ? 'basarili' : 'hata'; ?>"
-                role="<?php echo $basarili ? 'status' : 'alert'; ?>"
+                class="bildirim <?php echo $basarili ? "basarili" : "hata"; ?>"
+                role="<?php echo $basarili ? "status" : "alert"; ?>"
             >
-                <?php echo guvenli($bildirim); ?>
+                <?php echo iletisim_guvenli($bildirim); ?>
             </p>
         <?php endif; ?>
 
@@ -690,68 +711,104 @@ $menu_baglantilari = [
             action="iletisim.php"
             method="POST"
             class="iletisim-formu"
+            id="iletisim-form"
         >
             <input
                 type="hidden"
                 name="token"
-                value="<?php echo guvenli($_SESSION["iletisim_token"]); ?>"
+                value="<?php echo iletisim_guvenli(
+                    $_SESSION["iletisim_token"]
+                ); ?>"
             >
 
             <div class="form-grup">
-                <label for="ad">Adınız Soyadınız:</label>
+                <label for="ad">
+                    <?php echo iletisim_ceviri(
+                        "Adınız Soyadınız:",
+                        "Full Name:"
+                    ); ?>
+                </label>
+
                 <input
                     type="text"
                     id="ad"
                     name="ad"
-                    value="<?php echo guvenli($ad); ?>"
+                    value="<?php echo iletisim_guvenli($ad); ?>"
                     autocomplete="name"
                     maxlength="100"
                     aria-describedby="ad-aciklama"
                     required
                 >
+
                 <small id="ad-aciklama">
-                    Mesajınızda görünecek adınızı ve soyadınızı yazınız.
+                    <?php echo iletisim_ceviri(
+                        "Mesajınızda görünecek adınızı ve soyadınızı yazınız.",
+                        "Enter the full name that will appear with your message."
+                    ); ?>
                 </small>
             </div>
 
             <div class="form-grup">
-                <label for="eposta">E-posta Adresiniz:</label>
+                <label for="eposta">
+                    <?php echo iletisim_ceviri(
+                        "E-posta Adresiniz:",
+                        "Email Address:"
+                    ); ?>
+                </label>
+
                 <input
                     type="email"
                     id="eposta"
                     name="eposta"
-                    value="<?php echo guvenli($eposta); ?>"
+                    value="<?php echo iletisim_guvenli($eposta); ?>"
                     autocomplete="email"
                     maxlength="150"
                     aria-describedby="eposta-aciklama"
                     required
                 >
+
                 <small id="eposta-aciklama">
-                    Size ulaşılabilecek e-posta adresini yazınız.
+                    <?php echo iletisim_ceviri(
+                        "Size ulaşılabilecek e-posta adresini yazınız.",
+                        "Enter an email address where we can reach you."
+                    ); ?>
                 </small>
             </div>
 
             <div class="form-grup">
-                <label for="mesaj">Mesajınız:</label>
+                <label for="mesaj">
+                    <?php echo iletisim_ceviri("Mesajınız:", "Your Message:"); ?>
+                </label>
+
                 <textarea
                     id="mesaj"
                     name="mesaj"
                     rows="5"
                     maxlength="5000"
-                    placeholder="Yöneticiye mesajınızı yazınız..."
+                    placeholder="<?php echo iletisim_ceviri(
+                        "Yöneticiye mesajınızı yazınız...",
+                        "Write your message to the administrator..."
+                    ); ?>"
                     required
-                ><?php echo guvenli($mesaj); ?></textarea>
+                ><?php echo iletisim_guvenli($mesaj); ?></textarea>
             </div>
 
             <button type="submit" class="btn-gonder">
-                Mesajı Gönder
+                <?php echo iletisim_ceviri("Mesajı Gönder", "Send Message"); ?>
             </button>
         </form>
     </section>
 </main>
 
 <footer>
-    <p>© 2026 Aris Pati Yuvası · Hayvan Sahiplendirme Platformu</p>
+    <p>
+        © <?php echo date("Y"); ?> Aris Pati Yuvası ·
+        <?php echo iletisim_ceviri(
+            "Hayvan Sahiplendirme Platformu",
+            "Pet Adoption Platform"
+        ); ?>
+    </p>
 </footer>
+
 </body>
 </html>

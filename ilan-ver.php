@@ -1,9 +1,37 @@
 <?php
 session_start();
 
+/* Dil tercihi */
+$istenen_dil = $_SERVER["REQUEST_METHOD"] === "POST"
+    ? ($_POST["dil_secimi"] ?? null)
+    : ($_GET["lang"] ?? null);
+
+$dil_degisti = is_string($istenen_dil)
+    && in_array($istenen_dil, ["tr", "en"], true);
+
+if ($dil_degisti) {
+    $_SESSION["dil"] = $istenen_dil;
+
+    if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+        header("Location: ilan-ver.php");
+        exit();
+    }
+}
+
+$dil = in_array($_SESSION["dil"] ?? "", ["tr", "en"], true)
+    ? $_SESSION["dil"]
+    : "tr";
+
 function guvenli($deger)
 {
-    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+}
+
+function ceviri($tr, $en)
+{
+    global $dil;
+
+    return $dil === "en" ? $en : $tr;
 }
 
 function form_degeri($alan)
@@ -13,7 +41,55 @@ function form_degeri($alan)
         : "";
 }
 
-$uye_girisi = (int) ($_SESSION["uye_id"] ?? 0) > 0;
+function tur_adi($tur)
+{
+    global $dil;
+
+    $adlar = [
+        "Kedi" => "Cat",
+        "Köpek" => "Dog",
+        "Kuş" => "Bird",
+        "Tavşan" => "Rabbit",
+        "Balık" => "Fish",
+        "Kemirgen" => "Rodent",
+        "Sürüngen" => "Reptile",
+        "Diğer" => "Other"
+    ];
+
+    return $dil === "en" ? ($adlar[$tur] ?? $tur) : $tur;
+}
+
+function ozellik_adi($deger)
+{
+    global $dil;
+
+    $adlar = [
+        "Karakter Özellikleri" => "Personality",
+        "Sosyal Özellikleri" => "Social Traits",
+        "Bakım ve Sağlık" => "Care and Health",
+        "Yaşam Ortamı" => "Living Environment",
+        "Oyuncu" => "Playful",
+        "Sakin" => "Calm",
+        "Sevecen" => "Affectionate",
+        "Hareketli" => "Energetic",
+        "Uysal" => "Gentle",
+        "Çekingen" => "Shy",
+        "Çocuklarla anlaşır" => "Gets along with children",
+        "Diğer hayvanlarla anlaşır" => "Gets along with other animals",
+        "İnsanlara alışkın" => "Used to people",
+        "Tuvalet eğitimi var" => "Toilet trained",
+        "Aşıları yapıldı" => "Vaccinated",
+        "Kısırlaştırıldı" => "Spayed / neutered",
+        "Özel bakım gerektiriyor" => "Needs special care",
+        "Ev ortamına alışkın" => "Used to living indoors",
+        "Apartman yaşamına uygun" => "Suitable for apartment living",
+        "Bahçeli ev için uygun" => "Suitable for a home with a garden"
+    ];
+
+    return $dil === "en" ? ($adlar[$deger] ?? $deger) : $deger;
+}
+
+$uye_girisi = (int)($_SESSION["uye_id"] ?? 0) > 0;
 $mesaj = "";
 $basarili = false;
 $secilen_ozellikler = [];
@@ -47,6 +123,18 @@ foreach ($ozellik_gruplari as $grup) {
     $izinli_ozellikler = array_merge($izinli_ozellikler, $grup);
 }
 
+$gelen_ozellikler = $_POST["ozellikler"] ?? [];
+
+if (!is_array($gelen_ozellikler)) {
+    $gelen_ozellikler = [];
+}
+
+foreach ($izinli_ozellikler as $ozellik) {
+    if (in_array($ozellik, $gelen_ozellikler, true)) {
+        $secilen_ozellikler[] = $ozellik;
+    }
+}
+
 $sehirler = [
     "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı",
     "Aksaray", "Amasya", "Ankara", "Antalya",
@@ -75,14 +163,25 @@ $turler = [
     "Balık", "Kemirgen", "Sürüngen", "Diğer"
 ];
 
-if (empty($_SESSION["ilan_token"])) {
+if (
+    !isset($_SESSION["ilan_token"])
+    || !is_string($_SESSION["ilan_token"])
+    || $_SESSION["ilan_token"] === ""
+) {
     $_SESSION["ilan_token"] = bin2hex(random_bytes(32));
 }
 
 if ($uye_girisi) {
     require_once __DIR__ . "/baglanti.php";
 
-    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    /*
+     * Dil düğmesine basıldığında form bilgileri korunur.
+     * İlan kaydı ve fotoğraf yüklemesi yapılmaz.
+     */
+    if (
+        $_SERVER["REQUEST_METHOD"] === "POST"
+        && !$dil_degisti
+    ) {
         $ilan_basligi = form_degeri("ilan_basligi");
         $hayvan_adi = form_degeri("hayvan_adi");
         $tur = form_degeri("tur");
@@ -90,22 +189,15 @@ if ($uye_girisi) {
         $cinsiyet = form_degeri("cinsiyet");
         $sehir = form_degeri("sehir");
         $ek_aciklama = form_degeri("ek_aciklama");
-        $uye_id = (int) $_SESSION["uye_id"];
+        $uye_id = (int)$_SESSION["uye_id"];
         $token = $_POST["token"] ?? "";
 
-        $gelen_ozellikler = $_POST["ozellikler"] ?? [];
-
-        if (!is_array($gelen_ozellikler)) {
-            $gelen_ozellikler = [];
-        }
-
-        foreach ($izinli_ozellikler as $ozellik) {
-            if (in_array($ozellik, $gelen_ozellikler, true)) {
-                $secilen_ozellikler[] = $ozellik;
-            }
-        }
-
         $karakteristik_ozellikler = implode(", ", $secilen_ozellikler);
+
+        /*
+         * Mevcut veritabanı düzenini korumak için
+         * özellikler Türkçe değerleriyle saklanır.
+         */
         $aciklama = $karakteristik_ozellikler;
 
         if ($ek_aciklama !== "") {
@@ -119,7 +211,10 @@ if ($uye_girisi) {
             !is_string($token)
             || !hash_equals($_SESSION["ilan_token"], $token)
         ) {
-            $mesaj = "Sayfayı yenileyip tekrar deneyiniz.";
+            $mesaj = ceviri(
+                "Sayfayı yenileyip tekrar deneyiniz.",
+                "Please refresh the page and try again."
+            );
         } elseif (
             $ilan_basligi === ""
             || mb_strlen($ilan_basligi, "UTF-8") > 150
@@ -134,7 +229,10 @@ if ($uye_girisi) {
             || empty($secilen_ozellikler)
             || mb_strlen($ek_aciklama, "UTF-8") > 500
         ) {
-            $mesaj = "Lütfen tüm alanları doğru doldurunuz ve en az bir özellik seçiniz.";
+            $mesaj = ceviri(
+                "Lütfen tüm alanları doğru doldurunuz ve en az bir özellik seçiniz.",
+                "Please complete all fields correctly and select at least one trait."
+            );
         } else {
             $dosya = $_FILES["fotograf"] ?? null;
 
@@ -144,20 +242,35 @@ if ($uye_girisi) {
                     || !isset($dosya["error"])
                     || !is_int($dosya["error"])
                 ) {
-                    $mesaj = "Geçersiz fotoğraf yüklemesi.";
+                    $mesaj = ceviri(
+                        "Geçersiz fotoğraf yüklemesi.",
+                        "Invalid photo upload."
+                    );
                 } elseif ($dosya["error"] !== UPLOAD_ERR_NO_FILE) {
                     if ($dosya["error"] !== UPLOAD_ERR_OK) {
-                        $mesaj = "Fotoğraf yüklenirken hata oluştu.";
+                        $mesaj = ceviri(
+                            "Fotoğraf yüklenirken hata oluştu.",
+                            "An error occurred while uploading the photo."
+                        );
                     } elseif (
                         !isset($dosya["size"], $dosya["tmp_name"])
                         || !is_numeric($dosya["size"])
                         || !is_string($dosya["tmp_name"])
                     ) {
-                        $mesaj = "Geçersiz fotoğraf yüklemesi.";
+                        $mesaj = ceviri(
+                            "Geçersiz fotoğraf yüklemesi.",
+                            "Invalid photo upload."
+                        );
                     } elseif ($dosya["size"] > 5 * 1024 * 1024) {
-                        $mesaj = "Fotoğraf en fazla 5 MB olabilir.";
+                        $mesaj = ceviri(
+                            "Fotoğraf en fazla 5 MB olabilir.",
+                            "The photo must not exceed 5 MB."
+                        );
                     } elseif (!is_uploaded_file($dosya["tmp_name"])) {
-                        $mesaj = "Geçersiz fotoğraf yüklemesi.";
+                        $mesaj = ceviri(
+                            "Geçersiz fotoğraf yüklemesi.",
+                            "Invalid photo upload."
+                        );
                     } else {
                         $finfo = new finfo(FILEINFO_MIME_TYPE);
                         $mime = $finfo->file($dosya["tmp_name"]);
@@ -172,23 +285,37 @@ if ($uye_girisi) {
                             !isset($izin_verilen[$mime])
                             || @getimagesize($dosya["tmp_name"]) === false
                         ) {
-                            $mesaj = "Yalnızca JPG, PNG veya WEBP fotoğraf yükleyebilirsiniz.";
+                            $mesaj = ceviri(
+                                "Yalnızca JPG, PNG veya WEBP fotoğraf yükleyebilirsiniz.",
+                                "Only JPG, PNG or WEBP photos are allowed."
+                            );
                         } else {
                             $klasor = __DIR__ . "/uploads";
 
                             if (!is_dir($klasor) || !is_writable($klasor)) {
-                                $mesaj = "uploads klasörü bulunamadı veya yazılabilir değil.";
+                                $mesaj = ceviri(
+                                    "uploads klasörü bulunamadı veya yazılabilir değil.",
+                                    "The uploads folder is missing or is not writable."
+                                );
                             } else {
                                 $dosya_adi = bin2hex(random_bytes(16))
                                     . "." . $izin_verilen[$mime];
 
                                 $hedef = $klasor . "/" . $dosya_adi;
 
-                                if (move_uploaded_file($dosya["tmp_name"], $hedef)) {
+                                if (
+                                    move_uploaded_file(
+                                        $dosya["tmp_name"],
+                                        $hedef
+                                    )
+                                ) {
                                     $kaydedilen_dosya = $hedef;
                                     $fotograf = "uploads/" . $dosya_adi;
                                 } else {
-                                    $mesaj = "Fotoğraf kaydedilemedi.";
+                                    $mesaj = ceviri(
+                                        "Fotoğraf kaydedilemedi.",
+                                        "The photo could not be saved."
+                                    );
                                 }
                             }
                         }
@@ -242,12 +369,21 @@ if ($uye_girisi) {
 
                 if ($kayit_basarili) {
                     $basarili = true;
-                    $mesaj = "İlanınız oluşturuldu. Yönetici onayından sonra yayınlanacaktır.";
+
+                    $mesaj = ceviri(
+                        "İlanınız oluşturuldu. Yönetici onayından sonra yayınlanacaktır.",
+                        "Your listing has been created. It will be published after administrator approval."
+                    );
+
                     $_POST = [];
                     $secilen_ozellikler = [];
+
                     $_SESSION["ilan_token"] = bin2hex(random_bytes(32));
                 } else {
-                    $mesaj = "İlan kaydedilemedi. Lütfen tekrar deneyiniz.";
+                    $mesaj = ceviri(
+                        "İlan kaydedilemedi. Lütfen tekrar deneyiniz.",
+                        "The listing could not be saved. Please try again."
+                    );
 
                     if ($kaydedilen_dosya !== null) {
                         @unlink($kaydedilen_dosya);
@@ -257,22 +393,77 @@ if ($uye_girisi) {
         }
     }
 }
+
+$menu_kategorileri = [
+    "Kedi" => "🐱",
+    "Köpek" => "🐶",
+    "Kuş" => "🐦",
+    "Balık" => "🐠",
+    "Tavşan" => "🐰",
+    "Kemirgen" => "🐹",
+    "Sürüngen" => "🦎",
+    "Diğer" => "🐾"
+];
+
+$ornekler = [
+    "Kedi" => ceviri(
+        "Örneğin: Kedim alışınca çok sevecendir ve oyun oynamayı sever.",
+        "For example: My cat is affectionate once settled in and enjoys playing."
+    ),
+    "Köpek" => ceviri(
+        "Örneğin: Köpeğim yürüyüş yapmayı çok sever ve temel komutları bilir.",
+        "For example: My dog enjoys walks and knows basic commands."
+    ),
+    "Kuş" => ceviri(
+        "Örneğin: Kuşum insan sesine alışkındır ve zaman zaman sesleri taklit eder.",
+        "For example: My bird is used to human voices and sometimes imitates sounds."
+    ),
+    "Tavşan" => ceviri(
+        "Örneğin: Tavşanım sakin bir ortamda yaşamayı sever.",
+        "For example: My rabbit enjoys a quiet living environment."
+    ),
+    "Balık" => ceviri(
+        "Örneğin: Balığım diğer balıklarla uyumludur.",
+        "For example: My fish gets along with other fish."
+    ),
+    "Kemirgen" => ceviri(
+        "Örneğin: Küçük dostum hareketli ve meraklıdır.",
+        "For example: My little companion is active and curious."
+    ),
+    "Sürüngen" => ceviri(
+        "Örneğin: Sürüngenimin özel sıcaklık ve bakım ihtiyaçları vardır.",
+        "For example: My reptile has specific temperature and care requirements."
+    ),
+    "Diğer" => ceviri(
+        "Hayvanınızın alışkanlıklarını ve bakım ihtiyaçlarını yazabilirsiniz.",
+        "Describe your animal's habits and care needs."
+    )
+];
+
+$varsayilan_ornek = ceviri(
+    "Hayvanınız hakkında eklemek istediğiniz bilgileri yazabilirsiniz.",
+    "Write any additional information about your animal."
+);
+
+$dosya_sec_yazisi = ceviri("Fotoğraf Seç", "Choose Photo");
+$dosya_yok_yazisi = ceviri("Dosya seçilmedi", "No file selected");
 ?>
+
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= guvenli($dil) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İlan Ver | Aris Pati Yuvası</title>
+
+    <title><?= guvenli(ceviri(
+        "İlan Ver | Aris Pati Yuvası",
+        "Post a Listing | Aris Pati Yuvası"
+    )) ?></title>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        html {
-            scrollbar-gutter: stable;
-        }
+        html { scrollbar-gutter: stable; }
 
         body {
             margin: 0;
@@ -281,14 +472,16 @@ if ($uye_girisi) {
             font-family: Arial, sans-serif;
         }
 
-        input,
-        select,
-        textarea,
-        button {
-            font: inherit;
+        input, select, textarea, button { font: inherit; }
+
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid #9eb995;
+            outline-offset: 3px;
         }
 
         .ilan-ust {
+            position: relative;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -330,6 +523,53 @@ if ($uye_girisi) {
             display: block;
             margin-top: 5px;
             font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dil-secici {
+            display: inline-flex;
+            gap: 4px;
+            margin: 0;
+            padding: 3px;
+            border: 1px solid rgba(255,255,255,.35);
+            border-radius: 8px;
+        }
+
+        .dil-secici a,
+        .dil-secici button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 37px;
+            min-height: 30px;
+            padding: 5px 9px;
+            border: 0;
+            border-radius: 5px;
+            background: transparent;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .dil-secici a:hover,
+        .dil-secici button:hover {
+            background: #284b32;
+        }
+
+        .dil-secici [aria-current="true"] {
+            background: #f5f0e6;
+            color: #284b32;
         }
 
         .ilan-menu {
@@ -341,31 +581,80 @@ if ($uye_girisi) {
             margin-left: auto;
         }
 
-        .ilan-menu a {
+        .ilan-menu > a,
+        .kategori-baslik {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             min-height: 40px;
+            margin: 0;
             padding: 10px;
+            border: 0;
             border-radius: 8px;
+            background: transparent;
             color: #fff;
-            font-size: 14px;
-            line-height: 20px;
+            font: normal 14px/20px Arial, sans-serif;
             text-decoration: none;
             white-space: nowrap;
-            transition: background-color .15s, color .15s;
+            cursor: pointer;
         }
 
-        .ilan-menu a:hover,
-        .ilan-menu a:focus-visible {
+        .ilan-menu > a:hover,
+        .ilan-menu > a:focus-visible,
+        .kategori-menu:hover .kategori-baslik,
+        .kategori-menu:focus-within .kategori-baslik {
             background: #284b32;
-            color: #fff;
         }
 
-        .ilan-menu a[aria-current="page"] {
+        .ilan-menu > a[aria-current="page"] {
             background: #eee5d3;
             color: #284b32;
             font-weight: bold;
+        }
+
+        .kategori-menu {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .kategori-acilir {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 200;
+            display: none;
+            width: 205px;
+            max-width: calc(100vw - 36px);
+            padding: 8px;
+            border: 1px solid #ded6c6;
+            border-radius: 12px;
+            background: #fffdf8;
+            box-shadow: 0 12px 28px rgba(40,75,50,.16);
+        }
+
+        .kategori-menu:hover .kategori-acilir,
+        .kategori-menu:focus-within .kategori-acilir {
+            display: block;
+        }
+
+        .kategori-acilir a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 40px;
+            padding: 10px 12px;
+            border-radius: 7px;
+            color: #284b32;
+            font-size: 14px;
+            line-height: 20px;
+            text-decoration: none;
+        }
+
+        .kategori-acilir a:hover,
+        .kategori-acilir a:focus-visible {
+            background: #426b46;
+            color: white;
         }
 
         .ilan-icerik {
@@ -373,9 +662,7 @@ if ($uye_girisi) {
             margin: 28px auto 35px;
         }
 
-        .ilan-tanitim {
-            margin-bottom: 22px;
-        }
+        .ilan-tanitim { margin-bottom: 22px; }
 
         .ilan-etiket {
             font-size: 11px;
@@ -386,13 +673,11 @@ if ($uye_girisi) {
 
         .ilan-tanitim h1 {
             margin: 12px 0;
-            font-size: clamp(25px, 4vw, 33px);
+            font-size: clamp(25px,4vw,33px);
             line-height: 1.3;
         }
 
-        .ilan-tanitim h1 span {
-            color: #62824f;
-        }
+        .ilan-tanitim h1 span { color: #62824f; }
 
         .ilan-tanitim p {
             margin: 0;
@@ -456,17 +741,12 @@ if ($uye_girisi) {
 
         .ilan-form-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(2,minmax(0,1fr));
             gap: 18px;
         }
 
-        .ilan-grup {
-            min-width: 0;
-        }
-
-        .ilan-tam {
-            grid-column: 1 / -1;
-        }
+        .ilan-grup { min-width: 0; }
+        .ilan-tam { grid-column: 1 / -1; }
 
         .ilan-grup > label {
             display: block;
@@ -534,9 +814,7 @@ if ($uye_girisi) {
             background: #f8f5ee;
         }
 
-        .ozellik-grubu {
-            margin-top: 18px;
-        }
+        .ozellik-grubu { margin-top: 18px; }
 
         .ozellik-grubu h3 {
             margin: 0 0 12px;
@@ -545,7 +823,7 @@ if ($uye_girisi) {
 
         .ozellik-listesi {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(3,minmax(0,1fr));
             gap: 12px 16px;
         }
 
@@ -608,12 +886,6 @@ if ($uye_girisi) {
             background: #284b32;
         }
 
-        .ilan-gonder:focus-visible,
-        .giris-gerekli-buton:focus-visible {
-            outline: 3px solid #9eb995;
-            outline-offset: 3px;
-        }
-
         .ilan-alt-yazi {
             margin: 20px 0 0;
             color: #727b69;
@@ -623,7 +895,7 @@ if ($uye_girisi) {
         }
 
         .giris-gerekli-alani {
-            width: min(650px, 92%);
+            width: min(650px,92%);
             margin: 45px auto;
             padding: 35px 25px;
             text-align: center;
@@ -637,7 +909,7 @@ if ($uye_girisi) {
 
         .giris-gerekli-alani h1 {
             margin: 20px 0 12px;
-            font-size: clamp(23px, 4vw, 28px);
+            font-size: clamp(23px,4vw,28px);
             line-height: 1.4;
         }
 
@@ -657,409 +929,299 @@ if ($uye_girisi) {
         }
 
         @media (max-width: 1100px) {
-            .ilan-menu {
-                width: 100%;
-                justify-content: flex-end;
-            }
+            .ust-sag { flex-basis: 100%; }
+            .ilan-menu { width: 100%; }
         }
 
         @media (max-width: 700px) {
-            .ilan-ust {
-                padding: 15px 18px;
-                gap: 16px;
-            }
+            .ilan-ust { padding: 15px 18px; gap: 16px; }
 
-            .ilan-menu a {
+            .ilan-menu > a,
+            .kategori-baslik {
                 padding: 8px;
                 font-size: 13px;
             }
 
-            .ilan-kart {
-                padding: 20px;
-            }
+            .ilan-kart { padding: 20px; }
 
             .ozellik-listesi {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(2,minmax(0,1fr));
             }
         }
 
         @media (max-width: 500px) {
-            .ilan-form-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .ilan-gonder {
-                width: 100%;
-            }
-
-            .ozellik-alani {
-                padding: 14px;
-            }
+            .ilan-form-grid { grid-template-columns: minmax(0,1fr); }
+            .ilan-gonder { width: 100%; }
+            .ozellik-alani { padding: 14px; }
         }
 
         @media (max-width: 380px) {
-            .ozellik-listesi {
-                grid-template-columns: minmax(0, 1fr);
-            }
+            .ozellik-listesi { grid-template-columns: minmax(0,1fr); }
         }
     </style>
-    <style>
-    html {
-        scrollbar-gutter: stable;
-    }
-
-    #aris-ortak-ust,
-    #aris-ortak-ust * {
-        box-sizing: border-box;
-    }
-
-    html body > header#aris-ortak-ust {
-        position: relative;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 24px;
-        width: 100%;
-        min-height: 88px;
-        margin: 0;
-        padding: 16px 24px;
-        border-bottom: 1px solid #35583b !important;
-        background: #426b46 !important;
-        text-align: left;
-        overflow: visible;
-    }
-
-    #aris-ortak-ust > a.ilan-logo {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
-        flex-shrink: 0;
-        width: auto;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        color: #fff !important;
-        text-decoration: none;
-    }
-
-    #aris-ortak-ust .ilan-logo img {
-        display: block;
-        flex-shrink: 0;
-        width: 54px;
-        height: 54px;
-        margin: 0;
-        padding: 5px;
-        border: 1px solid #eee5d3;
-        border-radius: 12px;
-        background: #fffdf8;
-        object-fit: contain;
-    }
-
-    #aris-ortak-ust .ilan-logo strong {
-        display: block;
-        margin: 0;
-        color: #fff !important;
-        font: bold 20px/1.3 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust .ilan-logo small {
-        display: block;
-        margin: 5px 0 0;
-        color: #fff !important;
-        font: normal 11px/1.4 Arial, sans-serif;
-    }
-
-    #aris-ortak-ust > nav.ilan-menu {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 4px;
-        width: auto;
-        margin: 0 0 0 auto;
-        padding: 0;
-        background: transparent;
-    }
-
-    #aris-ortak-ust .ilan-menu > a,
-    #aris-ortak-ust .kategori-baslik {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        width: auto;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent !important;
-        color: #fff !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: center;
-        text-decoration: none;
-        white-space: nowrap;
-        cursor: pointer;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:hover,
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-menu:hover .kategori-baslik,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-baslik {
-        background: #284b32 !important;
-        color: #fff !important;
-    }
-
-    #aris-ortak-ust .ilan-menu > a[aria-current="page"],
-    #aris-ortak-ust .ilan-menu > a.menu-aktif {
-        background: #eee5d3 !important;
-        color: #284b32 !important;
-        font-weight: bold;
-    }
-
-    #aris-ortak-ust .ilan-menu > a:focus-visible,
-    #aris-ortak-ust .kategori-baslik:focus-visible {
-        outline: 2px solid #eee5d3;
-        outline-offset: 3px;
-    }
-
-    #aris-ortak-ust .kategori-menu {
-        position: relative;
-        flex-shrink: 0;
-        margin: 0;
-        padding: 0;
-    }
-
-    #aris-ortak-ust .kategori-acilir {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        z-index: 200;
-        display: none;
-        width: 205px;
-        max-width: calc(100vw - 36px);
-        margin: 0;
-        padding: 8px;
-        border: 1px solid #ded6c6;
-        border-radius: 12px;
-        background: #fffdf8;
-        box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
-    }
-
-    #aris-ortak-ust .kategori-menu:hover .kategori-acilir,
-    #aris-ortak-ust .kategori-menu:focus-within .kategori-acilir {
-        display: block;
-    }
-
-    #aris-ortak-ust .kategori-acilir a {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        min-height: 40px;
-        margin: 0;
-        padding: 10px 12px;
-        border: 0;
-        border-radius: 7px;
-        background: transparent !important;
-        color: #284b32 !important;
-        font: normal 14px/20px Arial, sans-serif;
-        text-align: left;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    #aris-ortak-ust .kategori-acilir a:hover,
-    #aris-ortak-ust .kategori-acilir a:focus-visible {
-        background: #426b46 !important;
-        color: #fff !important;
-    }
-
-    @media (max-width: 1100px) {
-        #aris-ortak-ust > nav.ilan-menu {
-            width: 100%;
-            justify-content: flex-end;
-        }
-    }
-
-    @media (max-width: 700px) {
-        html body > header#aris-ortak-ust {
-            gap: 16px;
-            padding: 15px 18px;
-        }
-
-        #aris-ortak-ust .ilan-menu > a,
-        #aris-ortak-ust .kategori-baslik {
-            padding: 8px;
-            font-size: 13px;
-        }
-    }
-</style>
 </head>
+
 <body>
-
-<?php
-$aktif_sayfa = basename($_SERVER["SCRIPT_NAME"] ?? "");
-
-$menu_kategorileri = [
-    "Kedi" => "🐱",
-    "Köpek" => "🐶",
-    "Kuş" => "🐦",
-    "Balık" => "🐠",
-    "Tavşan" => "🐰",
-    "Kemirgen" => "🐹",
-    "Sürüngen" => "🦎",
-    "Diğer" => "🐾"
-];
-
-$menu_baglantilari = [
-    "ilan-ver.php" => "İlan Ver",
-    "hakkimizda.php" => "Hakkımızda",
-    "iletisim.php" => "İletişim"
-];
-?>
 
 <header class="ilan-ust" id="aris-ortak-ust">
     <a href="index.php" class="ilan-logo">
         <img
             src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
+            alt="<?= guvenli(ceviri(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            )) ?>"
             width="54"
             height="54"
         >
 
         <span>
             <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
+            <small>
+                <?= guvenli(ceviri(
+                    "Her can dostuna bir yuva",
+                    "A home for every companion"
+                )) ?>
+            </small>
         </span>
     </a>
 
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a
-            href="index.php"
-            <?= $aktif_sayfa === "index.php" ? 'aria-current="page"' : "" ?>
-        >Ana Sayfa</a>
+    <div class="ust-sag">
+        <nav
+            class="dil-secici"
+            aria-label="<?= guvenli(ceviri(
+                "Dil seçimi",
+                "Language selection"
+            )) ?>"
+        >
+            <?php if ($uye_girisi): ?>
+                <button
+                    type="submit"
+                    form="ilan-form"
+                    name="dil_secimi"
+                    value="tr"
+                    formnovalidate
+                    lang="tr"
+                    aria-label="Türkçe"
+                    <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
+                >TR</button>
 
-        <a
-            href="ilanlar.php"
-            <?= $aktif_sayfa === "ilanlar.php" ? 'aria-current="page"' : "" ?>
-            <?= $aktif_sayfa === "ilan-detay.php" ? 'class="menu-aktif"' : "" ?>
-        >İlanlar</a>
+                <button
+                    type="submit"
+                    form="ilan-form"
+                    name="dil_secimi"
+                    value="en"
+                    formnovalidate
+                    lang="en"
+                    aria-label="English"
+                    <?= $dil === "en" ? 'aria-current="true"' : "" ?>
+                >EN</button>
+            <?php else: ?>
+                <a
+                    href="ilan-ver.php?lang=tr"
+                    lang="tr"
+                    hreflang="tr"
+                    aria-label="Türkçe"
+                    <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
+                >TR</a>
 
-        <div class="kategori-menu">
-            <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="aris-kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
+                <a
+                    href="ilan-ver.php?lang=en"
+                    lang="en"
+                    hreflang="en"
+                    aria-label="English"
+                    <?= $dil === "en" ? 'aria-current="true"' : "" ?>
+                >EN</a>
+            <?php endif; ?>
+        </nav>
 
-            <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $kategori_simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span aria-hidden="true"><?= $kategori_simge ?></span>
-                        <span><?= htmlspecialchars(
-                            $kategori_adi,
-                            ENT_QUOTES,
-                            "UTF-8"
-                        ) ?></span>
-                    </a>
-                <?php endforeach; ?>
+        <nav
+            class="ilan-menu"
+            aria-label="<?= guvenli(ceviri(
+                "Ana menü",
+                "Main navigation"
+            )) ?>"
+        >
+            <a href="index.php">
+                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
+            </a>
+
+            <a href="ilanlar.php">
+                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
+            </a>
+
+            <div class="kategori-menu">
+                <button
+                    type="button"
+                    class="kategori-baslik"
+                    aria-controls="aris-kategori-listesi"
+                >
+                    <?= guvenli(ceviri(
+                        "Hayvan Kategorileri",
+                        "Animal Categories"
+                    )) ?>
+                    <span aria-hidden="true">▾</span>
+                </button>
+
+                <div class="kategori-acilir" id="aris-kategori-listesi">
+                    <?php foreach ($menu_kategorileri as $ad => $simge): ?>
+                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
+                            <span aria-hidden="true"><?= $simge ?></span>
+                            <span><?= guvenli(tur_adi($ad)) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
             </div>
-        </div>
 
-        <?php foreach ($menu_baglantilari as $menu_dosyasi => $menu_yazisi): ?>
-            <a
-                href="<?= htmlspecialchars($menu_dosyasi, ENT_QUOTES, "UTF-8") ?>"
-                <?= $aktif_sayfa === $menu_dosyasi ? 'aria-current="page"' : "" ?>
-            ><?= htmlspecialchars($menu_yazisi, ENT_QUOTES, "UTF-8") ?></a>
-        <?php endforeach; ?>
+            <a href="ilan-ver.php" aria-current="page">
+                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
+            </a>
 
-        <?php if ((int) ($_SESSION["uye_id"] ?? 0) > 0): ?>
-            <a
-                href="mesajlar.php"
-                <?= $aktif_sayfa === "mesajlar.php" ? 'aria-current="page"' : "" ?>
-            >Mesajlarım</a>
+            <a href="blog.php">Blog</a>
 
-            <a
-                href="profil.php"
-                <?= $aktif_sayfa === "profil.php" ? 'aria-current="page"' : "" ?>
-            >Profilim</a>
+            <a href="hakkimizda.php">
+                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
+            </a>
 
-            <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a
-                href="giris.php"
-                <?= $aktif_sayfa === "giris.php" ? 'aria-current="page"' : "" ?>
-            >Giriş Yap</a>
-        <?php endif; ?>
+            <a href="iletisim.php">
+                <?= guvenli(ceviri("İletişim", "Contact")) ?>
+            </a>
 
-        <?php if (
-            isset($_SESSION["admin"])
-            && $aktif_sayfa === "ilan-detay.php"
-        ): ?>
-            <a href="admin/admin-panel.php">İlan Yönetimi</a>
-        <?php endif; ?>
-    </nav>
+            <?php if ($uye_girisi): ?>
+                <a href="mesajlar.php">
+                    <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
+                </a>
+
+                <a href="profil.php">
+                    <?= guvenli(ceviri("Profilim", "My Profile")) ?>
+                </a>
+
+                <a
+                    href="cikis.php"
+                    onclick="return confirm(<?= guvenli(json_encode(
+                        ceviri(
+                            "Çıkış yapmak istediğinize emin misiniz?",
+                            "Are you sure you want to sign out?"
+                        ),
+                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                    )) ?>);"
+                >
+                    <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
+                </a>
+            <?php else: ?>
+                <a href="giris.php">
+                    <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
 </header>
 
 <?php if (!$uye_girisi): ?>
+
     <main>
         <section class="giris-gerekli-alani">
-            <img src="images/aris-logoo.png" alt="Aris Pati Yuvası logosu">
+            <img
+                src="images/aris-logoo.png"
+                alt="<?= guvenli(ceviri(
+                    "Aris Pati Yuvası logosu",
+                    "Aris Pati Yuvası logo"
+                )) ?>"
+            >
 
-            <h1>İlan Vermek İçin Giriş Yapmalısınız</h1>
+            <h1>
+                <?= guvenli(ceviri(
+                    "İlan Vermek İçin Giriş Yapmalısınız",
+                    "Sign In to Post a Listing"
+                )) ?>
+            </h1>
 
             <p>
-                Bir can dostuna yuva bulmak için önce hesabınıza giriş yapın.
+                <?= guvenli(ceviri(
+                    "Bir can dostuna yuva bulmak için önce hesabınıza giriş yapın.",
+                    "Sign in to your account to help a companion find a home."
+                )) ?>
             </p>
 
-            <a href="giris.php" class="giris-gerekli-buton">Giriş Yap</a>
+            <a href="giris.php" class="giris-gerekli-buton">
+                <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+            </a>
         </section>
     </main>
+
 <?php else: ?>
+
     <main class="ilan-icerik">
         <section class="ilan-tanitim">
-            <span class="ilan-etiket">ARİS PATİ YUVASI · YENİ İLAN</span>
+            <span class="ilan-etiket">
+                <?= guvenli(ceviri(
+                    "ARİS PATİ YUVASI · YENİ İLAN",
+                    "ARİS PATİ YUVASI · NEW LISTING"
+                )) ?>
+            </span>
 
-            <h1>Ona yeni bir <span>yuva</span> bulalım.</h1>
+            <h1>
+                <?php if ($dil === "en"): ?>
+                    Let's find them a new <span>home</span>.
+                <?php else: ?>
+                    Ona yeni bir <span>yuva</span> bulalım.
+                <?php endif; ?>
+            </h1>
 
             <p>
-                Dostunuzun bilgilerini paylaşın ve onun sevgi dolu
-                bir aileyle buluşmasına yardımcı olun.
+                <?= guvenli(ceviri(
+                    "Dostunuzun bilgilerini paylaşın ve onun sevgi dolu bir aileyle buluşmasına yardımcı olun.",
+                    "Share your companion's information and help them meet a loving family."
+                )) ?>
             </p>
         </section>
 
         <section class="ilan-kart">
             <div class="ilan-kart-baslik">
                 <div>
-                    <h2>Hayvan Bilgileri</h2>
-                    <p>İlan oluşturmak için aşağıdaki alanları doldurun.</p>
+                    <h2>
+                        <?= guvenli(ceviri(
+                            "Hayvan Bilgileri",
+                            "Animal Information"
+                        )) ?>
+                    </h2>
+
+                    <p>
+                        <?= guvenli(ceviri(
+                            "İlan oluşturmak için aşağıdaki alanları doldurun.",
+                            "Complete the fields below to create a listing."
+                        )) ?>
+                    </p>
                 </div>
 
-                <span class="ilan-zorunlu">* Zorunlu alanlar</span>
+                <span class="ilan-zorunlu">
+                    <?= guvenli(ceviri(
+                        "* Zorunlu alanlar",
+                        "* Required fields"
+                    )) ?>
+                </span>
             </div>
 
             <?php if ($mesaj !== ""): ?>
                 <div
-                    class="ilan-mesaj<?= $basarili ? ' basarili' : '' ?>"
+                    class="ilan-mesaj<?= $basarili ? " basarili" : "" ?>"
                     role="status"
                 >
                     <?= guvenli($mesaj) ?>
                 </div>
             <?php endif; ?>
 
+            <?php if ($dil_degisti && $_SERVER["REQUEST_METHOD"] === "POST"): ?>
+                <div class="ilan-mesaj basarili" role="status">
+                    <?= guvenli(ceviri(
+                        "Dil değiştirildi. Form bilgileriniz korundu. Fotoğraf seçtiyseniz yeniden seçiniz.",
+                        "Language changed. Your form details have been kept. If you selected a photo, please select it again."
+                    )) ?>
+                </div>
+            <?php endif; ?>
+
             <form
+                id="ilan-form"
                 class="ilan-form"
                 action="ilan-ver.php"
                 method="post"
@@ -1073,12 +1235,21 @@ $menu_baglantilari = [
 
                 <div class="ilan-form-grid">
                     <div class="ilan-grup ilan-tam">
-                        <label for="ilan_basligi">İlan Başlığı *</label>
+                        <label for="ilan_basligi">
+                            <?= guvenli(ceviri(
+                                "İlan Başlığı *",
+                                "Listing Title *"
+                            )) ?>
+                        </label>
+
                         <input
                             type="text"
                             id="ilan_basligi"
                             name="ilan_basligi"
-                            placeholder="Örn. Minik dostumuza sıcak yuva aranıyor"
+                            placeholder="<?= guvenli(ceviri(
+                                "Örn. Minik dostumuza sıcak yuva aranıyor",
+                                "e.g. A loving home wanted for our little companion"
+                            )) ?>"
                             maxlength="150"
                             value="<?= guvenli(form_degeri("ilan_basligi")) ?>"
                             required
@@ -1086,12 +1257,21 @@ $menu_baglantilari = [
                     </div>
 
                     <div class="ilan-grup">
-                        <label for="hayvan_adi">Hayvanın Adı *</label>
+                        <label for="hayvan_adi">
+                            <?= guvenli(ceviri(
+                                "Hayvanın Adı *",
+                                "Animal's Name *"
+                            )) ?>
+                        </label>
+
                         <input
                             type="text"
                             id="hayvan_adi"
                             name="hayvan_adi"
-                            placeholder="Örn. Boncuk"
+                            placeholder="<?= guvenli(ceviri(
+                                "Örn. Boncuk",
+                                "e.g. Boncuk"
+                            )) ?>"
                             maxlength="50"
                             value="<?= guvenli(form_degeri("hayvan_adi")) ?>"
                             required
@@ -1099,51 +1279,101 @@ $menu_baglantilari = [
                     </div>
 
                     <div class="ilan-grup">
-                        <label for="tur">Hayvan Türü *</label>
+                        <label for="tur">
+                            <?= guvenli(ceviri(
+                                "Hayvan Türü *",
+                                "Animal Type *"
+                            )) ?>
+                        </label>
+
                         <select id="tur" name="tur" required>
-                            <option value="">Tür seçiniz</option>
+                            <option value="">
+                                <?= guvenli(ceviri(
+                                    "Tür seçiniz",
+                                    "Select an animal type"
+                                )) ?>
+                            </option>
 
                             <?php foreach ($turler as $secenek): ?>
                                 <option
                                     value="<?= guvenli($secenek) ?>"
                                     <?= form_degeri("tur") === $secenek ? "selected" : "" ?>
-                                ><?= guvenli($secenek) ?></option>
+                                ><?= guvenli(tur_adi($secenek)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="ilan-grup">
-                        <label for="yas">Hayvanın Yaşı *</label>
+                        <label for="yas">
+                            <?= guvenli(ceviri(
+                                "Hayvanın Yaşı *",
+                                "Animal's Age *"
+                            )) ?>
+                        </label>
+
                         <input
                             type="number"
                             id="yas"
                             name="yas"
                             min="0"
                             step="1"
-                            placeholder="Yaşını giriniz"
+                            placeholder="<?= guvenli(ceviri(
+                                "Yaşını giriniz",
+                                "Enter age in years"
+                            )) ?>"
                             value="<?= guvenli(form_degeri("yas")) ?>"
+                            aria-describedby="yas-yardim"
                             required
                         >
+
+                        <small id="yas-yardim">
+                            <?= guvenli(ceviri(
+                                "Yaşı yıl olarak yazınız. Bir yaşından küçükse 0 giriniz.",
+                                "Enter age in years. Enter 0 if under one year old."
+                            )) ?>
+                        </small>
                     </div>
 
                     <div class="ilan-grup">
-                        <label for="cinsiyet">Cinsiyet *</label>
-                        <select id="cinsiyet" name="cinsiyet" required>
-                            <option value="">Cinsiyet seçiniz</option>
+                        <label for="cinsiyet">
+                            <?= guvenli(ceviri("Cinsiyet *", "Sex *")) ?>
+                        </label>
 
-                            <?php foreach (["Dişi", "Erkek"] as $secenek): ?>
+                        <select id="cinsiyet" name="cinsiyet" required>
+                            <option value="">
+                                <?= guvenli(ceviri(
+                                    "Cinsiyet seçiniz",
+                                    "Select sex"
+                                )) ?>
+                            </option>
+
+                            <?php foreach ([
+                                "Dişi" => ceviri("Dişi", "Female"),
+                                "Erkek" => ceviri("Erkek", "Male")
+                            ] as $deger => $yazi): ?>
                                 <option
-                                    value="<?= guvenli($secenek) ?>"
-                                    <?= form_degeri("cinsiyet") === $secenek ? "selected" : "" ?>
-                                ><?= guvenli($secenek) ?></option>
+                                    value="<?= guvenli($deger) ?>"
+                                    <?= form_degeri("cinsiyet") === $deger ? "selected" : "" ?>
+                                ><?= guvenli($yazi) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="ilan-grup ilan-tam">
-                        <label for="sehir">Bulunduğu Şehir *</label>
+                        <label for="sehir">
+                            <?= guvenli(ceviri(
+                                "Bulunduğu Şehir *",
+                                "City *"
+                            )) ?>
+                        </label>
+
                         <select id="sehir" name="sehir" required>
-                            <option value="">Şehir seçiniz</option>
+                            <option value="">
+                                <?= guvenli(ceviri(
+                                    "Şehir seçiniz",
+                                    "Select a city"
+                                )) ?>
+                            </option>
 
                             <?php foreach ($sehirler as $il): ?>
                                 <option
@@ -1160,14 +1390,23 @@ $menu_baglantilari = [
                         aria-labelledby="ozellik-baslik"
                         aria-describedby="ozellik-yardim"
                     >
-                        <label id="ozellik-baslik">Hayvanın Özellikleri *</label>
+                        <label id="ozellik-baslik">
+                            <?= guvenli(ceviri(
+                                "Hayvanın Özellikleri *",
+                                "Animal's Traits *"
+                            )) ?>
+                        </label>
+
                         <p id="ozellik-yardim">
-                            Hayvanınıza uygun en az bir özellik işaretleyiniz.
+                            <?= guvenli(ceviri(
+                                "Hayvanınıza uygun en az bir özellik işaretleyiniz.",
+                                "Select at least one trait that applies to your animal."
+                            )) ?>
                         </p>
 
                         <?php foreach ($ozellik_gruplari as $baslik => $ozellikler): ?>
                             <div class="ozellik-grubu">
-                                <h3><?= guvenli($baslik) ?></h3>
+                                <h3><?= guvenli(ozellik_adi($baslik)) ?></h3>
 
                                 <div class="ozellik-listesi">
                                     <?php foreach ($ozellikler as $ozellik): ?>
@@ -1176,9 +1415,16 @@ $menu_baglantilari = [
                                                 type="checkbox"
                                                 name="ozellikler[]"
                                                 value="<?= guvenli($ozellik) ?>"
-                                                <?= in_array($ozellik, $secilen_ozellikler, true) ? "checked" : "" ?>
+                                                <?= in_array(
+                                                    $ozellik,
+                                                    $secilen_ozellikler,
+                                                    true
+                                                ) ? "checked" : "" ?>
                                             >
-                                            <span><?= guvenli($ozellik) ?></span>
+
+                                            <span>
+                                                <?= guvenli(ozellik_adi($ozellik)) ?>
+                                            </span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -1188,19 +1434,29 @@ $menu_baglantilari = [
 
                     <div class="ilan-grup ilan-tam">
                         <label for="ek_aciklama">
-                            Ek Açıklama (İsteğe Bağlı)
+                            <?= guvenli(ceviri(
+                                "Ek Açıklama (İsteğe Bağlı)",
+                                "Additional Description (Optional)"
+                            )) ?>
                         </label>
+
                         <textarea
                             id="ek_aciklama"
                             name="ek_aciklama"
                             rows="3"
                             maxlength="500"
-                            placeholder="Hayvanınız hakkında eklemek istediğiniz bilgileri yazabilirsiniz."
+                            placeholder="<?= guvenli($varsayilan_ornek) ?>"
                         ><?= guvenli(form_degeri("ek_aciklama")) ?></textarea>
                     </div>
 
                     <div class="ilan-grup ilan-tam">
-                        <label for="fotograf">Hayvan Fotoğrafı</label>
+                        <label for="fotograf">
+                            <?= guvenli(ceviri(
+                                "Hayvan Fotoğrafı",
+                                "Animal Photo"
+                            )) ?>
+                        </label>
+
                         <input
                             type="file"
                             id="fotograf"
@@ -1208,53 +1464,70 @@ $menu_baglantilari = [
                             accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                             aria-describedby="foto-yardim"
                         >
+
                         <small id="foto-yardim">
-                            JPG, PNG veya WEBP formatı · En fazla 5 MB
+                            <?= guvenli(ceviri(
+                                "JPG, PNG veya WEBP formatı · En fazla 5 MB",
+                                "JPG, PNG or WEBP format · Maximum 5 MB"
+                            )) ?>
                         </small>
                     </div>
                 </div>
 
                 <div class="ilan-form-alt">
                     <p>
-                        Bilgileri kontrol ettikten sonra ilanınızı gönderebilirsiniz.
+                        <?= guvenli(ceviri(
+                            "Bilgileri kontrol ettikten sonra ilanınızı gönderebilirsiniz.",
+                            "Check the information before submitting your listing."
+                        )) ?>
                     </p>
 
                     <button type="submit" class="ilan-gonder">
-                        🐾 İlanı Gönder →
+                        🐾 <?= guvenli(ceviri(
+                            "İlanı Gönder",
+                            "Submit Listing"
+                        )) ?> →
                     </button>
                 </div>
             </form>
         </section>
 
         <p class="ilan-alt-yazi">
-            ♥ Her can dostu sevgi dolu bir yuvayı hak eder.
+            ♥ <?= guvenli(ceviri(
+                "Her can dostu sevgi dolu bir yuvayı hak eder.",
+                "Every companion deserves a loving home."
+            )) ?>
         </p>
     </main>
+
 <?php endif; ?>
 
 <footer class="ilan-footer">
-    © 2026 Aris Pati Yuvası · Hayvan Sahiplendirme Platformu
+    © <?= date("Y") ?> Aris Pati Yuvası ·
+    <?= guvenli(ceviri(
+        "Hayvan Sahiplendirme Platformu",
+        "Pet Adoption Platform"
+    )) ?>
 </footer>
 
 <script>
 const turSecimi = document.getElementById("tur");
 const aciklama = document.getElementById("ek_aciklama");
 
-if (turSecimi && aciklama) {
-    const ornekler = {
-        "Kedi": "Örneğin: Kedim alışınca çok sevecendir ve oyun oynamayı sever.",
-        "Köpek": "Örneğin: Köpeğim yürüyüş yapmayı çok sever ve temel komutları bilir.",
-        "Kuş": "Örneğin: Kuşum insan sesine alışkındır ve zaman zaman sesleri taklit eder.",
-        "Tavşan": "Örneğin: Tavşanım sakin bir ortamda yaşamayı sever.",
-        "Balık": "Örneğin: Balığım diğer balıklarla uyumludur.",
-        "Kemirgen": "Örneğin: Küçük dostum hareketli ve meraklıdır.",
-        "Sürüngen": "Örneğin: Sürüngenimin özel sıcaklık ve bakım ihtiyaçları vardır.",
-        "Diğer": "Hayvanınızın alışkanlıklarını ve bakım ihtiyaçlarını yazabilirsiniz."
-    };
+const ornekler = <?= json_encode(
+    $ornekler,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+) ?>;
 
+const varsayilanOrnek = <?= json_encode(
+    $varsayilan_ornek,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+) ?>;
+
+if (turSecimi && aciklama) {
     function ornegiGuncelle() {
         aciklama.placeholder = ornekler[turSecimi.value]
-            || "Hayvanınız hakkında eklemek istediğiniz bilgileri yazabilirsiniz.";
+            || varsayilanOrnek;
     }
 
     turSecimi.addEventListener("change", ornegiGuncelle);

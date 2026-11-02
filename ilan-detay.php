@@ -1,15 +1,113 @@
 <?php
 session_start();
+
 require_once __DIR__ . "/baglanti.php";
+
+/* Dil tercihi */
+if (
+    is_string($_GET["lang"] ?? null)
+    && in_array($_GET["lang"], ["tr", "en"], true)
+) {
+    $_SESSION["dil"] = $_GET["lang"];
+
+    $parametreler = $_GET;
+    unset($parametreler["lang"]);
+
+    $adres = "ilan-detay.php";
+
+    if ($parametreler) {
+        $adres .= "?" . http_build_query($parametreler);
+    }
+
+    header("Location: " . $adres);
+    exit();
+}
+
+$dil = in_array($_SESSION["dil"] ?? "", ["tr", "en"], true)
+    ? $_SESSION["dil"]
+    : "tr";
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+}
+
+function ceviri($tr, $en)
+{
+    global $dil;
+
+    return $dil === "en" ? $en : $tr;
+}
+
+function tur_adi($tur)
+{
+    global $dil;
+
+    $adlar = [
+        "Kedi" => "Cat",
+        "Köpek" => "Dog",
+        "Kuş" => "Bird",
+        "Balık" => "Fish",
+        "Tavşan" => "Rabbit",
+        "Kemirgen" => "Rodent",
+        "Sürüngen" => "Reptile",
+        "Diğer" => "Other"
+    ];
+
+    return $dil === "en" ? ($adlar[$tur] ?? $tur) : $tur;
+}
+
+function durum_adi($durum)
+{
+    global $dil;
+
+    $adlar = [
+        "Bekliyor" => "Pending",
+        "Onaylandı" => "Approved",
+        "Reddedildi" => "Rejected"
+    ];
+
+    return $dil === "en" ? ($adlar[$durum] ?? $durum) : $durum;
+}
+
+function cinsiyet_adi($cinsiyet)
+{
+    global $dil;
+
+    $adlar = [
+        "Dişi" => "Female",
+        "Erkek" => "Male"
+    ];
+
+    return $dil === "en"
+        ? ($adlar[$cinsiyet] ?? $cinsiyet)
+        : $cinsiyet;
+}
+
+function onay_metni($tr, $en)
+{
+    return guvenli(json_encode(
+        ceviri($tr, $en),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    ));
+}
+
+function dil_linki($yeni_dil, $id)
+{
+    $parametreler = ["lang" => $yeni_dil];
+
+    if ($id && $id > 0) {
+        $parametreler["id"] = (int)$id;
+    }
+
+    return "ilan-detay.php?" . http_build_query($parametreler);
 }
 
 $admin_mi = isset($_SESSION["admin"]);
-$uye_id = (int) ($_SESSION["uye_id"] ?? 0);
+$uye_id = (int)($_SESSION["uye_id"] ?? 0);
+
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
+
 $ilan = null;
 
 if ($id && $id > 0) {
@@ -26,10 +124,12 @@ if ($id && $id > 0) {
     $sql .= " LIMIT 1";
 
     $sorgu = mysqli_prepare($baglanti, $sql);
+
     mysqli_stmt_bind_param($sorgu, "i", $id);
     mysqli_stmt_execute($sorgu);
 
-    $ilan = mysqli_fetch_assoc(mysqli_stmt_get_result($sorgu));
+    $sonuc = mysqli_stmt_get_result($sorgu);
+    $ilan = mysqli_fetch_assoc($sonuc);
 
     mysqli_stmt_close($sorgu);
 }
@@ -39,8 +139,14 @@ if (!$ilan) {
 }
 
 $baslik = $ilan
-    ? (trim((string) ($ilan["ilan_basligi"] ?? "")) ?: $ilan["hayvan_adi"])
-    : "İlan Bulunamadı";
+    ? (
+        trim((string)($ilan["ilan_basligi"] ?? ""))
+        ?: (
+            trim((string)($ilan["hayvan_adi"] ?? ""))
+            ?: ceviri("Can Dostumuz", "Our Companion")
+        )
+    )
+    : ceviri("İlan Bulunamadı", "Listing Not Found");
 
 $foto_yolu = "";
 $temsili = false;
@@ -49,7 +155,7 @@ $whatsapp = "";
 $ozellikler = [];
 
 if ($ilan) {
-    $foto = trim((string) ($ilan["fotograf"] ?? ""));
+    $foto = trim((string)($ilan["fotograf"] ?? ""));
     $dosya = basename($foto);
 
     if (
@@ -80,7 +186,10 @@ if ($ilan) {
 
         $resim = $temsili_resimler[$ilan["tur"] ?? ""] ?? "";
 
-        if ($resim && is_file(__DIR__ . "/images/hayvanlar/" . $resim)) {
+        if (
+            $resim !== ""
+            && is_file(__DIR__ . "/images/hayvanlar/" . $resim)
+        ) {
             $foto_yolu = "images/hayvanlar/" . $resim;
             $temsili = true;
         }
@@ -89,7 +198,7 @@ if ($ilan) {
     $numara = preg_replace(
         '/\D/',
         '',
-        (string) ($ilan["sahip_telefon"] ?? "")
+        (string)($ilan["sahip_telefon"] ?? "")
     );
 
     if (substr($numara, 0, 2) === "00") {
@@ -105,18 +214,29 @@ if ($ilan) {
     if (preg_match('/^[1-9][0-9]{7,14}$/', $numara)) {
         $telefon = "+" . $numara;
 
-        $whatsapp = "https://wa.me/" . $numara . "?text=" . rawurlencode(
+        $whatsapp_mesaji = ceviri(
             "Merhaba, Aris Pati Yuvası sitesindeki "
-            . $baslik
-            . " başlıklı ilanınız hakkında bilgi almak istiyorum. İlan no: "
-            . $ilan["id"]
+                . $baslik
+                . " başlıklı ilanınız hakkında bilgi almak istiyorum. İlan no: "
+                . $ilan["id"],
+
+            "Hello, I would like to learn more about your listing titled "
+                . $baslik
+                . " on Aris Pati Yuvası. Listing ID: "
+                . $ilan["id"]
         );
+
+        $whatsapp = "https://wa.me/" . $numara
+            . "?text=" . rawurlencode($whatsapp_mesaji);
     }
 
     $ozellikler = array_filter(
         array_map(
             "trim",
-            explode(",", (string) ($ilan["karakteristik_ozellikler"] ?? ""))
+            explode(
+                ",",
+                (string)($ilan["karakteristik_ozellikler"] ?? "")
+            )
         )
     );
 }
@@ -132,11 +252,13 @@ $menu_kategorileri = [
     "Diğer" => "🐾"
 ];
 ?>
+
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= guvenli($dil) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title><?= guvenli($baslik) ?> | Aris Pati Yuvası</title>
 
     <style>
@@ -211,6 +333,51 @@ $menu_kategorileri = [
             line-height: 1.4;
         }
 
+        .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dil-secici {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid rgba(255,255,255,.35);
+            border-radius: 8px;
+        }
+
+        .dil-secici a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 37px;
+            min-height: 30px;
+            padding: 5px 9px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .dil-secici a:hover {
+            background: #284b32;
+        }
+
+        .dil-secici a[aria-current="true"] {
+            background: #f5f0e6;
+            color: #284b32;
+        }
+
+        .dil-secici a:focus-visible {
+            outline: 2px solid #eee5d3;
+            outline-offset: 3px;
+        }
+
         .ilan-menu {
             display: flex;
             align-items: center;
@@ -276,7 +443,7 @@ $menu_kategorileri = [
             border: 1px solid #ded6c6;
             border-radius: 12px;
             background: #fffdf8;
-            box-shadow: 0 12px 28px rgba(40, 75, 50, .16);
+            box-shadow: 0 12px 28px rgba(40,75,50,.16);
         }
 
         .kategori-menu:hover .kategori-acilir,
@@ -585,13 +752,19 @@ $menu_kategorileri = [
         }
 
         @media (max-width: 1100px) {
+            .ust-sag {
+                flex-basis: 100%;
+            }
+
             .ilan-menu {
                 width: 100%;
                 justify-content: flex-end;
             }
 
             .detay-grid {
-                grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+                grid-template-columns:
+                    minmax(0, 1.3fr)
+                    minmax(0, 1fr);
             }
 
             .sahip-kart {
@@ -632,115 +805,272 @@ $menu_kategorileri = [
         }
     </style>
 </head>
+
 <body>
 
 <header class="ilan-ust" id="aris-ortak-ust">
-    <a class="ilan-logo" href="index.php">
+    <a href="index.php" class="ilan-logo">
         <img
             src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
             width="54"
             height="54"
+            alt="<?= guvenli(ceviri(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            )) ?>"
         >
+
         <span>
             <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
+
+            <small>
+                <?= guvenli(ceviri(
+                    "Her can dostuna bir yuva",
+                    "A home for every companion"
+                )) ?>
+            </small>
         </span>
     </a>
 
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php" class="menu-aktif">İlanlar</a>
-
-        <div class="kategori-menu">
-            <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="aris-kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
-
-            <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span aria-hidden="true"><?= $simge ?></span>
-                        <span><?= guvenli($kategori_adi) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-
-        <?php if ($uye_id > 0): ?>
-            <a href="mesajlar.php">Mesajlarım</a>
-            <a href="profil.php">Profilim</a>
+    <div class="ust-sag">
+        <nav
+            class="dil-secici"
+            aria-label="<?= guvenli(ceviri(
+                "Dil seçimi",
+                "Language selection"
+            )) ?>"
+        >
             <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a href="giris.php">Giriş Yap</a>
-        <?php endif; ?>
+                href="<?= guvenli(dil_linki("tr", $id)) ?>"
+                lang="tr"
+                hreflang="tr"
+                aria-label="Türkçe"
+                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
+            >TR</a>
 
-        <?php if ($admin_mi): ?>
-            <a href="admin/admin-panel.php">İlan Yönetimi</a>
-        <?php endif; ?>
-    </nav>
+            <a
+                href="<?= guvenli(dil_linki("en", $id)) ?>"
+                lang="en"
+                hreflang="en"
+                aria-label="English"
+                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
+            >EN</a>
+        </nav>
+
+        <nav
+            class="ilan-menu"
+            aria-label="<?= guvenli(ceviri(
+                "Ana menü",
+                "Main navigation"
+            )) ?>"
+        >
+            <a href="index.php">
+                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
+            </a>
+
+            <a href="ilanlar.php" class="menu-aktif">
+                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
+            </a>
+
+            <div class="kategori-menu">
+                <button
+                    type="button"
+                    class="kategori-baslik"
+                    aria-controls="aris-kategori-listesi"
+                >
+                    <?= guvenli(ceviri(
+                        "Hayvan Kategorileri",
+                        "Animal Categories"
+                    )) ?>
+
+                    <span aria-hidden="true">▾</span>
+                </button>
+
+                <div class="kategori-acilir" id="aris-kategori-listesi">
+                    <?php foreach ($menu_kategorileri as $kategori_adi => $simge): ?>
+                        <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
+                            <span aria-hidden="true"><?= $simge ?></span>
+                            <?= guvenli(tur_adi($kategori_adi)) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <a href="ilan-ver.php">
+                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
+            </a>
+
+            <a href="blog.php">Blog</a>
+
+            <a href="hakkimizda.php">
+                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
+            </a>
+
+            <a href="iletisim.php">
+                <?= guvenli(ceviri("İletişim", "Contact")) ?>
+            </a>
+
+            <?php if ($uye_id > 0): ?>
+                <a href="mesajlar.php">
+                    <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
+                </a>
+
+                <a href="profil.php">
+                    <?= guvenli(ceviri("Profilim", "My Profile")) ?>
+                </a>
+
+                <a
+                    href="cikis.php"
+                    onclick="return confirm(<?= onay_metni(
+                        "Çıkış yapmak istiyor musunuz?",
+                        "Do you want to sign out?"
+                    ) ?>);"
+                >
+                    <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
+                </a>
+            <?php else: ?>
+                <a href="giris.php">
+                    <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+                </a>
+            <?php endif; ?>
+
+            <?php if ($admin_mi): ?>
+                <a href="admin/admin-panel.php">
+                    <?= guvenli(ceviri(
+                        "İlan Yönetimi",
+                        "Manage Listings"
+                    )) ?>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
 </header>
 
 <main class="detay-alani">
+
     <?php if ($ilan): ?>
-        <nav class="yol" aria-label="Sayfa yolu">
-            <a href="index.php">Ana Sayfa</a>
+
+        <nav
+            class="yol"
+            aria-label="<?= guvenli(ceviri(
+                "Sayfa konumu",
+                "Breadcrumb"
+            )) ?>"
+        >
+            <a href="index.php">
+                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
+            </a>
+
             <span>/</span>
-            <a href="ilanlar.php">İlanlar</a>
+
+            <a href="ilanlar.php">
+                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
+            </a>
+
             <span>/</span>
-            <span><?= guvenli($ilan["tur"] ?? "") ?></span>
+
+            <span>
+                <?= guvenli(tur_adi($ilan["tur"] ?? "")) ?>
+            </span>
         </nav>
 
         <h1><?= guvenli($baslik) ?></h1>
 
         <div class="detay-grid">
-            <section class="kart foto-kart" aria-label="Hayvan fotoğrafı">
-                <?php if ($foto_yolu): ?>
+
+            <section
+                class="kart foto-kart"
+                aria-label="<?= guvenli(ceviri(
+                    "Hayvan fotoğrafı",
+                    "Animal photo"
+                )) ?>"
+            >
+                <?php if ($foto_yolu !== ""): ?>
                     <img
                         src="<?= guvenli($foto_yolu) ?>"
                         alt="<?= guvenli($ilan["hayvan_adi"] ?? $baslik) ?>"
                     >
                 <?php else: ?>
-                    <div class="foto-yok" aria-label="Fotoğraf bulunmuyor">🐾</div>
+                    <div
+                        class="foto-yok"
+                        role="img"
+                        aria-label="<?= guvenli(ceviri(
+                            "Fotoğraf bulunmuyor",
+                            "No photo available"
+                        )) ?>"
+                    >
+                        🐾
+                    </div>
                 <?php endif; ?>
 
                 <p class="foto-not">
                     <?php if ($temsili): ?>
-                        Bu fotoğraf temsili olarak kullanılmıştır.
-                    <?php elseif ($foto_yolu): ?>
-                        <?= guvenli($ilan["hayvan_adi"] ?? "") ?>
+                        <?= guvenli(ceviri(
+                            "Bu fotoğraf temsili olarak kullanılmıştır.",
+                            "This photo is used for illustration purposes."
+                        )) ?>
+                    <?php elseif ($foto_yolu !== ""): ?>
+                        <?= guvenli($ilan["hayvan_adi"] ?? $baslik) ?>
                     <?php else: ?>
-                        Bu ilan için fotoğraf eklenmemiş.
+                        <?= guvenli(ceviri(
+                            "Bu ilan için fotoğraf eklenmemiş.",
+                            "No photo has been added to this listing."
+                        )) ?>
                     <?php endif; ?>
                 </p>
             </section>
 
             <section class="kart bilgi-kart">
-                <h2>Hayvan Bilgileri</h2>
+                <h2>
+                    <?= guvenli(ceviri(
+                        "Hayvan Bilgileri",
+                        "Animal Information"
+                    )) ?>
+                </h2>
 
                 <?php
+                $yas_yazisi = ceviri(
+                    "Belirtilmemiş",
+                    "Not specified"
+                );
+
+                if (isset($ilan["yas"]) && $ilan["yas"] !== "") {
+                    $yas = (int)$ilan["yas"];
+
+                    if ($yas === 0) {
+                        $yas_yazisi = ceviri(
+                            "1 yaşından küçük",
+                            "Under 1 year old"
+                        );
+                    } else {
+                        $yas_yazisi = ceviri(
+                            $yas . " yaş",
+                            $yas . ($yas === 1 ? " year old" : " years old")
+                        );
+                    }
+                }
+
                 $bilgiler = [
-                    "İlan No" => $ilan["id"],
-                    "Hayvanın Adı" => $ilan["hayvan_adi"] ?? "",
-                    "Türü" => $ilan["tur"] ?? "",
-                    "Yaşı" => isset($ilan["yas"]) && $ilan["yas"] !== ""
-                        ? (int) $ilan["yas"] . " yaş"
-                        : "Belirtilmemiş",
-                    "Cinsiyeti" => $ilan["cinsiyet"] ?? "",
-                    "Şehir" => $ilan["sehir"] ?? "",
-                    "İlan Durumu" => $ilan["durum"] ?? ""
+                    ceviri("İlan No", "Listing ID") =>
+                        $ilan["id"],
+
+                    ceviri("Hayvanın Adı", "Name") =>
+                        $ilan["hayvan_adi"] ?? "",
+
+                    ceviri("Türü", "Animal Type") =>
+                        tur_adi($ilan["tur"] ?? ""),
+
+                    ceviri("Yaşı", "Age") =>
+                        $yas_yazisi,
+
+                    ceviri("Cinsiyeti", "Sex") =>
+                        cinsiyet_adi($ilan["cinsiyet"] ?? ""),
+
+                    ceviri("Şehir", "City") =>
+                        $ilan["sehir"] ?? "",
+
+                    ceviri("İlan Durumu", "Listing Status") =>
+                        durum_adi($ilan["durum"] ?? "")
                 ];
                 ?>
 
@@ -748,11 +1078,15 @@ $menu_kategorileri = [
                     <?php foreach ($bilgiler as $etiket => $deger): ?>
                         <div class="bilgi-satiri">
                             <dt><?= guvenli($etiket) ?></dt>
+
                             <dd>
                                 <?= guvenli(
-                                    trim((string) $deger) !== ""
+                                    trim((string)$deger) !== ""
                                         ? $deger
-                                        : "Belirtilmemiş"
+                                        : ceviri(
+                                            "Belirtilmemiş",
+                                            "Not specified"
+                                        )
                                 ) ?>
                             </dd>
                         </div>
@@ -761,23 +1095,34 @@ $menu_kategorileri = [
             </section>
 
             <section class="kart sahip-kart">
-                <h2>İlan Sahibi</h2>
+                <h2>
+                    <?= guvenli(ceviri(
+                        "İlan Sahibi",
+                        "Listing Owner"
+                    )) ?>
+                </h2>
 
                 <div class="sahip-simge" aria-hidden="true">👤</div>
 
                 <h3 class="sahip-adi">
                     <?= guvenli(
-                        trim((string) ($ilan["sahip_adi"] ?? "")) ?: "İlan sahibi"
+                        trim((string)($ilan["sahip_adi"] ?? ""))
+                            ?: ceviri("İlan sahibi", "Listing owner")
                     ) ?>
                 </h3>
 
                 <p class="kucuk-metin">
-                    Hayvan hakkında bilgi almak için ilan sahibiyle
-                    iletişime geçebilirsiniz.
+                    <?= guvenli(ceviri(
+                        "Hayvan hakkında bilgi almak için ilan sahibiyle iletişime geçebilirsiniz.",
+                        "Contact the listing owner to learn more about this animal."
+                    )) ?>
                 </p>
 
-                <?php if ($telefon): ?>
-                    <a class="buton" href="tel:<?= guvenli($telefon) ?>">
+                <?php if ($telefon !== ""): ?>
+                    <a
+                        class="buton"
+                        href="tel:<?= guvenli($telefon) ?>"
+                    >
                         ☎ <?= guvenli($telefon) ?>
                     </a>
 
@@ -786,145 +1131,251 @@ $menu_kategorileri = [
                         href="<?= guvenli($whatsapp) ?>"
                         target="_blank"
                         rel="noopener noreferrer"
-                    >WhatsApp ile İletişim</a>
+                    >
+                        <?= guvenli(ceviri(
+                            "WhatsApp ile İletişim",
+                            "Contact via WhatsApp"
+                        )) ?>
+                    </a>
                 <?php else: ?>
                     <p class="kucuk-metin">
-                        Geçerli telefon numarası eklenmemiş.
+                        <?= guvenli(ceviri(
+                            "İlan sahibinin geçerli bir telefon numarası bulunmuyor.",
+                            "The listing owner has no valid phone number available."
+                        )) ?>
                     </p>
                 <?php endif; ?>
 
-                <?php if ($uye_id > 0 && $uye_id === (int) $ilan["uye_id"]): ?>
+                <?php if ($uye_id > 0 && $uye_id === (int)$ilan["uye_id"]): ?>
                     <a class="buton yesil" href="mesajlar.php">
-                        ✉ İlan Mesajlarımı Gör
+                        ✉ <?= guvenli(ceviri(
+                            "İlan Mesajlarımı Gör",
+                            "View My Listing Messages"
+                        )) ?>
                     </a>
+
                 <?php elseif ($uye_id > 0 && !empty($ilan["sahip_adi"])): ?>
                     <a
                         class="buton yesil"
-                        href="mesajlar.php?ilan_id=<?= (int) $ilan["id"] ?>&amp;kisi=<?= (int) $ilan["uye_id"] ?>"
-                    >✉ Mesaj Gönder</a>
+                        href="mesajlar.php?ilan_id=<?= (int)$ilan["id"] ?>&amp;kisi=<?= (int)$ilan["uye_id"] ?>"
+                    >
+                        ✉ <?= guvenli(ceviri(
+                            "Mesaj Gönder",
+                            "Send a Message"
+                        )) ?>
+                    </a>
+
                 <?php elseif (!$uye_id): ?>
                     <a class="buton yesil" href="giris.php">
-                        Mesaj Göndermek İçin Giriş Yap
+                        <?= guvenli(ceviri(
+                            "Mesaj Göndermek İçin Giriş Yap",
+                            "Sign In to Send a Message"
+                        )) ?>
                     </a>
                 <?php endif; ?>
 
-                <?php if (!$admin_mi && $uye_id !== (int) $ilan["uye_id"]): ?>
+                <?php if (!$admin_mi && $uye_id !== (int)$ilan["uye_id"]): ?>
                     <a
                         class="buton"
-                        href="sahiplen.php?ilan_id=<?= (int) $ilan["id"] ?>"
-                    >🐾 Sahiplenme Başvurusu Yap</a>
+                        href="sahiplen.php?ilan_id=<?= (int)$ilan["id"] ?>"
+                    >
+                        🐾 <?= guvenli(ceviri(
+                            "Sahiplenme Başvurusu Yap",
+                            "Apply to Adopt"
+                        )) ?>
+                    </a>
                 <?php endif; ?>
             </section>
+
         </div>
 
         <section class="kart aciklama-kart">
-            <h2>İlan Açıklaması</h2>
+            <h2>
+                <?= guvenli(ceviri(
+                    "İlan Açıklaması",
+                    "Listing Description"
+                )) ?>
+            </h2>
 
-            <?php if ($ozellikler): ?>
+            <?php if (!empty($ozellikler)): ?>
                 <div class="ozellikler">
                     <?php foreach ($ozellikler as $ozellik): ?>
-                        <span class="ozellik"><?= guvenli($ozellik) ?></span>
+                        <span class="ozellik">
+                            <?= guvenli($ozellik) ?>
+                        </span>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
 
             <p class="metin"><?= guvenli(
-                trim((string) ($ilan["aciklama"] ?? "")) ?: "Açıklama eklenmemiş."
+                trim((string)($ilan["aciklama"] ?? ""))
+                    ?: ceviri(
+                        "Açıklama eklenmemiş.",
+                        "No description has been added."
+                    )
             ) ?></p>
         </section>
 
         <?php if ($admin_mi): ?>
             <section class="kart admin-kart">
-                <h2>İlan Yönetim İşlemleri</h2>
+                <h2>
+                    <?= guvenli(ceviri(
+                        "İlan Yönetim İşlemleri",
+                        "Listing Management"
+                    )) ?>
+                </h2>
 
                 <p>
-                    İlan durumu:
-                    <strong><?= guvenli($ilan["durum"]) ?></strong>
+                    <?= guvenli(ceviri(
+                        "İlan durumu:",
+                        "Listing status:"
+                    )) ?>
+
+                    <strong>
+                        <?= guvenli(durum_adi($ilan["durum"] ?? "")) ?>
+                    </strong>
                 </p>
 
                 <?php if (!empty($ilan["red_nedeni"])): ?>
                     <p class="red-nedeni">
-                        <strong>Red nedeni:</strong>
+                        <strong>
+                            <?= guvenli(ceviri(
+                                "Red nedeni:",
+                                "Reason for rejection:"
+                            )) ?>
+                        </strong>
+
                         <?= guvenli($ilan["red_nedeni"]) ?>
                     </p>
                 <?php endif; ?>
 
-                <?php if ($ilan["durum"] === "Bekliyor"): ?>
+                <?php if (($ilan["durum"] ?? "") === "Bekliyor"): ?>
                     <form
                         action="admin/onayla.php"
-                        method="post"
-                        onsubmit="return confirm('Bu ilanı onaylamak istiyor musunuz?');"
+                        method="POST"
+                        onsubmit="return confirm(<?= onay_metni(
+                            "Bu ilanı onaylamak istiyor musunuz?",
+                            "Do you want to approve this listing?"
+                        ) ?>);"
                     >
                         <input
                             type="hidden"
                             name="id"
-                            value="<?= (int) $ilan["id"] ?>"
+                            value="<?= (int)$ilan["id"] ?>"
                         >
+
                         <button type="submit" class="buton yesil">
-                            İlanı Onayla
+                            <?= guvenli(ceviri(
+                                "İlanı Onayla",
+                                "Approve Listing"
+                            )) ?>
                         </button>
                     </form>
 
                     <form
                         action="admin/reddet.php"
-                        method="post"
-                        onsubmit="return confirm('Bu ilanı reddetmek istiyor musunuz?');"
+                        method="POST"
+                        onsubmit="return confirm(<?= onay_metni(
+                            "Bu ilanı reddetmek istiyor musunuz?",
+                            "Do you want to reject this listing?"
+                        ) ?>);"
                     >
                         <input
                             type="hidden"
                             name="id"
-                            value="<?= (int) $ilan["id"] ?>"
+                            value="<?= (int)$ilan["id"] ?>"
                         >
 
-                        <label for="red-nedeni">Red nedeni</label>
+                        <label for="red-nedeni">
+                            <?= guvenli(ceviri(
+                                "Red nedeni",
+                                "Reason for rejection"
+                            )) ?>
+                        </label>
+
                         <textarea
                             id="red-nedeni"
                             name="red_nedeni"
                             rows="3"
-                            placeholder="İlanın reddedilme nedenini yazın."
+                            placeholder="<?= guvenli(ceviri(
+                                "İlanın reddedilme nedenini yazın.",
+                                "Explain why this listing is being rejected."
+                            )) ?>"
                             required
                         ></textarea>
 
                         <button type="submit" class="buton kirmizi">
-                            İlanı Reddet
+                            <?= guvenli(ceviri(
+                                "İlanı Reddet",
+                                "Reject Listing"
+                            )) ?>
                         </button>
                     </form>
                 <?php endif; ?>
 
                 <form
                     action="admin/sil.php"
-                    method="post"
-                    onsubmit="return confirm('Bu ilan kalıcı olarak silinecek. Devam etmek istiyor musunuz?');"
+                    method="POST"
+                    onsubmit="return confirm(<?= onay_metni(
+                        "Bu ilan kalıcı olarak silinecek. Devam etmek istiyor musunuz?",
+                        "This listing will be permanently deleted. Do you want to continue?"
+                    ) ?>);"
                 >
                     <input
                         type="hidden"
                         name="id"
-                        value="<?= (int) $ilan["id"] ?>"
+                        value="<?= (int)$ilan["id"] ?>"
                     >
+
                     <button type="submit" class="buton kirmizi">
-                        İlanı Sil
+                        <?= guvenli(ceviri(
+                            "İlanı Sil",
+                            "Delete Listing"
+                        )) ?>
                     </button>
                 </form>
             </section>
         <?php endif; ?>
 
     <?php else: ?>
+
         <section class="kart bulunamadi">
-            <h1>İlan Bulunamadı</h1>
-            <p>Aradığınız ilan silinmiş veya henüz onaylanmamış olabilir.</p>
+            <h1>
+                <?= guvenli(ceviri(
+                    "İlan Bulunamadı",
+                    "Listing Not Found"
+                )) ?>
+            </h1>
+
+            <p>
+                <?= guvenli(ceviri(
+                    "Aradığınız ilan silinmiş veya henüz onaylanmamış olabilir.",
+                    "The listing may have been deleted or may not have been approved yet."
+                )) ?>
+            </p>
         </section>
+
     <?php endif; ?>
 
     <a
         class="geri-link"
-        href="<?= $admin_mi ? 'admin/admin-panel.php' : 'ilanlar.php' ?>"
+        href="<?= $admin_mi ? "admin/admin-panel.php" : "ilanlar.php" ?>"
     >
-        ← <?= $admin_mi ? "İlan Yönetimine Dön" : "İlanlara Dön" ?>
+        ← <?= guvenli(
+            $admin_mi
+                ? ceviri("İlan Yönetimine Dön", "Back to Listing Management")
+                : ceviri("İlanlara Dön", "Back to Listings")
+        ) ?>
     </a>
+
 </main>
 
 <footer class="alt-bilgi">
-    © 2026 Aris Pati Yuvası · Hayvan Sahiplendirme Platformu
+    © <?= date("Y") ?> Aris Pati Yuvası ·
+    <?= guvenli(ceviri(
+        "Hayvan Sahiplendirme Platformu",
+        "Pet Adoption Platform"
+    )) ?>
 </footer>
 
 </body>

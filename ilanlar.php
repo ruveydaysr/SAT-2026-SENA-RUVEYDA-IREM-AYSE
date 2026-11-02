@@ -1,10 +1,73 @@
 <?php
 session_start();
+
 require_once __DIR__ . "/baglanti.php";
+
+/* Dil tercihi: filtreleri ve sayfa numarasını korur. */
+if (
+    is_string($_GET["lang"] ?? null)
+    && in_array($_GET["lang"], ["tr", "en"], true)
+) {
+    $_SESSION["dil"] = $_GET["lang"];
+
+    $adres_parametreleri = $_GET;
+    unset($adres_parametreleri["lang"]);
+
+    $adres = "ilanlar.php";
+
+    if ($adres_parametreleri) {
+        $adres .= "?" . http_build_query($adres_parametreleri);
+    }
+
+    header("Location: " . $adres);
+    exit();
+}
+
+$dil = in_array($_SESSION["dil"] ?? "", ["tr", "en"], true)
+    ? $_SESSION["dil"]
+    : "tr";
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+}
+
+function ceviri($tr, $en)
+{
+    global $dil;
+
+    return $dil === "en" ? $en : $tr;
+}
+
+function tur_adi($tur)
+{
+    global $dil;
+
+    $adlar = [
+        "Kedi" => "Cat",
+        "Köpek" => "Dog",
+        "Kuş" => "Bird",
+        "Balık" => "Fish",
+        "Tavşan" => "Rabbit",
+        "Kemirgen" => "Rodent",
+        "Sürüngen" => "Reptile",
+        "Diğer" => "Other"
+    ];
+
+    return $dil === "en" ? ($adlar[$tur] ?? $tur) : $tur;
+}
+
+function cinsiyet_adi($deger)
+{
+    if ($deger === "Dişi") {
+        return ceviri("Dişi", "Female");
+    }
+
+    if ($deger === "Erkek") {
+        return ceviri("Erkek", "Male");
+    }
+
+    return ceviri("Tümü", "All");
 }
 
 function filtre_degeri($alan)
@@ -14,7 +77,6 @@ function filtre_degeri($alan)
         : "";
 }
 
-/* Tek seçimli eski bağlantıları ve çoklu seçimleri birlikte destekler. */
 function coklu_filtre($alan)
 {
     $degerler = $_GET[$alan] ?? [];
@@ -61,6 +123,15 @@ function veri_getir($baglanti, $sql, $tipler = "", $degerler = [])
 function sayfa_linki($sayfa, $filtreler)
 {
     $filtreler["sayfa"] = $sayfa;
+
+    return "ilanlar.php?" . http_build_query($filtreler);
+}
+
+function dil_linki($yeni_dil, $filtreler, $sayfa)
+{
+    $filtreler["sayfa"] = $sayfa;
+    $filtreler["lang"] = $yeni_dil;
+
     return "ilanlar.php?" . http_build_query($filtreler);
 }
 
@@ -82,10 +153,9 @@ function filtre_sil_linki($alan, $deger, $filtreler)
     return "ilanlar.php?" . http_build_query($filtreler);
 }
 
-/* Yalnızca ilanın kendi fotoğrafını döndürür. */
 function asil_fotograf($fotograf)
 {
-    $fotograf = (string) $fotograf;
+    $fotograf = (string)$fotograf;
     $dosya = basename($fotograf);
 
     if (
@@ -131,6 +201,49 @@ function ilan_fotografi($ilan)
     return ["", false];
 }
 
+$uye_id = (int)($_SESSION["uye_id"] ?? 0);
+
+/* Gerçek favori sayıları */
+$favori_sayilari = [];
+
+$favori_kayitlari = veri_getir(
+    $baglanti,
+    "SELECT ilan_id, COUNT(DISTINCT uye_id) AS toplam
+     FROM favoriler
+     GROUP BY ilan_id"
+);
+
+foreach ($favori_kayitlari as $favori) {
+    $favori_sayilari[(int)$favori["ilan_id"]] = (int)$favori["toplam"];
+}
+
+/* Kullanıcının favorileri ve mesaj bildirimi */
+$benim_favorilerim = [];
+$okunmamis_mesaj_var = false;
+
+if ($uye_id > 0) {
+    $kayitlar = veri_getir(
+        $baglanti,
+        "SELECT ilan_id FROM favoriler WHERE uye_id = ?",
+        "i",
+        [$uye_id]
+    );
+
+    foreach ($kayitlar as $kayit) {
+        $benim_favorilerim[(int)$kayit["ilan_id"]] = true;
+    }
+
+    $mesajlar = veri_getir(
+        $baglanti,
+        "SELECT id FROM ilan_mesajlari
+         WHERE alici_id = ? AND okundu = 0 LIMIT 1",
+        "i",
+        [$uye_id]
+    );
+
+    $okunmamis_mesaj_var = !empty($mesajlar);
+}
+
 $kategoriler = [
     "Kedi" => "kedi.png",
     "Köpek" => "kopek.png",
@@ -165,7 +278,6 @@ $sehirler = [
     "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
 ];
 
-/* Veritabanındaki diğer şehirleri de seçeneklere ekle. */
 $kayitli_sehirler = veri_getir(
     $baglanti,
     "SELECT DISTINCT sehir FROM ilanlar
@@ -181,10 +293,10 @@ foreach ($kayitli_sehirler as $kayit) {
 }
 
 $siralamalar = [
-    "yeni" => "En Yeni",
-    "eski" => "En Eski",
-    "yas_artan" => "Yaşı Küçükten Büyüğe",
-    "yas_azalan" => "Yaşı Büyükten Küçüğe"
+    "yeni" => ceviri("En Yeni", "Newest"),
+    "eski" => ceviri("En Eski", "Oldest"),
+    "yas_artan" => ceviri("Yaşı Küçükten Büyüğe", "Age: Youngest First"),
+    "yas_azalan" => ceviri("Yaşı Büyükten Küçüğe", "Age: Oldest First")
 ];
 
 $turler = array_values(
@@ -211,7 +323,7 @@ if (!in_array($cinsiyet, ["Dişi", "Erkek"], true)) {
     $cinsiyet = "";
 }
 
-/* Eski yaş filtreli bağlantılar için uyumluluk. */
+/* Eski yaş filtreli bağlantılar */
 if ($min_yas === "" && $max_yas === "") {
     $eski_yas = filtre_degeri("yas");
 
@@ -234,7 +346,10 @@ foreach ([$min_yas, $max_yas] as $deger) {
             ["options" => ["min_range" => 0]]
         ) === false
     ) {
-        $filtre_hata = "Yaş alanlarına sıfır veya daha büyük tam sayı giriniz.";
+        $filtre_hata = ceviri(
+            "Yaş alanlarına sıfır veya daha büyük tam sayı giriniz.",
+            "Enter a whole number of zero or greater in the age fields."
+        );
     }
 }
 
@@ -242,15 +357,15 @@ if (
     $filtre_hata === ""
     && $min_yas !== ""
     && $max_yas !== ""
-    && (int) $min_yas > (int) $max_yas
+    && (int)$min_yas > (int)$max_yas
 ) {
-    $filtre_hata = "En küçük yaş, en büyük yaştan fazla olamaz.";
+    $filtre_hata = ceviri(
+        "En küçük yaş, en büyük yaştan fazla olamaz.",
+        "The minimum age cannot be greater than the maximum age."
+    );
 }
 
-$uye_id = (int) ($_SESSION["uye_id"] ?? 0);
-
-/* Filtreli sorgu */
-
+/* Filtreli ilan sorgusu */
 $kosullar = ["durum = 'Onaylandı'"];
 $parametreler = [];
 $tipler = "";
@@ -262,8 +377,10 @@ if ($arama !== "") {
     $tipler .= "ss";
 }
 
-/* Aynı filtre içindeki seçimler VEYA, farklı filtreler VE ile çalışır. */
-foreach (["tur" => $turler, "sehir" => $secili_sehirler] as $alan => $degerler) {
+foreach ([
+    "tur" => $turler,
+    "sehir" => $secili_sehirler
+] as $alan => $degerler) {
     if ($degerler) {
         $isaretler = implode(",", array_fill(0, count($degerler), "?"));
         $kosullar[] = $alan . " IN (" . $isaretler . ")";
@@ -286,18 +403,17 @@ if ($filtre_hata !== "") {
 } else {
     if ($min_yas !== "") {
         $kosullar[] = "yas >= ?";
-        $parametreler[] = (int) $min_yas;
+        $parametreler[] = (int)$min_yas;
         $tipler .= "i";
     }
 
     if ($max_yas !== "") {
         $kosullar[] = "yas <= ?";
-        $parametreler[] = (int) $max_yas;
+        $parametreler[] = (int)$max_yas;
         $tipler .= "i";
     }
 }
 
-/* Fotoğraflı filtresinde dosyanın gerçekten mevcut olduğunu kontrol et. */
 if ($fotografli) {
     $adaylar = veri_getir(
         $baglanti,
@@ -312,7 +428,7 @@ if ($fotografli) {
 
     foreach ($adaylar as $aday) {
         if (asil_fotograf($aday["fotograf"]) !== "") {
-            $fotografli_idler[] = (int) $aday["id"];
+            $fotografli_idler[] = (int)$aday["id"];
         }
     }
 
@@ -330,13 +446,14 @@ $sayim = veri_getir(
     $parametreler
 );
 
-$toplam_ilan = (int) $sayim[0]["toplam"];
+$toplam_ilan = (int)$sayim[0]["toplam"];
+
 $ilan_sayisi = 8;
 
 $sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
 $sayfa = $sayfa && $sayfa > 0 ? $sayfa : 1;
 
-$toplam_sayfa = max(1, (int) ceil($toplam_ilan / $ilan_sayisi));
+$toplam_sayfa = max(1, (int)ceil($toplam_ilan / $ilan_sayisi));
 $sayfa = min($sayfa, $toplam_sayfa);
 $baslangic = ($sayfa - 1) * $ilan_sayisi;
 
@@ -375,11 +492,10 @@ if ($fotografli) {
 }
 
 /* Seçili filtre etiketleri */
-
 $etiketler = [];
 
 foreach ($turler as $deger) {
-    $etiketler[] = ["tur", $deger, $deger];
+    $etiketler[] = ["tur", $deger, tur_adi($deger)];
 }
 
 foreach ($secili_sehirler as $deger) {
@@ -387,10 +503,28 @@ foreach ($secili_sehirler as $deger) {
 }
 
 foreach ([
-    "arama" => [$arama, "Arama: " . $arama],
-    "cinsiyet" => [$cinsiyet, $cinsiyet],
-    "min_yas" => [$min_yas, "En az " . $min_yas . " yaş"],
-    "max_yas" => [$max_yas, "En fazla " . $max_yas . " yaş"]
+    "arama" => [
+        $arama,
+        ceviri("Arama: ", "Search: ") . $arama
+    ],
+    "cinsiyet" => [
+        $cinsiyet,
+        cinsiyet_adi($cinsiyet)
+    ],
+    "min_yas" => [
+        $min_yas,
+        ceviri(
+            "En az " . $min_yas . " yaş",
+            "Minimum age: " . $min_yas
+        )
+    ],
+    "max_yas" => [
+        $max_yas,
+        ceviri(
+            "En fazla " . $max_yas . " yaş",
+            "Maximum age: " . $max_yas
+        )
+    ]
 ] as $alan => $bilgi) {
     if ($bilgi[0] !== "") {
         $etiketler[] = [$alan, $bilgi[0], $bilgi[1]];
@@ -398,43 +532,33 @@ foreach ([
 }
 
 if ($fotografli) {
-    $etiketler[] = ["fotografli", "1", "Yalnızca fotoğraflı"];
+    $etiketler[] = [
+        "fotografli",
+        "1",
+        ceviri("Yalnızca fotoğraflı", "With photos only")
+    ];
 }
 
-/* Favoriler ve mesaj bildirimi */
-
-$favoriler = [];
-$okunmamis_mesaj_var = false;
-
-if ($uye_id > 0) {
-    $kayitlar = veri_getir(
-        $baglanti,
-        "SELECT ilan_id FROM favoriler WHERE uye_id = ?",
-        "i",
-        [$uye_id]
-    );
-
-    foreach ($kayitlar as $kayit) {
-        $favoriler[(int) $kayit["ilan_id"]] = true;
-    }
-
-    $mesajlar = veri_getir(
-        $baglanti,
-        "SELECT id FROM ilan_mesajlari
-         WHERE alici_id = ? AND okundu = 0 LIMIT 1",
-        "i",
-        [$uye_id]
-    );
-
-    $okunmamis_mesaj_var = !empty($mesajlar);
-}
+/* JavaScript içinde gösterilecek metinler */
+$js_metinleri = [
+    "favoride" => ceviri("Favorilerinizde", "In your favourites"),
+    "hata" => ceviri(
+        "Eklenemedi. Lütfen tekrar dene.",
+        "Could not add to favourites. Please try again."
+    )
+];
 ?>
+
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= guvenli($dil) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İlanlar | Aris Pati Yuvası</title>
+
+    <title><?= guvenli(ceviri(
+        "İlanlar | Aris Pati Yuvası",
+        "Listings | Aris Pati Yuvası"
+    )) ?></title>
 
     <style>
         :root {
@@ -467,8 +591,6 @@ if ($uye_id > 0) {
             outline: 3px solid #8fa97d;
             outline-offset: 3px;
         }
-
-        /* Üst menü */
 
         .ilan-ust {
             position: relative;
@@ -514,6 +636,44 @@ if ($uye_id > 0) {
             display: block;
             margin-top: 5px;
             font-size: 11px;
+        }
+
+        .ust-sag {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dil-secici {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid rgba(255,255,255,.35);
+            border-radius: 8px;
+        }
+
+        .dil-secici a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 37px;
+            min-height: 30px;
+            padding: 5px 9px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .dil-secici a:hover { background: var(--koyu); }
+
+        .dil-secici a[aria-current="true"] {
+            background: var(--krem);
+            color: var(--koyu);
         }
 
         .ilan-menu {
@@ -575,7 +735,7 @@ if ($uye_id > 0) {
             border: 1px solid var(--cizgi);
             border-radius: 12px;
             background: var(--beyaz);
-            box-shadow: 0 12px 30px rgba(40, 75, 50, .16);
+            box-shadow: 0 12px 30px rgba(40,75,50,.16);
         }
 
         .kategori-menu:hover .kategori-acilir,
@@ -601,8 +761,6 @@ if ($uye_id > 0) {
             border-radius: 50%;
             object-fit: cover;
         }
-
-        /* Sayfa düzeni */
 
         main {
             width: min(1440px, calc(100% - 48px));
@@ -643,7 +801,7 @@ if ($uye_id > 0) {
 
         .sayfa-baslik h1 {
             margin: 0;
-            font-size: clamp(25px, 3vw, 35px);
+            font-size: clamp(25px,3vw,35px);
             letter-spacing: -1px;
         }
 
@@ -666,12 +824,10 @@ if ($uye_id > 0) {
 
         .liste-duzeni {
             display: grid;
-            grid-template-columns: 235px minmax(0, 1fr);
+            grid-template-columns: 235px minmax(0,1fr);
             align-items: start;
             gap: 24px;
         }
-
-        /* Filtreler */
 
         .filtre-panel {
             overflow: hidden;
@@ -709,8 +865,7 @@ if ($uye_id > 0) {
             border-bottom: 1px solid #e8e6dc;
         }
 
-        .filtre-grup h2,
-        .filtre-grup > label {
+        .filtre-grup h2, .filtre-grup > label {
             display: block;
             margin: 0 0 11px;
             font-size: 13px;
@@ -735,8 +890,7 @@ if ($uye_id > 0) {
             accent-color: var(--yesil);
         }
 
-        .filtre-icerik input[type="search"],
-        .yas-alanlari input {
+        .filtre-icerik input[type="search"], .yas-alanlari input {
             width: 100%;
             min-width: 0;
             min-height: 38px;
@@ -751,11 +905,8 @@ if ($uye_id > 0) {
         .filtre-icerik input[type="search"] { margin-bottom: 10px; }
 
         .sehir-listesi {
-            max-height: 205px;
+            max-height: 210px;
             overflow-y: auto;
-            overscroll-behavior: contain;
-            scrollbar-width: thin;
-            padding: 2px 4px 2px 0;
         }
 
         .yas-alanlari {
@@ -790,18 +941,8 @@ if ($uye_id > 0) {
             cursor: pointer;
         }
 
-        .filtre-buton {
-            background: var(--yesil);
-            color: white;
-        }
-
-        .temizle {
-            margin-top: 8px;
-            background: #eee5d3;
-        }
-
-        /* Sonuçlar */
-
+        .filtre-buton { background: var(--yesil); color: white; }
+        .temizle { margin-top: 8px; background: #eee5d3; }
         .sonuclar { min-width: 0; }
 
         .arama-satiri {
@@ -841,28 +982,18 @@ if ($uye_id > 0) {
             margin-bottom: 18px;
         }
 
-        .sonuc-ust h2 {
-            margin: 0;
-            font-size: 18px;
-        }
+        .sonuc-ust h2 { margin: 0; font-size: 18px; }
 
         .sonuc-ust h2 span {
+            display: inline-block;
             margin-left: 8px;
             color: var(--metin);
             font-size: 13px;
             font-weight: normal;
         }
 
-        .siralama {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .siralama label {
-            color: var(--metin);
-            font-size: 12px;
-        }
+        .siralama { display: flex; align-items: center; gap: 8px; }
+        .siralama label { color: var(--metin); font-size: 12px; }
 
         .siralama select {
             max-width: 200px;
@@ -907,11 +1038,9 @@ if ($uye_id > 0) {
             line-height: 1.6;
         }
 
-        /* İlan kartları */
-
         .ilanlar {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(4,minmax(0,1fr));
             gap: 17px;
         }
 
@@ -928,7 +1057,7 @@ if ($uye_id > 0) {
 
         .ilan-karti:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(40, 75, 50, .1);
+            box-shadow: 0 10px 25px rgba(40,75,50,.1);
         }
 
         .kart-gorsel {
@@ -938,11 +1067,7 @@ if ($uye_id > 0) {
             background: #e8eddf;
         }
 
-        .fotograf-link {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        .fotograf-link { display: block; width: 100%; height: 100%; }
 
         .ilan-fotograf {
             display: block;
@@ -960,61 +1085,6 @@ if ($uye_id > 0) {
             font-size: 13px;
         }
 
-        .yuva-rozet {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            padding: 5px 8px;
-            border-radius: 6px;
-            background: var(--beyaz);
-            color: var(--yesil);
-            font-size: 10px;
-            font-weight: bold;
-            pointer-events: none;
-        }
-
-        .favori-form {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            margin: 0;
-        }
-
-        .favori-kalp {
-            display: grid;
-            width: 37px;
-            height: 37px;
-            padding: 0;
-            border: 1px solid #e0e3d7;
-            border-radius: 50%;
-            background: var(--beyaz);
-            color: var(--koyu);
-            font: normal 25px/1 Arial, sans-serif;
-            text-decoration: none;
-            place-items: center;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, .08);
-            cursor: pointer;
-        }
-
-        a.favori-kalp {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-
-        .favori-kalp:hover { background: #edf2e6; }
-        .favori-kalp.eklendi { color: var(--yesil); border-color: #c9d8bf; }
-        .favori-kalp:disabled { cursor: default; }
-
-        .foto-not {
-            margin: 0;
-            padding: 5px;
-            background: #eee5d3;
-            color: var(--metin);
-            font-size: 10px;
-            text-align: center;
-        }
-
         .ilan-bilgi {
             display: flex;
             flex-direction: column;
@@ -1022,54 +1092,19 @@ if ($uye_id > 0) {
             padding: 15px;
         }
 
-        .ilan-tur {
-            margin-bottom: 7px;
-            color: var(--metin);
-            font-size: 11px;
-        }
-
         .ilan-bilgi h3 {
-            margin: 0 0 8px;
-            font-size: 19px;
+            display: -webkit-box;
+            min-height: 44px;
+            margin: 0 0 10px;
+            overflow: hidden;
+            font-size: 15px;
+            line-height: 1.5;
             overflow-wrap: anywhere;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .ilan-bilgi h3 a { text-decoration: none; }
-
-        .ilan-basligi {
-            display: -webkit-box;
-            min-height: 38px;
-            margin: 0 0 12px;
-            overflow: hidden;
-            color: var(--metin);
-            font-size: 12px;
-            line-height: 1.6;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow-wrap: anywhere;
-        }
-
-        .kart-ozellikler {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .kart-ozellikler span {
-            padding: 5px 7px;
-            border-radius: 5px;
-            background: #edf1e7;
-            color: #52664d;
-            font-size: 10px;
-        }
-
-        .kart-sehir {
-            margin: 0 0 14px;
-            color: var(--metin);
-            font-size: 12px;
-            overflow-wrap: anywhere;
-        }
 
         .detay-buton {
             display: block;
@@ -1085,12 +1120,65 @@ if ($uye_id > 0) {
             text-decoration: none;
         }
 
-        .detay-buton:hover,
-        .filtre-buton:hover,
-        .arama-satiri button:hover,
-        .ilan-ver-link:hover {
+        .detay-buton:hover, .filtre-buton:hover,
+        .arama-satiri button:hover, .ilan-ver-link:hover {
             background: var(--koyu);
             color: white;
+        }
+
+        .kart-favori-form {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            margin: 0;
+        }
+
+        .kart-favori-kalp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: 1px solid #dedccd;
+            border-radius: 50%;
+            background: #fffdf8;
+            color: #687361;
+            font: 27px/1 Arial,sans-serif;
+            text-decoration: none;
+            box-shadow: 0 2px 7px rgba(0,0,0,.12);
+            cursor: pointer;
+        }
+
+        a.kart-favori-kalp {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+        }
+
+        .kart-favori-kalp:hover { color: #c74658; border-color: #c74658; }
+        .kart-favori-kalp.secili { color: #c74658; }
+        .kart-favori-kalp:disabled { cursor: default; }
+
+        .kart-favori-sayisi {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0 0 14px;
+            color: var(--metin);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .kalp-isaret { color: #c74658; font-size: 17px; }
+        .kart-favori-sayisi strong { color: var(--yesil); }
+
+        .kart-islem-mesaji {
+            margin: 0 0 10px;
+            color: #913c30;
+            font-size: 12px;
         }
 
         .bos-sonuc {
@@ -1150,75 +1238,43 @@ if ($uye_id > 0) {
             text-align: center;
         }
 
-        .bildirim {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            z-index: 999;
-            transform: translateX(-50%);
-            width: max-content;
-            max-width: calc(100% - 30px);
-            padding: 14px 22px;
-            border: 1px solid #b9cfae;
-            border-radius: 10px;
-            background: var(--beyaz);
-            box-shadow: 0 8px 30px rgba(40, 75, 50, .2);
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .bildirim[hidden] { display: none; }
-
         @media (min-width: 801px) {
-            .filtre-panel:not([open]) > .filtre-icerik {
-                display: block;
-            }
+            .filtre-panel:not([open]) > .filtre-icerik { display: block; }
         }
 
         @media (max-width: 1100px) {
+            .ust-sag { flex-basis: 100%; }
             .ilan-menu { width: 100%; }
 
             .liste-duzeni {
-                grid-template-columns: 220px minmax(0, 1fr);
+                grid-template-columns: 220px minmax(0,1fr);
                 gap: 18px;
             }
 
-            .ilanlar {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+            .ilanlar { grid-template-columns: repeat(3,minmax(0,1fr)); }
         }
 
         @media (max-width: 800px) {
             main { width: calc(100% - 30px); }
             .liste-duzeni { grid-template-columns: 1fr; }
 
-            .filtre-panel:not([open]) > .filtre-icerik {
-                display: none;
-            }
+            .filtre-panel:not([open]) > .filtre-icerik { display: none; }
 
             .filtre-icerik form {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(2,minmax(0,1fr));
                 gap: 18px;
             }
 
             .filtre-grup { margin: 0; }
             .filtre-islemler { align-self: end; }
-
-            .ilanlar {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
+            .ilanlar { grid-template-columns: repeat(2,minmax(0,1fr)); }
             .sayfa-baslik { padding: 23px; }
         }
 
         @media (max-width: 600px) {
             .ilan-ust { padding: 15px 18px; gap: 15px; }
-
-            .ilan-menu > a, .kategori-baslik {
-                padding: 8px;
-                font-size: 13px;
-            }
+            .ilan-menu > a, .kategori-baslik { padding: 8px; font-size: 13px; }
 
             .sonuc-ust {
                 align-items: flex-start;
@@ -1227,15 +1283,11 @@ if ($uye_id > 0) {
 
             .ilanlar { gap: 12px; }
             .ilan-bilgi { padding: 12px; }
-            .ilan-bilgi h3 { font-size: 17px; }
-            .favori-kalp { width: 33px; height: 33px; }
             .arama-satiri button { padding-inline: 17px; }
         }
 
         @media (max-width: 380px) {
-            .ilanlar, .filtre-icerik form {
-                grid-template-columns: 1fr;
-            }
+            .ilanlar, .filtre-icerik form { grid-template-columns: 1fr; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1251,102 +1303,195 @@ if ($uye_id > 0) {
     <a href="index.php" class="ilan-logo">
         <img
             src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
+            alt="<?= guvenli(ceviri(
+                "Aris Pati Yuvası logosu",
+                "Aris Pati Yuvası logo"
+            )) ?>"
             width="54"
             height="54"
         >
+
         <span>
             <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
+            <small>
+                <?= guvenli(ceviri(
+                    "Her can dostuna bir yuva",
+                    "A home for every companion"
+                )) ?>
+            </small>
         </span>
     </a>
 
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php" aria-current="page">İlanlar</a>
-
-        <div class="kategori-menu">
-            <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
-
-            <div class="kategori-acilir" id="kategori-listesi">
-                <?php foreach ($kategoriler as $ad => $dosya): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
-                        <img
-                            src="images/<?= guvenli($dosya) ?>"
-                            alt=""
-                            width="32"
-                            height="32"
-                            loading="lazy"
-                        >
-                        <span><?= guvenli($ad) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-
-        <?php if ($uye_id > 0): ?>
-            <a href="mesajlar.php">
-                Mesajlarım
-                <?php if ($okunmamis_mesaj_var): ?>
-                    <span
-                        class="mesaj-bildirim"
-                        role="img"
-                        aria-label="Okunmamış mesajınız var"
-                    ></span>
-                <?php endif; ?>
-            </a>
-            <a href="profil.php">Profilim</a>
+    <div class="ust-sag">
+        <nav
+            class="dil-secici"
+            aria-label="<?= guvenli(ceviri("Dil seçimi", "Language selection")) ?>"
+        >
             <a
-                href="cikis.php"
-                onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-            >Çıkış Yap</a>
-        <?php else: ?>
-            <a href="giris.php">Giriş Yap</a>
-        <?php endif; ?>
-    </nav>
+                href="<?= guvenli(dil_linki("tr", $sayfa_filtreleri, $sayfa)) ?>"
+                lang="tr"
+                hreflang="tr"
+                aria-label="Türkçe"
+                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
+            >TR</a>
+
+            <a
+                href="<?= guvenli(dil_linki("en", $sayfa_filtreleri, $sayfa)) ?>"
+                lang="en"
+                hreflang="en"
+                aria-label="English"
+                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
+            >EN</a>
+        </nav>
+
+        <nav
+            class="ilan-menu"
+            aria-label="<?= guvenli(ceviri("Ana menü", "Main navigation")) ?>"
+        >
+            <a href="index.php"><?= guvenli(ceviri("Ana Sayfa", "Home")) ?></a>
+
+            <a href="ilanlar.php" aria-current="page">
+                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
+            </a>
+
+            <div class="kategori-menu">
+                <button
+                    type="button"
+                    class="kategori-baslik"
+                    aria-controls="kategori-listesi"
+                >
+                    <?= guvenli(ceviri(
+                        "Hayvan Kategorileri",
+                        "Animal Categories"
+                    )) ?>
+                    <span aria-hidden="true">▾</span>
+                </button>
+
+                <div class="kategori-acilir" id="kategori-listesi">
+                    <?php foreach ($kategoriler as $ad => $dosya): ?>
+                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
+                            <img
+                                src="images/<?= guvenli($dosya) ?>"
+                                alt=""
+                                width="32"
+                                height="32"
+                                loading="lazy"
+                            >
+                            <span><?= guvenli(tur_adi($ad)) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <a href="ilan-ver.php">
+                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
+            </a>
+
+            <a href="blog.php">Blog</a>
+
+            <a href="hakkimizda.php">
+                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
+            </a>
+
+            <a href="iletisim.php">
+                <?= guvenli(ceviri("İletişim", "Contact")) ?>
+            </a>
+
+            <?php if ($uye_id > 0): ?>
+                <a href="mesajlar.php">
+                    <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
+
+                    <?php if ($okunmamis_mesaj_var): ?>
+                        <span
+                            class="mesaj-bildirim"
+                            role="img"
+                            aria-label="<?= guvenli(ceviri(
+                                "Okunmamış mesajınız var",
+                                "You have unread messages"
+                            )) ?>"
+                        ></span>
+                    <?php endif; ?>
+                </a>
+
+                <a href="profil.php">
+                    <?= guvenli(ceviri("Profilim", "My Profile")) ?>
+                </a>
+
+                <a
+                    href="cikis.php"
+                    onclick="return confirm(<?= guvenli(json_encode(
+                        ceviri(
+                            "Çıkış yapmak istediğinize emin misiniz?",
+                            "Are you sure you want to sign out?"
+                        ),
+                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                    )) ?>);"
+                >
+                    <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
+                </a>
+            <?php else: ?>
+                <a href="giris.php">
+                    <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
 </header>
 
 <main>
-    <nav class="yol" aria-label="Sayfa yolu">
-        <a href="index.php">Ana Sayfa</a>
+    <nav
+        class="yol"
+        aria-label="<?= guvenli(ceviri("Sayfa yolu", "Breadcrumb")) ?>"
+    >
+        <a href="index.php"><?= guvenli(ceviri("Ana Sayfa", "Home")) ?></a>
         <span aria-hidden="true">›</span>
-        <span>İlanlar</span>
+        <span><?= guvenli(ceviri("İlanlar", "Listings")) ?></span>
     </nav>
 
     <section class="sayfa-baslik">
         <div>
-            <small>BİR YUVA, YENİ BİR BAŞLANGIÇ</small>
-            <h1>Yeni dostun seni bekliyor.</h1>
-            <p>Sana uygun dostunu keşfet, onun hikâyesine ortak ol.</p>
+            <small>
+                <?= guvenli(ceviri(
+                    "BİR YUVA, YENİ BİR BAŞLANGIÇ",
+                    "A HOME, A NEW BEGINNING"
+                )) ?>
+            </small>
+
+            <h1>
+                <?= guvenli(ceviri(
+                    "Yeni dostun seni bekliyor.",
+                    "Your new companion is waiting."
+                )) ?>
+            </h1>
+
+            <p>
+                <?= guvenli(ceviri(
+                    "Sana uygun dostunu keşfet, onun hikâyesine ortak ol.",
+                    "Find a companion who suits your life and become part of their story."
+                )) ?>
+            </p>
         </div>
+
         <a href="ilan-ver.php" class="ilan-ver-link">
-            + Sahiplendirme İlanı Ver
+            + <?= guvenli(ceviri(
+                "Sahiplendirme İlanı Ver",
+                "Post an Adoption Listing"
+            )) ?>
         </a>
     </section>
 
     <div class="liste-duzeni">
-        <aside aria-label="İlan filtreleri">
+        <aside aria-label="<?= guvenli(ceviri("İlan filtreleri", "Listing filters")) ?>">
             <details class="filtre-panel">
                 <summary>
-                    Filtreler
-                    <span>Aç / Kapat</span>
+                    <?= guvenli(ceviri("Filtreler", "Filters")) ?>
+                    <span><?= guvenli(ceviri("Aç / Kapat", "Show / Hide")) ?></span>
                 </summary>
 
                 <div class="filtre-icerik">
                     <form action="ilanlar.php" method="GET" id="filtre-form">
                         <div class="filtre-grup">
-                            <h2>Hayvan Türü</h2>
+                            <h2><?= guvenli(ceviri("Hayvan Türü", "Animal Type")) ?></h2>
 
                             <?php foreach ($kategoriler as $ad => $dosya): ?>
                                 <label class="secenek">
@@ -1356,23 +1501,29 @@ if ($uye_id > 0) {
                                         value="<?= guvenli($ad) ?>"
                                         <?= in_array($ad, $turler, true) ? "checked" : "" ?>
                                     >
-                                    <?= guvenli($ad) ?>
+                                    <?= guvenli(tur_adi($ad)) ?>
                                 </label>
                             <?php endforeach; ?>
 
                             <p class="filtre-not">
-                                Birden fazla tür seçebilirsin.
+                                <?= guvenli(ceviri(
+                                    "Birden fazla tür seçebilirsin.",
+                                    "You can select more than one animal type."
+                                )) ?>
                             </p>
                         </div>
 
                         <div class="filtre-grup">
-                            <h2>Şehir</h2>
+                            <h2><?= guvenli(ceviri("Şehir", "City")) ?></h2>
 
                             <input
                                 type="search"
                                 id="sehir-ara"
-                                placeholder="Şehir ara..."
-                                aria-label="Filtre seçeneklerinde şehir ara"
+                                placeholder="<?= guvenli(ceviri("Şehir ara...", "Search cities...")) ?>"
+                                aria-label="<?= guvenli(ceviri(
+                                    "Filtre seçeneklerinde şehir ara",
+                                    "Search city filter options"
+                                )) ?>"
                             >
 
                             <div class="sehir-listesi">
@@ -1393,55 +1544,62 @@ if ($uye_id > 0) {
                             </div>
 
                             <p class="filtre-not">
-                                Birden fazla şehir seçebilirsin.
+                                <?= guvenli(ceviri(
+                                    "Birden fazla şehir seçebilirsin.",
+                                    "You can select more than one city."
+                                )) ?>
                             </p>
                         </div>
 
                         <div class="filtre-grup">
-                            <h2>Yaş Aralığı</h2>
+                            <h2><?= guvenli(ceviri("Yaş Aralığı", "Age Range")) ?></h2>
 
                             <div class="yas-alanlari">
                                 <div>
-                                    <label for="min_yas">En küçük</label>
+                                    <label for="min_yas">
+                                        <?= guvenli(ceviri("En küçük", "Minimum")) ?>
+                                    </label>
+
                                     <input
                                         type="number"
                                         id="min_yas"
                                         name="min_yas"
                                         min="0"
                                         step="1"
-                                        placeholder="Örn. 0"
+                                        placeholder="<?= guvenli(ceviri("Örn. 0", "e.g. 0")) ?>"
                                         value="<?= guvenli($min_yas) ?>"
                                     >
                                 </div>
+
                                 <div>
-                                    <label for="max_yas">En büyük</label>
+                                    <label for="max_yas">
+                                        <?= guvenli(ceviri("En büyük", "Maximum")) ?>
+                                    </label>
+
                                     <input
                                         type="number"
                                         id="max_yas"
                                         name="max_yas"
                                         min="0"
                                         step="1"
-                                        placeholder="Örn. 5"
+                                        placeholder="<?= guvenli(ceviri("Örn. 5", "e.g. 5")) ?>"
                                         value="<?= guvenli($max_yas) ?>"
                                     >
                                 </div>
                             </div>
 
                             <p class="filtre-not">
-                                Yaşlar yıl cinsindendir. 0, bir yaşından
-                                küçük dostlarımızı gösterir. Sınır koymak
-                                istemediğin alanı boş bırakabilirsin.
+                                <?= guvenli(ceviri(
+                                    "Yaşlar yıl cinsindendir. 0, bir yaşından küçük dostlarımızı gösterir. Sınır koymak istemediğin alanı boş bırakabilirsin.",
+                                    "Ages are in years. 0 means under one year old. Leave a field empty if you do not want to set a limit."
+                                )) ?>
                             </p>
                         </div>
 
                         <div class="filtre-grup">
-                            <h2>Cinsiyet</h2>
+                            <h2><?= guvenli(ceviri("Cinsiyet", "Sex")) ?></h2>
 
-                            <?php foreach ([
-                                "" => "Tümü",
-                                "Dişi" => "Dişi",
-                                "Erkek" => "Erkek"
-                            ] as $deger => $yazi): ?>
+                            <?php foreach (["", "Dişi", "Erkek"] as $deger): ?>
                                 <label class="secenek">
                                     <input
                                         type="radio"
@@ -1449,13 +1607,13 @@ if ($uye_id > 0) {
                                         value="<?= guvenli($deger) ?>"
                                         <?= $cinsiyet === $deger ? "checked" : "" ?>
                                     >
-                                    <?= guvenli($yazi) ?>
+                                    <?= guvenli(cinsiyet_adi($deger)) ?>
                                 </label>
                             <?php endforeach; ?>
                         </div>
 
                         <div class="filtre-grup">
-                            <h2>Fotoğraf</h2>
+                            <h2><?= guvenli(ceviri("Fotoğraf", "Photo")) ?></h2>
 
                             <label class="secenek">
                                 <input
@@ -1464,16 +1622,21 @@ if ($uye_id > 0) {
                                     value="1"
                                     <?= $fotografli ? "checked" : "" ?>
                                 >
-                                Yalnızca fotoğraflı ilanlar
+
+                                <?= guvenli(ceviri(
+                                    "Yalnızca fotoğraflı ilanlar",
+                                    "Listings with photos only"
+                                )) ?>
                             </label>
                         </div>
 
                         <div class="filtre-islemler">
                             <button type="submit" class="filtre-buton">
-                                Filtreleri Uygula
+                                <?= guvenli(ceviri("Filtreleri Uygula", "Apply Filters")) ?>
                             </button>
+
                             <a href="ilanlar.php" class="temizle">
-                                Tümünü Temizle
+                                <?= guvenli(ceviri("Tümünü Temizle", "Clear All")) ?>
                             </a>
                         </div>
                     </form>
@@ -1488,22 +1651,42 @@ if ($uye_id > 0) {
                     name="arama"
                     form="filtre-form"
                     value="<?= guvenli($arama) ?>"
-                    placeholder="Hayvan adı veya ilan başlığı ara..."
-                    aria-label="Hayvan adı veya ilan başlığı ara"
+                    placeholder="<?= guvenli(ceviri(
+                        "Hayvan adı veya ilan başlığı ara...",
+                        "Search by pet name or listing title..."
+                    )) ?>"
+                    aria-label="<?= guvenli(ceviri(
+                        "Hayvan adı veya ilan başlığı ara",
+                        "Search by pet name or listing title"
+                    )) ?>"
                 >
-                <button type="submit" form="filtre-form">Ara</button>
+
+                <button type="submit" form="filtre-form">
+                    <?= guvenli(ceviri("Ara", "Search")) ?>
+                </button>
             </div>
 
             <div class="sonuc-ust">
                 <h2 id="sonuc-baslik">
-                    <?= count($turler) === 1
-                        ? guvenli($turler[0]) . " İlanları"
-                        : "Sahiplendirme İlanları" ?>
-                    <span><?= $toplam_ilan ?> ilan bulundu</span>
+                    <?php
+                    echo guvenli(
+                        count($turler) === 1
+                            ? tur_adi($turler[0]) . ceviri(" İlanları", " Listings")
+                            : ceviri("Sahiplendirme İlanları", "Adoption Listings")
+                    );
+                    ?>
+
+                    <span>
+                        <?= $toplam_ilan ?>
+                        <?= guvenli(ceviri("ilan bulundu", "listings found")) ?>
+                    </span>
                 </h2>
 
                 <div class="siralama">
-                    <label for="siralama">Sırala:</label>
+                    <label for="siralama">
+                        <?= guvenli(ceviri("Sırala:", "Sort by:")) ?>
+                    </label>
+
                     <select
                         id="siralama"
                         name="siralama"
@@ -1521,13 +1704,19 @@ if ($uye_id > 0) {
             </div>
 
             <?php if ($etiketler): ?>
-                <nav class="aktif-filtreler" aria-label="Seçili filtreler">
+                <nav
+                    class="aktif-filtreler"
+                    aria-label="<?= guvenli(ceviri("Seçili filtreler", "Selected filters")) ?>"
+                >
                     <?php foreach ($etiketler as [$alan, $deger, $yazi]): ?>
                         <a
                             href="<?= guvenli(
                                 filtre_sil_linki($alan, $deger, $sayfa_filtreleri)
                             ) ?>"
-                            aria-label="<?= guvenli($yazi . ' filtresini kaldır') ?>"
+                            aria-label="<?= guvenli(ceviri(
+                                $yazi . " filtresini kaldır",
+                                "Remove filter: " . $yazi
+                            )) ?>"
                         >
                             <?= guvenli($yazi) ?>
                             <span aria-hidden="true">×</span>
@@ -1547,9 +1736,19 @@ if ($uye_id > 0) {
                     <?php foreach ($ilanlar as $ilan): ?>
                         <?php
                         [$foto, $temsili] = ilan_fotografi($ilan);
-                        $ilan_id = (int) $ilan["id"];
-                        $favoride = isset($favoriler[$ilan_id]);
-                        $hayvan_adi = $ilan["hayvan_adi"] ?: "Can Dostumuz";
+
+                        $ilan_id = (int)$ilan["id"];
+
+                        $hayvan_adi = $ilan["hayvan_adi"]
+                            ?: ceviri("Can Dostumuz", "Our Companion");
+
+                        $kart_basligi = $ilan["ilan_basligi"] ?: $hayvan_adi;
+                        $favoride = isset($benim_favorilerim[$ilan_id]);
+                        $favori_sayisi = $favori_sayilari[$ilan_id] ?? 0;
+
+                        $favori_yazisi = $favoride
+                            ? ceviri("Favorilerinizde", "In your favourites")
+                            : ceviri("Favorilere ekle", "Add to favourites");
                         ?>
 
                         <article class="ilan-karti">
@@ -1557,7 +1756,10 @@ if ($uye_id > 0) {
                                 <a
                                     href="ilan-detay.php?id=<?= $ilan_id ?>"
                                     class="fotograf-link"
-                                    aria-label="<?= guvenli($hayvan_adi . ' ilanını incele') ?>"
+                                    aria-label="<?= guvenli(ceviri(
+                                        $kart_basligi . " ilanını incele",
+                                        "View listing: " . $kart_basligi
+                                    )) ?>"
                                 >
                                     <?php if ($foto !== ""): ?>
                                         <img
@@ -1567,100 +1769,123 @@ if ($uye_id > 0) {
                                             loading="lazy"
                                         >
                                     <?php else: ?>
-                                        <div class="foto-yok">Fotoğraf Yok</div>
+                                        <div class="foto-yok">
+                                            <?= guvenli(ceviri("Fotoğraf Yok", "No Photo")) ?>
+                                        </div>
                                     <?php endif; ?>
                                 </a>
-
-                                <span class="yuva-rozet">Yuva arıyor</span>
 
                                 <?php if ($uye_id > 0): ?>
                                     <form
                                         action="favori-islem.php"
                                         method="POST"
-                                        class="favori-form"
+                                        class="kart-favori-form"
                                     >
                                         <input
                                             type="hidden"
                                             name="ilan_id"
                                             value="<?= $ilan_id ?>"
                                         >
+
                                         <button
                                             type="submit"
-                                            class="favori-kalp <?= $favoride ? 'eklendi' : '' ?>"
-                                            aria-label="<?= $favoride ? 'Favorilerinizde' : 'Favorilere ekle' ?>"
-                                            title="<?= $favoride ? 'Favorilerinizde' : 'Favorilere ekle' ?>"
+                                            class="kart-favori-kalp <?= $favoride ? "secili" : "" ?>"
+                                            aria-label="<?= guvenli($favori_yazisi) ?>"
+                                            title="<?= guvenli($favori_yazisi) ?>"
                                             <?= $favoride ? "disabled" : "" ?>
                                         ><?= $favoride ? "♥" : "♡" ?></button>
                                     </form>
                                 <?php else: ?>
                                     <a
                                         href="giris.php"
-                                        class="favori-kalp"
-                                        aria-label="Favorilere eklemek için giriş yap"
-                                        title="Favorilere eklemek için giriş yap"
+                                        class="kart-favori-kalp"
+                                        aria-label="<?= guvenli(ceviri(
+                                            "Favorilere eklemek için giriş yap",
+                                            "Sign in to add to favourites"
+                                        )) ?>"
+                                        title="<?= guvenli(ceviri(
+                                            "Favorilere eklemek için giriş yap",
+                                            "Sign in to add to favourites"
+                                        )) ?>"
                                     >♡</a>
                                 <?php endif; ?>
                             </div>
 
-                            <?php if ($temsili): ?>
-                                <p class="foto-not">Temsili fotoğraf</p>
-                            <?php endif; ?>
-
                             <div class="ilan-bilgi">
-                                <span class="ilan-tur">
-                                    <?= guvenli($ilan["tur"]) ?>
-                                </span>
-
                                 <h3>
-                                    <a href="ilan-detay.php?id=<?= $ilan_id ?>">
-                                        <?= guvenli($hayvan_adi) ?>
+                                    <a
+                                        href="ilan-detay.php?id=<?= $ilan_id ?>"
+                                        title="<?= guvenli($kart_basligi) ?>"
+                                    >
+                                        <?= guvenli($kart_basligi) ?>
                                     </a>
                                 </h3>
 
-                                <p class="ilan-basligi">
-                                    <?= guvenli(
-                                        $ilan["ilan_basligi"] ?: "Sevgi dolu bir yuva arıyor."
-                                    ) ?>
-                                </p>
+                                <p class="kart-favori-sayisi" aria-live="polite">
+                                    <span class="kalp-isaret" aria-hidden="true">♥</span>
 
-                                <div class="kart-ozellikler">
                                     <span>
-                                        <?= (int) $ilan["yas"] < 1
-                                            ? "1 yaşından küçük"
-                                            : (int) $ilan["yas"] . " yaşında" ?>
+                                        <strong class="favori-adet"><?= $favori_sayisi ?></strong>
+                                        <?= guvenli(ceviri(
+                                            "kişinin favorisinde",
+                                            "people have saved this"
+                                        )) ?>
                                     </span>
-
-                                    <?php if (!empty($ilan["cinsiyet"])): ?>
-                                        <span><?= guvenli($ilan["cinsiyet"]) ?></span>
-                                    <?php endif; ?>
-                                </div>
-
-                                <p class="kart-sehir">
-                                    <?= guvenli($ilan["sehir"]) ?>
                                 </p>
+
+                                <p
+                                    class="kart-islem-mesaji"
+                                    role="status"
+                                    hidden
+                                ></p>
 
                                 <a
                                     href="ilan-detay.php?id=<?= $ilan_id ?>"
                                     class="detay-buton"
-                                >İlanı İncele →</a>
+                                >
+                                    <?= guvenli(ceviri("İlanı İncele", "View Listing")) ?> →
+                                </a>
                             </div>
                         </article>
                     <?php endforeach; ?>
+
                 <?php else: ?>
                     <div class="bos-sonuc">
-                        <h3>Aradığın kriterlerde ilan bulunamadı.</h3>
-                        <p>Filtreleri değiştirerek diğer dostlarımızı keşfedebilirsin.</p>
-                        <a href="ilanlar.php">Tüm ilanları göster →</a>
+                        <h3>
+                            <?= guvenli(ceviri(
+                                "Aradığın kriterlerde ilan bulunamadı.",
+                                "No listings match your criteria."
+                            )) ?>
+                        </h3>
+
+                        <p>
+                            <?= guvenli(ceviri(
+                                "Filtreleri değiştirerek diğer dostlarımızı keşfedebilirsin.",
+                                "Try changing your filters to discover other companions."
+                            )) ?>
+                        </p>
+
+                        <a href="ilanlar.php">
+                            <?= guvenli(ceviri(
+                                "Tüm ilanları göster",
+                                "Show all listings"
+                            )) ?> →
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if ($toplam_sayfa > 1): ?>
-                <nav class="sayfalama" aria-label="İlan sayfaları">
+                <nav
+                    class="sayfalama"
+                    aria-label="<?= guvenli(ceviri("İlan sayfaları", "Listing pages")) ?>"
+                >
                     <?php if ($sayfa > 1): ?>
                         <a href="<?= guvenli(
                             sayfa_linki($sayfa - 1, $sayfa_filtreleri)
-                        ) ?>">« Önceki</a>
+                        ) ?>">
+                            « <?= guvenli(ceviri("Önceki", "Previous")) ?>
+                        </a>
                     <?php endif; ?>
 
                     <?php
@@ -1671,9 +1896,7 @@ if ($uye_id > 0) {
 
                     <?php for ($i = $ilk; $i <= $son; $i++): ?>
                         <a
-                            href="<?= guvenli(
-                                sayfa_linki($i, $sayfa_filtreleri)
-                            ) ?>"
+                            href="<?= guvenli(sayfa_linki($i, $sayfa_filtreleri)) ?>"
                             <?= $i === $sayfa ? 'aria-current="page"' : "" ?>
                         ><?= $i ?></a>
                     <?php endfor; ?>
@@ -1681,16 +1904,29 @@ if ($uye_id > 0) {
                     <?php if ($sayfa < $toplam_sayfa): ?>
                         <a href="<?= guvenli(
                             sayfa_linki($sayfa + 1, $sayfa_filtreleri)
-                        ) ?>">Sonraki »</a>
+                        ) ?>">
+                            <?= guvenli(ceviri("Sonraki", "Next")) ?> »
+                        </a>
                     <?php endif; ?>
                 </nav>
             <?php endif; ?>
 
             <?php if ($toplam_ilan > 0): ?>
                 <p class="sayfa-notu">
-                    <?= $toplam_ilan ?> ilanın
-                    <?= $baslangic + 1 ?>–<?= min($baslangic + $ilan_sayisi, $toplam_ilan) ?>
-                    arasını görüntülüyorsun.
+                    <?php
+                    $son_ilan = min(
+                        $baslangic + $ilan_sayisi,
+                        $toplam_ilan
+                    );
+
+                    echo guvenli(ceviri(
+                        $toplam_ilan . " ilanın "
+                            . ($baslangic + 1) . "–" . $son_ilan
+                            . " arasını görüntülüyorsun.",
+                        "Showing " . ($baslangic + 1) . "–" . $son_ilan
+                            . " of " . $toplam_ilan . " listings."
+                    ));
+                    ?>
                 </p>
             <?php endif; ?>
         </section>
@@ -1698,88 +1934,125 @@ if ($uye_id > 0) {
 </main>
 
 <footer>
-    © <?= date("Y") ?> Aris Pati Yuvası · Her can dostuna bir yuva.
+    © <?= date("Y") ?> Aris Pati Yuvası ·
+    <?= guvenli(ceviri(
+        "Her can dostuna bir yuva.",
+        "A home for every companion."
+    )) ?>
 </footer>
 
-<div class="bildirim" id="favori-bildirim" role="status" hidden></div>
-
 <script>
-    /* Şehir seçenekleri içinde arama */
+const metinler = <?= json_encode(
+    $js_metinleri,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+) ?>;
 
-    const sehirArama = document.getElementById("sehir-ara");
+/* Şehir seçenekleri içinde arama */
+const sehirArama = document.getElementById("sehir-ara");
 
-    function aramaMetni(metin) {
-        return metin
-            .toLocaleLowerCase("tr-TR")
-            .replaceAll("ı", "i")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-    }
+function aramaMetni(metin) {
+    return metin
+        .toLocaleLowerCase("tr-TR")
+        .replaceAll("ı", "i")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
 
-    sehirArama.addEventListener("input", function () {
-        const aranan = aramaMetni(this.value.trim());
+sehirArama.addEventListener("input", function () {
+    const aranan = aramaMetni(this.value.trim());
 
-        document.querySelectorAll(".sehir-secenek").forEach(function (secenek) {
-            const sehir = aramaMetni(secenek.dataset.sehir);
+    document.querySelectorAll(".sehir-secenek").forEach(function (secenek) {
+        const sehir = aramaMetni(secenek.dataset.sehir);
 
-            secenek.style.display = sehir.includes(aranan) ? "" : "none";
-        });
+        secenek.style.display = sehir.includes(aranan) ? "" : "none";
     });
+});
 
-    /* Favorilere ekleme */
+/* Favorilere ekleme */
+document.querySelectorAll(".kart-favori-form").forEach(function (form) {
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-    const bildirim = document.getElementById("favori-bildirim");
-    let bildirimZamani;
+        const buton = form.querySelector("button");
+        const kart = form.closest(".ilan-karti");
+        const sayi = kart.querySelector(".favori-adet");
+        const mesaj = kart.querySelector(".kart-islem-mesaji");
 
-    function mesajGoster(mesaj) {
-        clearTimeout(bildirimZamani);
-        bildirim.textContent = mesaj;
-        bildirim.hidden = false;
+        if (buton.disabled) {
+            return;
+        }
 
-        bildirimZamani = setTimeout(function () {
-            bildirim.hidden = true;
-        }, 2000);
-    }
+        buton.disabled = true;
+        mesaj.hidden = true;
 
-    document.querySelectorAll(".favori-form").forEach(function (form) {
-        form.addEventListener("submit", async function (event) {
-            event.preventDefault();
+        try {
+            const cevap = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new FormData(form)
+            });
 
-            const buton = form.querySelector("button");
-            buton.disabled = true;
+            if (cevap.redirected) {
+                window.location.href = cevap.url;
+                return;
+            }
 
+            const sonuc = await cevap.json();
+
+            if (!cevap.ok || !sonuc.basarili) {
+                throw new Error(metinler.hata);
+            }
+
+            buton.textContent = "♥";
+            buton.classList.add("secili");
+            buton.setAttribute("aria-label", metinler.favoride);
+            buton.title = metinler.favoride;
+
+            /* Güncel favori sayısını sunucudan al. */
             try {
-                const cevap = await fetch(form.action, {
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: new FormData(form)
+                const guncelCevap = await fetch(window.location.href, {
+                    cache: "no-store"
                 });
 
-                if (cevap.redirected) {
-                    window.location.href = cevap.url;
-                    return;
+                if (guncelCevap.ok && !guncelCevap.redirected) {
+                    const html = await guncelCevap.text();
+
+                    const belge = new DOMParser().parseFromString(
+                        html,
+                        "text/html"
+                    );
+
+                    const ilanId = form.querySelector(
+                        'input[name="ilan_id"]'
+                    ).value;
+
+                    const guncelForm = Array.from(
+                        belge.querySelectorAll(".kart-favori-form")
+                    ).find(function (oge) {
+                        return oge.querySelector(
+                            'input[name="ilan_id"]'
+                        ).value === ilanId;
+                    });
+
+                    if (guncelForm) {
+                        sayi.textContent = guncelForm
+                            .closest(".ilan-karti")
+                            .querySelector(".favori-adet")
+                            .textContent;
+                    }
                 }
-
-                const sonuc = await cevap.json();
-
-                if (!cevap.ok || !sonuc.basarili) {
-                    throw new Error("Favori işlemi başarısız.");
-                }
-
-                buton.textContent = "♥";
-                buton.classList.add("eklendi");
-                buton.setAttribute("aria-label", "Favorilerinizde");
-                buton.title = "Favorilerinizde";
-
-                mesajGoster("İlan favorilerinize eklendi.");
             } catch (hata) {
-                buton.disabled = false;
-                mesajGoster("İlan eklenemedi. Lütfen tekrar deneyiniz.");
+                /* Sayı, sayfa yenilendiğinde güncellenir. */
             }
-        });
+        } catch (hata) {
+            buton.disabled = false;
+            mesaj.textContent = metinler.hata;
+            mesaj.hidden = false;
+        }
     });
+});
 </script>
 
 </body>
