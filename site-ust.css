@@ -1,0 +1,123 @@
+/* Tek üst bölüm: bütün kullanıcı sayfaları bu dosyayı kullanır. */
+html { scrollbar-gutter: stable; }
+#aris-site-header, #aris-site-header * { box-sizing: border-box; }
+#aris-site-header {
+    position: sticky; top: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: nowrap; gap: 18px;
+    width: 100%; max-width: none; min-height: 120px;
+    margin: 0; padding: 16px 24px;
+    border: 0; border-bottom: 1px solid #35583b; border-radius: 0;
+    background: #426b46; color: #fff;
+    font: normal 14px/20px Arial, sans-serif; text-align: left;
+    box-shadow: none; overflow: visible;
+    -webkit-font-smoothing: antialiased;
+}
+#aris-site-header a, #aris-site-header summary, #aris-site-header span,
+#aris-site-header strong, #aris-site-header small {
+    font-family: Arial, sans-serif; letter-spacing: normal;
+    text-transform: none; text-shadow: none;
+}
+#aris-site-header .aris-brand {
+    display: inline-flex; align-items: center; flex-shrink: 0;
+    gap: 12px; margin: 0; padding: 0; border: 0;
+    background: transparent; color: #fff; text-decoration: none;
+}
+#aris-site-header .aris-brand > img {
+    display: block; flex-shrink: 0; width: 54px; height: 54px;
+    max-width: 54px; padding: 5px; margin: 0;
+    border: 1px solid #eee5d3; border-radius: 12px;
+    background: #fffdf8; object-fit: contain;
+}
+#aris-site-header .aris-brand strong {
+    display: block; margin: 0; padding: 0;
+    color: #fff; font-size: 20px; font-weight: 700; line-height: 26px;
+}
+#aris-site-header .aris-brand small {
+    display: block; margin: 5px 0 0; padding: 0;
+    color: #e3ebdd; font-size: 11px; font-weight: 400; line-height: 16px;
+}
+#aris-site-header .aris-header-right {
+    display: flex; flex: 1; min-width: 0; flex-direction: column;
+    align-items: flex-end; gap: 8px; margin: 0; padding: 0;
+}
+#aris-site-header .aris-language {
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-wrap: nowrap; gap: 4px; width: auto; min-height: 0;
+    margin: 0; padding: 3px; background: transparent;
+    border: 1px solid rgba(255,255,255,.35); border-radius: 8px;
+}
+#aris-site-header .aris-language > a {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 37px; min-height: 30px; margin: 0; padding: 5px 9px;
+    border: 0; border-radius: 5px; background: transparent; color: #fff;
+    font: bold 12px/20px Arial, sans-serif; text-decoration: none;
+}
+#aris-site-header .aris-language > a[aria-current="true"] {
+    background: #f5f0e6; color: #284b32;
+}
+#aris-site-header .aris-navigation {
+    display: flex; align-items: center; justify-content: flex-end;
+    flex-wrap: nowrap; gap: 4px; width: auto; min-height: 40px;
+    margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent;
+}
+#aris-site-header .aris-navigation > a,
+#aris-site-header .aris-categories > summary {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 7px; min-height: 40px; margin: 0; padding: 10px;
+    border: 0; border-radius: 8px; background: transparent; color: #fff;
+    font: normal 14px/20px Arial, sans-serif;
+    text-decoration: none; white-space: nowrap; cursor: pointer;
+}
+#aris-site-header .aris-navigation > a[aria-current="page"] {
+    background: #eee5d3; color: #284b32;
+}
+#aris-site-header .aris-navigation > a:hover,
+#aris-site-header .aris-categories > summary:hover,
+#aris-site-header .aris-categories[open] > summary,
+#aris-site-header .aris-language > a:hover {
+    background: #284b32; color: #fff;
+}
+#aris-site-header .aris-categories {
+    position: relative; width: auto; margin: 0; padding: 0;
+    border: 0; border-radius: 0; background: transparent;
+}
+#aris-site-header .aris-categories > summary { list-style: none; }
+#aris-site-header .aris-categories > summary::-webkit-details-marker { display: none; }
+#aris-site-header .aris-category-list {
+    position: absolute; top: 100%; right: 0; z-index: 1100;
+    width: 210px; max-width: calc(100vw - 32px);
+    max-height: min(440px, 70vh); overflow-y: auto;
+    margin: 0; padding: 8px; border: 1px solid #ded6c6;
+    border-radius: 12px; background: #fffdf8;
+    box-shadow: 0 10px 25px rgba(20,40,25,.18);
+}
+#aris-site-header .aris-category-list > a {
+    display: flex; align-items: center; justify-content: flex-start;
+    gap: 10px; min-height: 44px; margin: 0; padding: 6px 10px;
+    border: 0; border-radius: 8px; background: transparent; color: #284b32;
+    font: normal 14px/20px Arial, sans-serif; text-decoration: none;
+}
+#aris-site-header .aris-category-list > a:hover { background: #e6eddf; }
+#aris-site-header .aris-category-list img {
+    display: block; width: 32px; height: 32px; max-width: 32px;
+    margin: 0; padding: 0; border: 0; border-radius: 50%; object-fit: cover;
+}
+#aris-site-header .aris-unread {
+    display: inline-block; flex-shrink: 0; width: 9px; height: 9px;
+    margin: 0; padding: 0; border: 1px solid #fff;
+    border-radius: 50%; background: #ef5350;
+}
+#aris-site-header :focus-visible { outline: 3px solid #c7d9b6; outline-offset: 2px; }
+@media (max-width: 1250px) {
+    #aris-site-header { flex-direction: column; gap: 12px; }
+    #aris-site-header .aris-header-right { width: 100%; align-items: center; }
+    #aris-site-header .aris-navigation { justify-content: center; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+    #aris-site-header { padding: 14px 12px; }
+    #aris-site-header .aris-navigation { gap: 2px; }
+    #aris-site-header .aris-navigation > a,
+    #aris-site-header .aris-categories > summary { padding: 8px; font-size: 13px; }
+    #aris-site-header .aris-category-list { right: auto; left: 0; }
+}

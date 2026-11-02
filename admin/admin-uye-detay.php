@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -10,7 +12,34 @@ require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars(
+        (string) $deger,
+        ENT_QUOTES,
+        "UTF-8"
+    );
+}
+
+function uye_ilan_fotografi($fotograf)
+{
+    $foto = trim((string) $fotograf);
+    $dosya = basename($foto);
+    $kok = dirname(__DIR__);
+
+    if (
+        preg_match('/^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$/i', $dosya)
+        && is_file($kok . "/uploads/" . $dosya)
+    ) {
+        return "../uploads/" . $dosya;
+    }
+
+    if (
+        preg_match('~^images/hayvanlar/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$~i', $foto)
+        && is_file($kok . "/" . $foto)
+    ) {
+        return "../" . $foto;
+    }
+
+    return "";
 }
 
 function kayitlari_getir($baglanti, $sql, $uye_id)
@@ -55,10 +84,9 @@ $basvurular = [];
 $favoriler = [];
 
 if ($uye) {
-
     $ilanlar = kayitlari_getir(
         $baglanti,
-        "SELECT id, hayvan_adi, ilan_basligi, tur, sehir, durum
+        "SELECT id, hayvan_adi, ilan_basligi, tur, sehir, durum, fotograf
          FROM ilanlar
          WHERE uye_id = ?
          ORDER BY id DESC",
@@ -112,15 +140,17 @@ $evler = [
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Üye Detayları | Admin Paneli</title>
+    <title>
+        <?= admin_h(admin_t("Üye Detayları | Admin Paneli")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .uye-geri,
@@ -192,6 +222,24 @@ $evler = [
             color: #284b32;
             overflow-wrap: anywhere;
             box-shadow: 0 6px 20px rgba(40, 75, 50, 0.05);
+        }
+
+        .uye-ilan-fotografi {
+            display: block;
+            width: 100%;
+            height: 190px;
+            object-fit: contain;
+            background: #f3eee3;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .uye-ilan-foto-yok {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5c6d5b;
+            font-size: 14px;
         }
 
         .uye-detay-kart h3 {
@@ -271,6 +319,8 @@ $evler = [
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -280,72 +330,86 @@ $evler = [
 <main class="icerik">
 
     <a href="admin-uyeler.php" class="uye-geri">
-        ← Üye Listesine Dön
+        <?= admin_h(admin_t("← Üye Listesine Dön")) ?>
     </a>
 
     <?php if (!$uye): ?>
 
         <section class="kart">
-            <h2>Üye bulunamadı</h2>
-            <p>Bu numaraya ait bir üye bulunmuyor.</p>
+            <h2><?= admin_h(admin_t("Üye bulunamadı")) ?></h2>
+
+            <p>
+                <?= admin_h(admin_t(
+                    "Bu numaraya ait bir üye bulunmuyor."
+                )) ?>
+            </p>
         </section>
 
     <?php else: ?>
 
         <h2>
-            <?php echo guvenli($uye["ad_soyad"]); ?>
-            — Üye Detayları
+            <?= guvenli($uye["ad_soyad"]) ?>
+            <?= admin_h(admin_t("— Üye Detayları")) ?>
         </h2>
 
         <section class="kart uye-bilgi">
-            <h3>Üye Bilgileri</h3>
+            <h3><?= admin_h(admin_t("Üye Bilgileri")) ?></h3>
 
             <p>
-                <strong>Üye ID:</strong>
-                <?php echo (int)$uye["id"]; ?>
+                <strong><?= admin_h(admin_t("Üye ID:")) ?></strong>
+                <?= (int) $uye["id"] ?>
             </p>
 
             <p>
-                <strong>Ad Soyad:</strong>
-                <?php echo guvenli($uye["ad_soyad"]); ?>
+                <strong><?= admin_h(admin_t("Ad Soyad:")) ?></strong>
+                <?= guvenli($uye["ad_soyad"]) ?>
             </p>
 
             <p>
-                <strong>E-posta:</strong>
-                <?php echo guvenli($uye["email"]); ?>
+                <strong><?= admin_h(admin_t("E-posta:")) ?></strong>
+                <?= guvenli($uye["email"]) ?>
             </p>
 
             <p>
-                <strong>Telefon:</strong>
-                <?php echo guvenli($uye["telefon"]); ?>
+                <strong><?= admin_h(admin_t("Telefon:")) ?></strong>
+                <?= guvenli($uye["telefon"]) ?>
             </p>
         </section>
 
         <div class="uye-ozet">
             <a href="#uye-ilanlar">
-                <span>Verdiği İlanlar</span>
-                <strong><?php echo count($ilanlar); ?></strong>
+                <span>
+                    <?= admin_h(admin_t("Verdiği İlanlar")) ?>
+                </span>
+                <strong><?= count($ilanlar) ?></strong>
             </a>
 
             <a href="#uye-basvurular">
-                <span>Sahiplenme Başvuruları</span>
-                <strong><?php echo count($basvurular); ?></strong>
+                <span>
+                    <?= admin_h(admin_t("Sahiplenme Başvuruları")) ?>
+                </span>
+                <strong><?= count($basvurular) ?></strong>
             </a>
 
             <a href="#uye-favoriler">
-                <span>Favorileri</span>
-                <strong><?php echo count($favoriler); ?></strong>
+                <span>
+                    <?= admin_h(admin_t("Favorileri")) ?>
+                </span>
+                <strong><?= count($favoriler) ?></strong>
             </a>
         </div>
 
         <section id="uye-ilanlar" class="uye-bolum">
-
-            <h2>Verdiği İlanlar</h2>
+            <h2><?= admin_h(admin_t("Verdiği İlanlar")) ?></h2>
 
             <?php if (!$ilanlar): ?>
 
                 <div class="kart">
-                    <p>Bu üyenin verdiği ilan bulunmuyor.</p>
+                    <p>
+                        <?= admin_h(admin_t(
+                            "Bu üyenin verdiği ilan bulunmuyor."
+                        )) ?>
+                    </p>
                 </div>
 
             <?php else: ?>
@@ -354,52 +418,83 @@ $evler = [
 
                     <?php foreach ($ilanlar as $ilan): ?>
                         <?php
-                        $durum = (string)($ilan["durum"] ?? "");
+                        $durum = (string) ($ilan["durum"] ?? "");
                         $sinif = $durum_siniflari[$durum] ?? "";
+                        $ilan_fotografi = uye_ilan_fotografi($ilan["fotograf"] ?? "");
                         ?>
 
                         <article class="uye-detay-kart">
-
+                            <?php if ($ilan_fotografi !== ""): ?>
+                                <a
+                                    href="../ilan-detay.php?id=<?= (int) $ilan['id'] ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <img
+                                        class="uye-ilan-fotografi"
+                                        src="<?= guvenli($ilan_fotografi) ?>"
+                                        alt="<?= guvenli($ilan["hayvan_adi"] ?? "") ?>"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="320"
+                                        height="190"
+                                    >
+                                </a>
+                            <?php else: ?>
+                                <div class="uye-ilan-fotografi uye-ilan-foto-yok">
+                                    <?= guvenli($admin_dil === "en" ? "No photo added" : "Fotoğraf eklenmemiş") ?>
+                                </div>
+                            <?php endif; ?>
                             <h3>
-                                <?php echo guvenli($ilan["hayvan_adi"] ?? ""); ?>
+                                <?= guvenli($ilan["hayvan_adi"] ?? "") ?>
                             </h3>
 
                             <p>
-                                <strong>İlan ID:</strong>
-                                <?php echo (int)$ilan["id"]; ?>
+                                <strong>
+                                    <?= admin_h(admin_t("İlan ID:")) ?>
+                                </strong>
+                                <?= (int) $ilan["id"] ?>
                             </p>
 
                             <p>
-                                <strong>Başlık:</strong>
-                                <?php echo guvenli($ilan["ilan_basligi"] ?? ""); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Başlık:")) ?>
+                                </strong>
+                                <?= guvenli($ilan["ilan_basligi"] ?? "") ?>
                             </p>
 
                             <p>
-                                <strong>Tür:</strong>
-                                <?php echo guvenli($ilan["tur"] ?? "-"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Tür:")) ?>
+                                </strong>
+                                <?= admin_h(admin_t($ilan["tur"] ?? "-")) ?>
                             </p>
 
                             <p>
-                                <strong>Şehir:</strong>
-                                <?php echo guvenli($ilan["sehir"] ?? "-"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Şehir:")) ?>
+                                </strong>
+                                <?= guvenli($ilan["sehir"] ?? "-") ?>
                             </p>
 
                             <p>
-                                <strong>Durum:</strong>
-                                <span class="uye-durum <?php echo guvenli($sinif); ?>">
-                                    <?php echo guvenli($durum); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Durum:")) ?>
+                                </strong>
+
+                                <span class="uye-durum <?= guvenli($sinif) ?>">
+                                    <?= admin_h(admin_t($durum)) ?>
                                 </span>
                             </p>
 
                             <a
-                                href="../ilan-detay.php?id=<?php echo (int)$ilan['id']; ?>"
+                                href="../ilan-detay.php?id=<?= (int) $ilan['id'] ?>"
                                 class="uye-incele"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                İlanı İncele
+                                <?= admin_h(admin_t("İlanı İncele")) ?>
                             </a>
-
                         </article>
 
                     <?php endforeach; ?>
@@ -407,17 +502,21 @@ $evler = [
                 </div>
 
             <?php endif; ?>
-
         </section>
 
         <section id="uye-basvurular" class="uye-bolum">
-
-            <h2>Sahiplenme Başvuruları</h2>
+            <h2>
+                <?= admin_h(admin_t("Sahiplenme Başvuruları")) ?>
+            </h2>
 
             <?php if (!$basvurular): ?>
 
                 <div class="kart">
-                    <p>Bu üyenin sahiplenme başvurusu bulunmuyor.</p>
+                    <p>
+                        <?= admin_h(admin_t(
+                            "Bu üyenin sahiplenme başvurusu bulunmuyor."
+                        )) ?>
+                    </p>
                 </div>
 
             <?php else: ?>
@@ -426,48 +525,71 @@ $evler = [
 
                     <?php foreach ($basvurular as $basvuru): ?>
                         <?php
-                        $durum = (string)($basvuru["durum"] ?? "");
+                        $durum = (string) ($basvuru["durum"] ?? "");
                         $sinif = $durum_siniflari[$durum] ?? "";
                         $ev = $evler[$basvuru["ev"] ?? ""] ?? "-";
                         ?>
 
                         <article class="uye-detay-kart">
-
                             <h3>
-                                Başvuru #<?php echo (int)$basvuru["id"]; ?>
+                                <?= admin_h(admin_t("Başvuru #")) ?><?= (int) $basvuru["id"] ?>
                             </h3>
 
                             <p>
-                                <strong>Hayvan:</strong>
-                                <?php echo guvenli($basvuru["hayvan_adi"] ?? "İlan silinmiş"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Hayvan:")) ?>
+                                </strong>
+
+                                <?= guvenli(
+                                    $basvuru["hayvan_adi"]
+                                    ?? admin_t("İlan silinmiş")
+                                ) ?>
                             </p>
 
                             <p>
-                                <strong>Tür:</strong>
-                                <?php echo guvenli($basvuru["tur"] ?? "-"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Tür:")) ?>
+                                </strong>
+
+                                <?= admin_h(admin_t(
+                                    $basvuru["tur"] ?? "-"
+                                )) ?>
                             </p>
 
                             <p>
-                                <strong>Başvuru Tarihi:</strong>
-                                <?php echo guvenli($basvuru["basvuru_tarihi"] ?? ""); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Başvuru Tarihi:")) ?>
+                                </strong>
+
+                                <?= guvenli(
+                                    $basvuru["basvuru_tarihi"] ?? ""
+                                ) ?>
                             </p>
 
                             <p>
-                                <strong>Yaşadığı Yer:</strong>
-                                <?php echo guvenli($ev); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Yaşadığı Yer:")) ?>
+                                </strong>
+                                <?= admin_h(admin_t($ev)) ?>
                             </p>
 
                             <p>
-                                <strong>Durum:</strong>
-                                <span class="uye-durum <?php echo guvenli($sinif); ?>">
-                                    <?php echo guvenli($durum); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Durum:")) ?>
+                                </strong>
+
+                                <span class="uye-durum <?= guvenli($sinif) ?>">
+                                    <?= admin_h(admin_t($durum)) ?>
                                 </span>
                             </p>
 
-                            <p><strong>Ek Bilgi:</strong></p>
+                            <p>
+                                <strong>
+                                    <?= admin_h(admin_t("Ek Bilgi:")) ?>
+                                </strong>
+                            </p>
 
-                            <div class="uye-ek-bilgi"><?php echo guvenli($basvuru["mesaj"] ?? ""); ?></div>
-
+                            <div class="uye-ek-bilgi"><?= guvenli($basvuru["mesaj"] ?? "") ?></div>
                         </article>
 
                     <?php endforeach; ?>
@@ -475,17 +597,19 @@ $evler = [
                 </div>
 
             <?php endif; ?>
-
         </section>
 
         <section id="uye-favoriler" class="uye-bolum">
-
-            <h2>Favorileri</h2>
+            <h2><?= admin_h(admin_t("Favorileri")) ?></h2>
 
             <?php if (!$favoriler): ?>
 
                 <div class="kart">
-                    <p>Bu üyenin favori kaydı bulunmuyor.</p>
+                    <p>
+                        <?= admin_h(admin_t(
+                            "Bu üyenin favori kaydı bulunmuyor."
+                        )) ?>
+                    </p>
                 </div>
 
             <?php else: ?>
@@ -494,46 +618,57 @@ $evler = [
 
                     <?php foreach ($favoriler as $favori): ?>
                         <?php
-                        $durum = (string)($favori["durum"] ?? "");
+                        $durum = (string) ($favori["durum"] ?? "");
                         $sinif = $durum_siniflari[$durum] ?? "";
                         ?>
 
                         <article class="uye-detay-kart">
-
                             <h3>
-                                <?php echo guvenli($favori["hayvan_adi"] ?? "İlan silinmiş"); ?>
+                                <?= guvenli(
+                                    $favori["hayvan_adi"]
+                                    ?? admin_t("İlan silinmiş")
+                                ) ?>
                             </h3>
 
                             <p>
-                                <strong>Tür:</strong>
-                                <?php echo guvenli($favori["tur"] ?? "-"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Tür:")) ?>
+                                </strong>
+
+                                <?= admin_h(admin_t(
+                                    $favori["tur"] ?? "-"
+                                )) ?>
                             </p>
 
                             <p>
-                                <strong>Şehir:</strong>
-                                <?php echo guvenli($favori["sehir"] ?? "-"); ?>
+                                <strong>
+                                    <?= admin_h(admin_t("Şehir:")) ?>
+                                </strong>
+                                <?= guvenli($favori["sehir"] ?? "-") ?>
                             </p>
 
                             <?php if ($favori["ilan_id"] !== null): ?>
 
                                 <p>
-                                    <strong>İlan Durumu:</strong>
-                                    <span class="uye-durum <?php echo guvenli($sinif); ?>">
-                                        <?php echo guvenli($durum); ?>
+                                    <strong>
+                                        <?= admin_h(admin_t("İlan Durumu:")) ?>
+                                    </strong>
+
+                                    <span class="uye-durum <?= guvenli($sinif) ?>">
+                                        <?= admin_h(admin_t($durum)) ?>
                                     </span>
                                 </p>
 
                                 <a
-                                    href="../ilan-detay.php?id=<?php echo (int)$favori['ilan_id']; ?>"
+                                    href="../ilan-detay.php?id=<?= (int) $favori['ilan_id'] ?>"
                                     class="uye-incele"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    İlanı İncele
+                                    <?= admin_h(admin_t("İlanı İncele")) ?>
                                 </a>
 
                             <?php endif; ?>
-
                         </article>
 
                     <?php endforeach; ?>
@@ -541,7 +676,6 @@ $evler = [
                 </div>
 
             <?php endif; ?>
-
         </section>
 
     <?php endif; ?>

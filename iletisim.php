@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 $post_istegi = $_SERVER["REQUEST_METHOD"] === "POST";
 
@@ -530,141 +531,12 @@ if ($post_istegi && !$dil_degisti) {
             }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="<?php echo iletisim_ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            ); ?>"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?php echo iletisim_ceviri(
-                    "Her can dostuna bir yuva",
-                    "A loving home for every pet"
-                ); ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <div
-            class="dil-secici"
-            role="group"
-            aria-label="<?php echo iletisim_ceviri(
-                "Dil seçimi",
-                "Language selection"
-            ); ?>"
-        >
-            <button
-                type="submit"
-                form="iletisim-form"
-                name="dil_secimi"
-                value="tr"
-                lang="tr"
-                class="<?php echo $dil === "tr" ? "aktif" : ""; ?>"
-                aria-pressed="<?php echo $dil === "tr" ? "true" : "false"; ?>"
-                aria-label="Türkçe"
-                formnovalidate
-            >TR</button>
-
-            <button
-                type="submit"
-                form="iletisim-form"
-                name="dil_secimi"
-                value="en"
-                lang="en"
-                class="<?php echo $dil === "en" ? "aktif" : ""; ?>"
-                aria-pressed="<?php echo $dil === "en" ? "true" : "false"; ?>"
-                aria-label="English"
-                formnovalidate
-            >EN</button>
-        </div>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?php echo iletisim_ceviri(
-                "Ana menü",
-                "Main navigation"
-            ); ?>"
-        >
-            <a href="index.php">
-                <?php echo iletisim_ceviri("Ana Sayfa", "Home"); ?>
-            </a>
-
-            <a href="ilanlar.php">
-                <?php echo iletisim_ceviri("İlanlar", "Listings"); ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button type="button" class="kategori-buton">
-                    <?php echo iletisim_ceviri("Kategoriler", "Categories"); ?>
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir">
-                    <?php foreach ($kategoriler as $kategori): ?>
-                        <a href="ilanlar.php?tur=<?php echo rawurlencode($kategori[0]); ?>">
-                            <span aria-hidden="true">
-                                <?php echo $kategori[2]; ?>
-                            </span>
-
-                            <?php echo iletisim_guvenli(
-                                iletisim_ceviri($kategori[0], $kategori[1])
-                            ); ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?php echo iletisim_ceviri("İlan Ver", "Post a Listing"); ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?php echo iletisim_ceviri("Hakkımızda", "About Us"); ?>
-            </a>
-
-            <a href="iletisim.php" aria-current="page">
-                <?php echo iletisim_ceviri("İletişim", "Contact"); ?>
-            </a>
-
-            <?php if ((int)($_SESSION["uye_id"] ?? 0) > 0): ?>
-                <a href="mesajlar.php">
-                    <?php echo iletisim_ceviri("Mesajlarım", "My Messages"); ?>
-                </a>
-
-                <a href="profil.php">
-                    <?php echo iletisim_ceviri("Profilim", "My Profile"); ?>
-                </a>
-
-                <a
-                    href="cikis.php"
-                    onclick="return confirm('<?php echo iletisim_ceviri(
-                        "Çıkış yapmak istediğinize emin misiniz?",
-                        "Are you sure you want to log out?"
-                    ); ?>');"
-                >
-                    <?php echo iletisim_ceviri("Çıkış Yap", "Log Out"); ?>
-                </a>
-            <?php else: ?>
-                <a href="giris.php">
-                    <?php echo iletisim_ceviri("Giriş Yap", "Log In"); ?>
-                </a>
-            <?php endif; ?>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <section class="iletisim">

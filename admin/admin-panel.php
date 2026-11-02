@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -10,7 +12,7 @@ require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars((string) $deger, ENT_QUOTES, "UTF-8");
 }
 
 function sayfa_linki($numara, $filtreler)
@@ -42,8 +44,6 @@ $tarih_secenekleri = [
 $kategori = is_string($_GET["kategori"] ?? null)
     ? trim($_GET["kategori"]) : "";
 
-// İlk açılışta onaylanan ilanlar listelenir.
-// Boş değer seçilirse tüm durumlar gösterilir.
 $durum = is_string($_GET["durum"] ?? null)
     ? trim($_GET["durum"]) : "Onaylandı";
 
@@ -62,7 +62,6 @@ if (!array_key_exists($tarih, $tarih_secenekleri)) {
     $tarih = "";
 }
 
-// Filtreleme hem sayımda hem ilan sorgusunda kullanılır.
 $kosul = "WHERE (? = '' OR tur = ?)
           AND (? = '' OR durum = ?)";
 
@@ -77,7 +76,6 @@ if ($tarih === "bugun") {
                 AND ilan_tarihi <= NOW()";
 }
 
-// Seçilen filtrelere uygun toplam ilan sayısı.
 $sayim = mysqli_prepare(
     $baglanti,
     "SELECT COUNT(*) AS toplam FROM ilanlar " . $kosul
@@ -93,20 +91,20 @@ mysqli_stmt_bind_param(
 );
 
 mysqli_stmt_execute($sayim);
+
 $sayim_sonucu = mysqli_stmt_get_result($sayim);
-$toplam_ilan = (int)mysqli_fetch_assoc($sayim_sonucu)["toplam"];
+$toplam_ilan = (int) mysqli_fetch_assoc($sayim_sonucu)["toplam"];
+
 mysqli_stmt_close($sayim);
 
-// Her sayfada 10 ilan gösterilir.
 $sayfa_basi = 10;
-$toplam_sayfa = max(1, (int)ceil($toplam_ilan / $sayfa_basi));
+$toplam_sayfa = max(1, (int) ceil($toplam_ilan / $sayfa_basi));
 
 $sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
 $sayfa = min($toplam_sayfa, max(1, $sayfa ?: 1));
 
 $baslangic = ($sayfa - 1) * $sayfa_basi;
 
-// Sadece geçerli sayfada gösterilecek ilanlar sorgulanır.
 $stmt = mysqli_prepare(
     $baglanti,
     "SELECT * FROM ilanlar " . $kosul . "
@@ -136,16 +134,26 @@ $filtreler = [
 
 $ilk_kayit = $toplam_ilan > 0 ? $baslangic + 1 : 0;
 $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
+
+$durum_siniflari = [
+    "Bekliyor" => "durum-bekliyor",
+    "Onaylandı" => "durum-onaylandi",
+    "Reddedildi" => "durum-reddedildi"
+];
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İlan Yönetimi | Aris Pati Yuvası</title>
 
-    <link rel="stylesheet" href="admin-style.css?v=14">
+    <title>
+        <?= admin_h(admin_t("İlan Yönetimi | Aris Pati Yuvası")) ?>
+    </title>
+
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .ilan-filtre {
@@ -406,6 +414,8 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -414,12 +424,12 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
 <main class="icerik">
 
-    <h2>İlan Yönetimi</h2>
+    <h2><?= admin_h(admin_t("İlan Yönetimi")) ?></h2>
 
     <?php if (isset($_SESSION["ilan_bildirimi"])): ?>
         <div class="kayit-bildirimi" role="status">
             <?php
-            echo guvenli($_SESSION["ilan_bildirimi"]);
+            echo admin_h(admin_t($_SESSION["ilan_bildirimi"]));
             unset($_SESSION["ilan_bildirimi"]);
             ?>
         </div>
@@ -429,75 +439,99 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
         <form action="admin-panel.php" method="GET" class="ilan-filtre">
 
             <div>
-                <label for="kategori">Kategori</label>
+                <label for="kategori">
+                    <?= admin_h(admin_t("Kategori")) ?>
+                </label>
+
                 <select id="kategori" name="kategori">
-                    <option value="">Tüm Kategoriler</option>
+                    <option value="">
+                        <?= admin_h(admin_t("Tüm Kategoriler")) ?>
+                    </option>
 
                     <?php foreach ($kategoriler as $secenek): ?>
                         <option
-                            value="<?php echo guvenli($secenek); ?>"
-                            <?php echo $kategori === $secenek ? "selected" : ""; ?>
+                            value="<?= guvenli($secenek) ?>"
+                            <?= $kategori === $secenek ? "selected" : "" ?>
                         >
-                            <?php echo guvenli($secenek); ?>
+                            <?= admin_h(admin_t($secenek)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div>
-                <label for="durum">İlan Durumu</label>
+                <label for="durum">
+                    <?= admin_h(admin_t("İlan Durumu")) ?>
+                </label>
+
                 <select id="durum" name="durum">
-                    <option value="" <?php echo $durum === "" ? "selected" : ""; ?>>
-                        Tüm Durumlar
+                    <option
+                        value=""
+                        <?= $durum === "" ? "selected" : "" ?>
+                    >
+                        <?= admin_h(admin_t("Tüm Durumlar")) ?>
                     </option>
 
                     <?php foreach ($izinli_durumlar as $secenek): ?>
                         <option
-                            value="<?php echo guvenli($secenek); ?>"
-                            <?php echo $durum === $secenek ? "selected" : ""; ?>
+                            value="<?= guvenli($secenek) ?>"
+                            <?= $durum === $secenek ? "selected" : "" ?>
                         >
-                            <?php echo guvenli($secenek); ?>
+                            <?= admin_h(admin_t($secenek)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div>
-                <label for="tarih">İlan Tarihi</label>
+                <label for="tarih">
+                    <?= admin_h(admin_t("İlan Tarihi")) ?>
+                </label>
+
                 <select id="tarih" name="tarih">
                     <?php foreach ($tarih_secenekleri as $deger => $yazi): ?>
                         <option
-                            value="<?php echo guvenli($deger); ?>"
-                            <?php echo $tarih === (string)$deger ? "selected" : ""; ?>
+                            value="<?= guvenli($deger) ?>"
+                            <?= $tarih === (string) $deger ? "selected" : "" ?>
                         >
-                            <?php echo guvenli($yazi); ?>
+                            <?= admin_h(admin_t($yazi)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
-            <button type="submit">Filtrele</button>
-            <a href="admin-panel.php" class="filtre-temizle">Temizle</a>
+            <button type="submit">
+                <?= admin_h(admin_t("Filtrele")) ?>
+            </button>
+
+            <a href="admin-panel.php" class="filtre-temizle">
+                <?= admin_h(admin_t("Temizle")) ?>
+            </a>
         </form>
 
         <p>
-            Bulunan ilan sayısı:
-            <strong><?php echo $toplam_ilan; ?></strong>
+            <?= admin_h(admin_t("Bulunan ilan sayısı:")) ?>
+            <strong><?= $toplam_ilan ?></strong>
 
             <?php if ($toplam_ilan > 0): ?>
-                — <?php echo $ilk_kayit; ?>–<?php echo $son_kayit; ?>
-                arası gösteriliyor.
+                — <?= $ilk_kayit ?>–<?= $son_kayit ?>
+                <?= admin_h(admin_t("arası gösteriliyor.")) ?>
             <?php endif; ?>
         </p>
 
         <p>
-            Sayfa <?php echo $sayfa; ?> / <?php echo $toplam_sayfa; ?>
+            <?= admin_h(admin_t("Sayfa")) ?>
+            <?= $sayfa ?> / <?= $toplam_sayfa ?>
         </p>
     </section>
 
     <?php if ($toplam_ilan === 0): ?>
         <div class="kart">
-            <p>Seçtiğiniz filtrelere uygun ilan bulunamadı.</p>
+            <p>
+                <?= admin_h(admin_t(
+                    "Seçtiğiniz filtrelere uygun ilan bulunamadı."
+                )) ?>
+            </p>
         </div>
     <?php endif; ?>
 
@@ -505,18 +539,14 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
 
         <?php while ($ilan = mysqli_fetch_assoc($ilanlar)): ?>
             <?php
-            $ilan_id = (int)$ilan["id"];
-            $ilan_durumu = (string)($ilan["durum"] ?? "");
-
-            $durum_siniflari = [
-                "Bekliyor" => "durum-bekliyor",
-                "Onaylandı" => "durum-onaylandi",
-                "Reddedildi" => "durum-reddedildi"
-            ];
+            $ilan_id = (int) $ilan["id"];
+            $ilan_durumu = (string) ($ilan["durum"] ?? "");
 
             $durum_sinifi = $durum_siniflari[$ilan_durumu] ?? "";
 
-            $dosya_adi = basename((string)($ilan["fotograf"] ?? ""));
+            $dosya_adi = basename(
+                (string) ($ilan["fotograf"] ?? "")
+            );
 
             $gecerli_fotograf =
                 preg_match(
@@ -525,7 +555,7 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 ) === 1
                 && is_file(__DIR__ . "/../uploads/" . $dosya_adi);
 
-            $ilan_tarihi = (string)($ilan["ilan_tarihi"] ?? "");
+            $ilan_tarihi = (string) ($ilan["ilan_tarihi"] ?? "");
 
             $tarih_nesnesi = DateTimeImmutable::createFromFormat(
                 "!Y-m-d H:i:s",
@@ -537,48 +567,52 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 && $tarih_nesnesi->format("Y-m-d H:i:s") === $ilan_tarihi
             )
                 ? $tarih_nesnesi->format("d.m.Y H:i")
-                : "Tarih belirtilmemiş";
+                : admin_t("Tarih belirtilmemiş");
             ?>
 
             <article class="kart">
 
                 <?php if ($gecerli_fotograf): ?>
                     <img
-                        src="../uploads/<?php echo guvenli($dosya_adi); ?>"
-                        alt="<?php echo guvenli($ilan["hayvan_adi"] ?? "Hayvan fotoğrafı"); ?>"
+                        src="../uploads/<?= guvenli($dosya_adi) ?>"
+                        alt="<?= guvenli($ilan['hayvan_adi'] ?? admin_t('Hayvan fotoğrafı')) ?>"
                         class="ilan-fotograf"
                         loading="lazy"
                     >
                 <?php else: ?>
-                    <div class="admin-foto-yok">🐾 Fotoğraf Yok</div>
+                    <div class="admin-foto-yok">
+                        <?= admin_h(admin_t("🐾 Fotoğraf Yok")) ?>
+                    </div>
                 <?php endif; ?>
 
-                <h3><?php echo guvenli($ilan["hayvan_adi"] ?? ""); ?></h3>
+                <h3><?= guvenli($ilan["hayvan_adi"] ?? "") ?></h3>
 
                 <div class="admin-ilan-bilgileri">
                     <p>
-                        <strong>Tür:</strong>
-                        <?php echo guvenli($ilan["tur"] ?? ""); ?>
+                        <strong><?= admin_h(admin_t("Tür:")) ?></strong>
+                        <?= admin_h(admin_t($ilan["tur"] ?? "")) ?>
                     </p>
 
                     <p>
-                        <strong>Yaş:</strong>
-                        <?php echo guvenli($ilan["yas"] ?? ""); ?>
+                        <strong><?= admin_h(admin_t("Yaş:")) ?></strong>
+                        <?= guvenli($ilan["yas"] ?? "") ?>
                     </p>
 
                     <p>
-                        <strong>Şehir:</strong>
-                        <?php echo guvenli($ilan["sehir"] ?? ""); ?>
+                        <strong><?= admin_h(admin_t("Şehir:")) ?></strong>
+                        <?= guvenli($ilan["sehir"] ?? "") ?>
                     </p>
 
                     <p>
-                        <strong>İlan Tarihi:</strong>
-                        <?php echo guvenli($tarih_yazisi); ?>
+                        <strong>
+                            <?= admin_h(admin_t("İlan Tarihi:")) ?>
+                        </strong>
+                        <?= guvenli($tarih_yazisi) ?>
                     </p>
                 </div>
 
-                <span class="durum <?php echo guvenli($durum_sinifi); ?>">
-                    <?php echo guvenli($ilan_durumu); ?>
+                <span class="durum <?= guvenli($durum_sinifi) ?>">
+                    <?= admin_h(admin_t($ilan_durumu)) ?>
                 </span>
 
                 <?php if (
@@ -586,93 +620,109 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                     && !empty($ilan["red_nedeni"])
                 ): ?>
                     <details class="admin-red-nedeni">
-                        <summary>Reddedilme Nedenini Gör</summary>
-                        <p><?php echo guvenli($ilan["red_nedeni"]); ?></p>
+                        <summary>
+                            <?= admin_h(admin_t("Reddedilme Nedenini Gör")) ?>
+                        </summary>
+
+                        <p><?= guvenli($ilan["red_nedeni"]) ?></p>
                     </details>
                 <?php endif; ?>
 
                 <div class="islem-alani">
                     <a
-                        href="../ilan-detay.php?id=<?php echo $ilan_id; ?>"
+                        href="../ilan-detay.php?id=<?= $ilan_id ?>"
                         class="incele-buton"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        İlanı İncele
+                        <?= admin_h(admin_t("İlanı İncele")) ?>
                     </a>
 
                     <?php if ($ilan_durumu === "Bekliyor"): ?>
                         <form
                             action="onayla.php"
                             method="POST"
-                            onsubmit="return confirm('Bu ilanı onaylamak istediğinize emin misiniz?');"
+                            onsubmit="return confirm(<?= admin_h(admin_json('Bu ilanı onaylamak istediğinize emin misiniz?')) ?>);"
                         >
                             <input
                                 type="hidden"
                                 name="id"
-                                value="<?php echo $ilan_id; ?>"
+                                value="<?= $ilan_id ?>"
                             >
-                            <button type="submit" class="onayla">Onayla</button>
+
+                            <button type="submit" class="onayla">
+                                <?= admin_h(admin_t("Onayla")) ?>
+                            </button>
                         </form>
                     <?php endif; ?>
 
                     <form
                         action="sil.php"
                         method="POST"
-                        onsubmit="return confirm('Bu ilanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');"
+                        onsubmit="return confirm(<?= admin_h(admin_json('Bu ilanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) ?>);"
                     >
                         <input
                             type="hidden"
                             name="id"
-                            value="<?php echo $ilan_id; ?>"
+                            value="<?= $ilan_id ?>"
                         >
-                        <button type="submit" class="sil">Sil</button>
+
+                        <button type="submit" class="sil">
+                            <?= admin_h(admin_t("Sil")) ?>
+                        </button>
                     </form>
                 </div>
 
                 <?php if ($ilan_durumu === "Bekliyor"): ?>
                     <details class="admin-ret">
-                        <summary>İlanı Reddet</summary>
+                        <summary>
+                            <?= admin_h(admin_t("İlanı Reddet")) ?>
+                        </summary>
 
                         <form
                             action="reddet.php"
                             method="POST"
                             class="ret-formu"
-                            onsubmit="return confirm('Bu ilanı reddetmek istediğinize emin misiniz?');"
+                            onsubmit="return confirm(<?= admin_h(admin_json('Bu ilanı reddetmek istediğinize emin misiniz?')) ?>);"
                         >
                             <input
                                 type="hidden"
                                 name="id"
-                                value="<?php echo $ilan_id; ?>"
+                                value="<?= $ilan_id ?>"
                             >
 
-                            <label for="red-<?php echo $ilan_id; ?>">
-                                Reddetme Nedeni
+                            <label for="red-<?= $ilan_id ?>">
+                                <?= admin_h(admin_t("Reddetme Nedeni")) ?>
                             </label>
 
                             <textarea
-                                id="red-<?php echo $ilan_id; ?>"
+                                id="red-<?= $ilan_id ?>"
                                 name="red_nedeni"
-                                placeholder="Reddetme nedenini yazınız..."
+                                placeholder="<?= admin_h(admin_t('Reddetme nedenini yazınız...')) ?>"
                                 required
                             ></textarea>
 
-                            <button type="submit" class="reddet">Reddet</button>
+                            <button type="submit" class="reddet">
+                                <?= admin_h(admin_t("Reddet")) ?>
+                            </button>
                         </form>
                     </details>
                 <?php endif; ?>
 
             </article>
+
         <?php endwhile; ?>
 
     </div>
 
     <?php if ($toplam_sayfa > 1): ?>
-        <nav class="ilan-sayfalama" aria-label="İlan sayfaları">
-
+        <nav
+            class="ilan-sayfalama"
+            aria-label="<?= admin_h(admin_t('İlan sayfaları')) ?>"
+        >
             <?php if ($sayfa > 1): ?>
-                <a href="<?php echo guvenli(sayfa_linki($sayfa - 1, $filtreler)); ?>">
-                    ‹ Önceki
+                <a href="<?= guvenli(sayfa_linki($sayfa - 1, $filtreler)) ?>">
+                    <?= admin_h(admin_t("‹ Önceki")) ?>
                 </a>
             <?php endif; ?>
 
@@ -699,10 +749,10 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
                 <?php endif; ?>
 
                 <?php if ($numara === $sayfa): ?>
-                    <span aria-current="page"><?php echo $numara; ?></span>
+                    <span aria-current="page"><?= $numara ?></span>
                 <?php else: ?>
-                    <a href="<?php echo guvenli(sayfa_linki($numara, $filtreler)); ?>">
-                        <?php echo $numara; ?>
+                    <a href="<?= guvenli(sayfa_linki($numara, $filtreler)) ?>">
+                        <?= $numara ?>
                     </a>
                 <?php endif; ?>
 
@@ -711,11 +761,10 @@ $son_kayit = min($baslangic + $sayfa_basi, $toplam_ilan);
             <?php endforeach; ?>
 
             <?php if ($sayfa < $toplam_sayfa): ?>
-                <a href="<?php echo guvenli(sayfa_linki($sayfa + 1, $filtreler)); ?>">
-                    Sonraki ›
+                <a href="<?= guvenli(sayfa_linki($sayfa + 1, $filtreler)) ?>">
+                    <?= admin_h(admin_t("Sonraki ›")) ?>
                 </a>
             <?php endif; ?>
-
         </nav>
     <?php endif; ?>
 

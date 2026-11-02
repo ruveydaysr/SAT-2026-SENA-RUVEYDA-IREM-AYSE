@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -15,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
 
-$bildirim = "Geçersiz ilan numarası.";
+$bildirim = admin_t("Geçersiz ilan numarası.");
 
 if ($id && $id > 0) {
     $sql = "UPDATE ilanlar
@@ -29,10 +31,10 @@ if ($id && $id > 0) {
 
     if (mysqli_stmt_execute($sorgu)) {
         $bildirim = mysqli_stmt_affected_rows($sorgu) > 0
-            ? "İlan başarıyla onaylandı."
-            : "İlan bulunamadı veya zaten değerlendirilmiş.";
+            ? admin_t("İlan başarıyla onaylandı.")
+            : admin_t("İlan bulunamadı veya zaten değerlendirilmiş.");
     } else {
-        $bildirim = "İlan onaylanamadı.";
+        $bildirim = admin_t("İlan onaylanamadı.");
     }
 
     mysqli_stmt_close($sorgu);

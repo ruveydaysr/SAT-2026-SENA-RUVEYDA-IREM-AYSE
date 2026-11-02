@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 /* Dil tercihi bütün iki dilli sayfalarda aynı oturumdan okunur. */
 $istenen_dil = $_GET["lang"] ?? null;
@@ -998,135 +999,12 @@ foreach ($yazilar as $yazi_id => $yazi) {
             }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="<?= blog_ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            ) ?>"
-            width="54"
-            height="54"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?= blog_ceviri(
-                    "Her can dostuna bir yuva",
-                    "A loving home for every pet"
-                ) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <div
-            class="dil-secici"
-            role="group"
-            aria-label="<?= blog_ceviri("Dil seçimi", "Language selection") ?>"
-        >
-            <a
-                href="<?= blog_guvenli(blog_dil_linki("tr")) ?>"
-                lang="tr"
-                class="<?= $dil === "tr" ? "aktif" : "" ?>"
-                aria-label="Türkçe"
-                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-            >TR</a>
-
-            <a
-                href="<?= blog_guvenli(blog_dil_linki("en")) ?>"
-                lang="en"
-                class="<?= $dil === "en" ? "aktif" : "" ?>"
-                aria-label="English"
-                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-            >EN</a>
-        </div>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?= blog_ceviri("Ana menü", "Main navigation") ?>"
-        >
-            <a href="index.php">
-                <?= blog_ceviri("Ana Sayfa", "Home") ?>
-            </a>
-
-            <a href="ilanlar.php">
-                <?= blog_ceviri("İlanlar", "Listings") ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button
-                    type="button"
-                    class="kategori-baslik"
-                    aria-controls="blog-menu-kategoriler"
-                >
-                    <?= blog_ceviri(
-                        "Hayvan Kategorileri",
-                        "Animal Categories"
-                    ) ?>
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir" id="blog-menu-kategoriler">
-                    <?php foreach ($menu_kategorileri as $hayvan): ?>
-                        <a href="ilanlar.php?tur=<?= rawurlencode($hayvan[0]) ?>">
-                            <span aria-hidden="true"><?= $hayvan[2] ?></span>
-                            <span>
-                                <?= blog_guvenli(
-                                    blog_ceviri($hayvan[0], $hayvan[1])
-                                ) ?>
-                            </span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?= blog_ceviri("İlan Ver", "Post a Listing") ?>
-            </a>
-
-            <a href="blog.php" aria-current="page">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= blog_ceviri("Hakkımızda", "About Us") ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= blog_ceviri("İletişim", "Contact") ?>
-            </a>
-
-            <?php if ((int)($_SESSION["uye_id"] ?? 0) > 0): ?>
-                <a href="mesajlar.php">
-                    <?= blog_ceviri("Mesajlarım", "My Messages") ?>
-                </a>
-
-                <a href="profil.php">
-                    <?= blog_ceviri("Profilim", "My Profile") ?>
-                </a>
-
-                <a
-                    href="cikis.php"
-                    onclick="return confirm('<?= blog_ceviri(
-                        "Çıkış yapmak istediğinize emin misiniz?",
-                        "Are you sure you want to log out?"
-                    ) ?>');"
-                >
-                    <?= blog_ceviri("Çıkış Yap", "Log Out") ?>
-                </a>
-            <?php else: ?>
-                <a href="giris.php">
-                    <?= blog_ceviri("Giriş Yap", "Log In") ?>
-                </a>
-            <?php endif; ?>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <div class="sayfa-yolu">

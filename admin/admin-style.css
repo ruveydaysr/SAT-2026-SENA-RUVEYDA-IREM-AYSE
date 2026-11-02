@@ -976,3 +976,23 @@ summary:focus-visible {
         align-items: flex-start;
     }
 }
+/* Admin dil düğmeleri */
+body > header.admin-ust {
+    position: relative;
+}
+
+body > header.admin-ust .admin-dil-secimi {
+    position: absolute;
+    right: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@media (max-width: 600px) {
+    body > header.admin-ust .admin-dil-secimi {
+        position: static;
+        transform: none;
+        justify-content: center;
+        margin: 8px 0 0;
+    }
+}

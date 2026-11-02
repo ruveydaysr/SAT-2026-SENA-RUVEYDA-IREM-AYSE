@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -10,7 +12,11 @@ require_once __DIR__ . "/../baglanti.php";
 
 function guvenli($deger)
 {
-    return htmlspecialchars((string)$deger, ENT_QUOTES, "UTF-8");
+    return htmlspecialchars(
+        (string) $deger,
+        ENT_QUOTES,
+        "UTF-8"
+    );
 }
 
 $arama = is_string($_GET["arama"] ?? null)
@@ -35,19 +41,22 @@ mysqli_stmt_bind_param(
 );
 
 mysqli_stmt_execute($stmt);
+
 $uyeler = mysqli_stmt_get_result($stmt);
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Üye Yönetimi | Admin Paneli</title>
+    <title>
+        <?= admin_h(admin_t("Üye Yönetimi | Admin Paneli")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .uye-arama {
@@ -143,6 +152,8 @@ $uyeler = mysqli_stmt_get_result($stmt);
             outline-offset: 3px;
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -151,7 +162,7 @@ $uyeler = mysqli_stmt_get_result($stmt);
 
 <main class="icerik">
 
-    <h2>Kayıtlı Üyeler</h2>
+    <h2><?= admin_h(admin_t("Kayıtlı Üyeler")) ?></h2>
 
     <section class="kart">
 
@@ -161,27 +172,31 @@ $uyeler = mysqli_stmt_get_result($stmt);
             class="uye-arama"
         >
             <div class="uye-arama-alani">
-                <label for="arama">Üye Ara</label>
+                <label for="arama">
+                    <?= admin_h(admin_t("Üye Ara")) ?>
+                </label>
 
                 <input
                     type="search"
                     id="arama"
                     name="arama"
-                    placeholder="Ad soyad veya e-posta yazınız..."
-                    value="<?php echo guvenli($arama); ?>"
+                    placeholder="<?= admin_h(admin_t('Ad soyad veya e-posta yazınız...')) ?>"
+                    value="<?= guvenli($arama) ?>"
                 >
             </div>
 
-            <button type="submit">Ara</button>
+            <button type="submit">
+                <?= admin_h(admin_t("Ara")) ?>
+            </button>
 
             <a href="admin-uyeler.php" class="filtre-temizle">
-                Temizle
+                <?= admin_h(admin_t("Temizle")) ?>
             </a>
         </form>
 
         <p>
-            Bulunan üye sayısı:
-            <strong><?php echo mysqli_num_rows($uyeler); ?></strong>
+            <?= admin_h(admin_t("Bulunan üye sayısı:")) ?>
+            <strong><?= mysqli_num_rows($uyeler) ?></strong>
         </p>
 
     </section>
@@ -190,11 +205,25 @@ $uyeler = mysqli_stmt_get_result($stmt);
         <table>
             <thead>
                 <tr>
-                    <th scope="col">Üye ID</th>
-                    <th scope="col">Ad Soyad</th>
-                    <th scope="col">E-posta</th>
-                    <th scope="col">Telefon</th>
-                    <th scope="col">İşlem</th>
+                    <th scope="col">
+                        <?= admin_h(admin_t("Üye ID")) ?>
+                    </th>
+
+                    <th scope="col">
+                        <?= admin_h(admin_t("Ad Soyad")) ?>
+                    </th>
+
+                    <th scope="col">
+                        <?= admin_h(admin_t("E-posta")) ?>
+                    </th>
+
+                    <th scope="col">
+                        <?= admin_h(admin_t("Telefon")) ?>
+                    </th>
+
+                    <th scope="col">
+                        <?= admin_h(admin_t("İşlem")) ?>
+                    </th>
                 </tr>
             </thead>
 
@@ -204,11 +233,11 @@ $uyeler = mysqli_stmt_get_result($stmt);
 
                     <tr>
                         <td colspan="5">
-                            <?php
-                            echo $arama !== ""
-                                ? "Aramanıza uygun üye bulunamadı."
-                                : "Henüz kayıtlı üye bulunmuyor.";
-                            ?>
+                            <?= admin_h(admin_t(
+                                $arama !== ""
+                                    ? "Aramanıza uygun üye bulunamadı."
+                                    : "Henüz kayıtlı üye bulunmuyor."
+                            )) ?>
                         </td>
                     </tr>
 
@@ -218,27 +247,27 @@ $uyeler = mysqli_stmt_get_result($stmt);
 
                         <tr>
                             <td>
-                                <?php echo (int)$uye["id"]; ?>
+                                <?= (int) $uye["id"] ?>
                             </td>
 
                             <td>
-                                <?php echo guvenli($uye["ad_soyad"] ?? ""); ?>
+                                <?= guvenli($uye["ad_soyad"] ?? "") ?>
                             </td>
 
                             <td>
-                                <?php echo guvenli($uye["email"] ?? ""); ?>
+                                <?= guvenli($uye["email"] ?? "") ?>
                             </td>
 
                             <td>
-                                <?php echo guvenli($uye["telefon"] ?? ""); ?>
+                                <?= guvenli($uye["telefon"] ?? "") ?>
                             </td>
 
                             <td>
                                 <a
-                                    href="admin-uye-detay.php?id=<?php echo (int)$uye['id']; ?>"
+                                    href="admin-uye-detay.php?id=<?= (int) $uye['id'] ?>"
                                     class="uye-detay-buton"
                                 >
-                                    Detayları Gör
+                                    <?= admin_h(admin_t("Detayları Gör")) ?>
                                 </a>
                             </td>
                         </tr>

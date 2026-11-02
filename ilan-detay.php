@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 require_once __DIR__ . "/baglanti.php";
 
@@ -803,150 +804,38 @@ $menu_kategorileri = [
                 padding: 20px;
             }
         }
+        .admin-detay-geri {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .admin-detay-geri .buton {
+            width: auto;
+            text-decoration: none;
+        }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="soru-cevap.css?v=1">
 </head>
 
 <body>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            width="54"
-            height="54"
-            alt="<?= guvenli(ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            )) ?>"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-
-            <small>
-                <?= guvenli(ceviri(
-                    "Her can dostuna bir yuva",
-                    "A home for every companion"
-                )) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <nav
-            class="dil-secici"
-            aria-label="<?= guvenli(ceviri(
-                "Dil seçimi",
-                "Language selection"
-            )) ?>"
-        >
-            <a
-                href="<?= guvenli(dil_linki("tr", $id)) ?>"
-                lang="tr"
-                hreflang="tr"
-                aria-label="Türkçe"
-                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-            >TR</a>
-
-            <a
-                href="<?= guvenli(dil_linki("en", $id)) ?>"
-                lang="en"
-                hreflang="en"
-                aria-label="English"
-                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-            >EN</a>
-        </nav>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?= guvenli(ceviri(
-                "Ana menü",
-                "Main navigation"
-            )) ?>"
-        >
-            <a href="index.php">
-                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
-            </a>
-
-            <a href="ilanlar.php" class="menu-aktif">
-                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button
-                    type="button"
-                    class="kategori-baslik"
-                    aria-controls="aris-kategori-listesi"
-                >
-                    <?= guvenli(ceviri(
-                        "Hayvan Kategorileri",
-                        "Animal Categories"
-                    )) ?>
-
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir" id="aris-kategori-listesi">
-                    <?php foreach ($menu_kategorileri as $kategori_adi => $simge): ?>
-                        <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                            <span aria-hidden="true"><?= $simge ?></span>
-                            <?= guvenli(tur_adi($kategori_adi)) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= guvenli(ceviri("İletişim", "Contact")) ?>
-            </a>
-
-            <?php if ($uye_id > 0): ?>
-                <a href="mesajlar.php">
-                    <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
-                </a>
-
-                <a href="profil.php">
-                    <?= guvenli(ceviri("Profilim", "My Profile")) ?>
-                </a>
-
-                <a
-                    href="cikis.php"
-                    onclick="return confirm(<?= onay_metni(
-                        "Çıkış yapmak istiyor musunuz?",
-                        "Do you want to sign out?"
-                    ) ?>);"
-                >
-                    <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
-                </a>
-            <?php else: ?>
-                <a href="giris.php">
-                    <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
-                </a>
-            <?php endif; ?>
-
-            <?php if ($admin_mi): ?>
-                <a href="admin/admin-panel.php">
-                    <?= guvenli(ceviri(
-                        "İlan Yönetimi",
-                        "Manage Listings"
-                    )) ?>
-                </a>
-            <?php endif; ?>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main class="detay-alani">
+
+    <?php if ($admin_mi): ?>
+        <nav class="admin-detay-geri" aria-label="<?= guvenli(ceviri("Admin paneli", "Admin panel")) ?>">
+            <a href="admin/admin-panel.php" class="buton yesil">
+                ← <?= guvenli(ceviri("İlan Yönetimine Dön", "Back to Listing Management")) ?>
+            </a>
+            <a href="admin/admin-genel-bakis.php" class="buton">
+                <?= guvenli(ceviri("Admin Genel Bakış", "Admin Overview")) ?>
+            </a>
+        </nav>
+    <?php endif; ?>
+
 
     <?php if ($ilan): ?>
 
@@ -1216,6 +1105,8 @@ $menu_kategorileri = [
             ) ?></p>
         </section>
 
+        <?php require __DIR__ . '/ilan-soru-cevap.php'; ?>
+
         <?php if ($admin_mi): ?>
             <section class="kart admin-kart">
                 <h2>
@@ -1313,27 +1204,6 @@ $menu_kategorileri = [
                     </form>
                 <?php endif; ?>
 
-                <form
-                    action="admin/sil.php"
-                    method="POST"
-                    onsubmit="return confirm(<?= onay_metni(
-                        "Bu ilan kalıcı olarak silinecek. Devam etmek istiyor musunuz?",
-                        "This listing will be permanently deleted. Do you want to continue?"
-                    ) ?>);"
-                >
-                    <input
-                        type="hidden"
-                        name="id"
-                        value="<?= (int)$ilan["id"] ?>"
-                    >
-
-                    <button type="submit" class="buton kirmizi">
-                        <?= guvenli(ceviri(
-                            "İlanı Sil",
-                            "Delete Listing"
-                        )) ?>
-                    </button>
-                </form>
             </section>
         <?php endif; ?>
 

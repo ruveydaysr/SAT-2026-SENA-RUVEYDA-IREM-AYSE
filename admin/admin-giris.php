@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
 require_once __DIR__ . "/../baglanti.php";
 
 $hata = "";
@@ -12,7 +13,6 @@ if (isset($_SESSION["admin"])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
     $kullanici_adi = is_string($_POST["kullanici_adi"] ?? null)
         ? trim($_POST["kullanici_adi"])
         : "";
@@ -40,21 +40,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $dogru = false;
 
     if ($admin && $kullanici_adi !== "" && $sifre !== "") {
-
         $kayitli_sifre = (string) $admin["sifre"];
         $bilgi = password_get_info($kayitli_sifre);
 
         if (!empty($bilgi["algo"])) {
-
             $dogru = password_verify($sifre, $kayitli_sifre);
-
         } else {
-
-            // Eski açık şifreleri başarılı girişte hash'e dönüştür.
+            // Eski açık şifreyi başarılı girişte hash'e dönüştür.
             $dogru = hash_equals($kayitli_sifre, $sifre);
 
             if ($dogru) {
-
                 $hash = password_hash($sifre, PASSWORD_DEFAULT);
 
                 $guncelle = mysqli_prepare(
@@ -80,28 +75,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($dogru) {
-
         session_regenerate_id(true);
+
         $_SESSION["admin"] = $admin["kullanici_adi"];
 
         header("Location: admin-genel-bakis.php");
         exit();
-
     } else {
-
-        $hata = "Kullanıcı adı veya şifre yanlış.";
+        $hata = admin_t("Kullanıcı adı veya şifre yanlış.");
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Yönetici Girişi | Aris Pati Yuvası</title>
+    <title>
+        <?= admin_h(admin_t("Yönetici Girişi | Aris Pati Yuvası")) ?>
+    </title>
 
     <style>
         * {
@@ -175,7 +170,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: #e6eddf;
         }
 
-        /* Görselin tamamı görünür, kenarlardan kesilmez. */
         .giris-ana {
             display: flex;
             flex: 1;
@@ -292,6 +286,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 font-size: 13px;
             }
 
+            .giris-ust .admin-dil-secimi {
+                margin-left: 0 !important;
+            }
+
             .giris-ana {
                 padding: 30px 16px;
             }
@@ -301,33 +299,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="giris-ust">
-
-    <a href="../index.php" class="admin-logo">
-        <img
-            src="../images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
-            width="48"
-            height="48"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-
-    <nav aria-label="Site menüsü">
-        <a href="../index.php">Ana Sayfa</a>
-        <a href="../ilanlar.php">İlanlar</a>
-        <a href="../hakkimizda.php">Hakkımızda</a>
-        <a href="../iletisim.php">İletişim</a>
-    </nav>
-
+<?php require_once __DIR__ . "/admin-ust-ortak.php"; ?>
+<header id="aris-site-header" class="aris-site-header aris-admin-header">
+    <?php admin_ortak_logo(); ?>
+    <div class="aris-header-right">
+        <?php admin_ortak_diller(); ?>
+        <nav class="aris-navigation" aria-label="<?= admin_h(admin_t('Site menüsü')) ?>">
+            <a href="../index.php"><?= admin_h(admin_t('Ana Sayfa')) ?></a>
+            <a href="../ilanlar.php"><?= admin_h(admin_t('İlanlar')) ?></a>
+            <a href="../hakkimizda.php"><?= admin_h(admin_t('Hakkımızda')) ?></a>
+            <a href="../iletisim.php"><?= admin_h(admin_t('İletişim')) ?></a>
+        </nav>
+    </div>
 </header>
 
 <main class="giris-ana">
@@ -342,49 +331,57 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             height="65"
         >
 
-        <h1 id="giris-baslik">Yönetici Girişi</h1>
+        <h1 id="giris-baslik">
+            <?= admin_h(admin_t("Yönetici Girişi")) ?>
+        </h1>
 
         <p class="giris-aciklama">
-            Aris Pati Yuvası yönetim paneline giriş yapın.
+            <?= admin_h(admin_t(
+                "Aris Pati Yuvası yönetim paneline giriş yapın."
+            )) ?>
         </p>
 
         <?php if ($hata !== ""): ?>
             <p class="hata" role="alert">
-                <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
+                <?= admin_h($hata) ?>
             </p>
         <?php endif; ?>
 
         <form action="admin-giris.php" method="POST">
 
             <div>
-                <label for="kullanici_adi">Kullanıcı Adı</label>
+                <label for="kullanici_adi">
+                    <?= admin_h(admin_t("Kullanıcı Adı")) ?>
+                </label>
 
                 <input
                     type="text"
                     id="kullanici_adi"
                     name="kullanici_adi"
-                    value="<?php echo htmlspecialchars($kullanici_adi, ENT_QUOTES, 'UTF-8'); ?>"
-                    placeholder="Kullanıcı adınızı yazınız"
+                    value="<?= admin_h($kullanici_adi) ?>"
+                    placeholder="<?= admin_h(admin_t('Kullanıcı adınızı yazınız')) ?>"
                     autocomplete="username"
                     required
                 >
             </div>
 
             <div>
-                <label for="sifre">Şifre</label>
+                <label for="sifre">
+                    <?= admin_h(admin_t("Şifre")) ?>
+                </label>
 
                 <input
                     type="password"
                     id="sifre"
                     name="sifre"
-                    placeholder="Şifrenizi yazınız"
+                    placeholder="<?= admin_h(admin_t('Şifrenizi yazınız')) ?>"
                     autocomplete="current-password"
                     required
                 >
             </div>
 
             <button type="submit" name="giris" value="1">
-                Giriş Yap
+                <?= admin_h(admin_t("Giriş Yap")) ?>
             </button>
 
         </form>

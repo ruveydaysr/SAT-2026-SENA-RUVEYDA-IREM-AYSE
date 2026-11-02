@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -19,7 +21,9 @@ $red_nedeni = is_string($_POST["red_nedeni"] ?? null)
     ? trim($_POST["red_nedeni"])
     : "";
 
-$bildirim = "Geçerli bir ilan ve reddetme nedeni gereklidir.";
+$bildirim = admin_t(
+    "Geçerli bir ilan ve reddetme nedeni gereklidir."
+);
 
 if ($id && $id > 0 && $red_nedeni !== "") {
     $sql = "UPDATE ilanlar
@@ -38,10 +42,10 @@ if ($id && $id > 0 && $red_nedeni !== "") {
 
     if (mysqli_stmt_execute($sorgu)) {
         $bildirim = mysqli_stmt_affected_rows($sorgu) > 0
-            ? "İlan reddedildi ve reddetme nedeni kaydedildi."
-            : "İlan bulunamadı veya zaten değerlendirilmiş.";
+            ? admin_t("İlan reddedildi ve reddetme nedeni kaydedildi.")
+            : admin_t("İlan bulunamadı veya zaten değerlendirilmiş.");
     } else {
-        $bildirim = "İlan reddedilemedi.";
+        $bildirim = admin_t("İlan reddedilemedi.");
     }
 
     mysqli_stmt_close($sorgu);

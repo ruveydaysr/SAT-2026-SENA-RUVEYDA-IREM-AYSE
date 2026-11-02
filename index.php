@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 require_once __DIR__ . "/baglanti.php";
 
@@ -1507,7 +1508,55 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
                 transform: none;
             }
         }
+
+        .pati-footer .footer-grid {
+            grid-template-columns: 1.35fr .9fr .9fr 1.05fr 1.3fr;
+            gap: 30px;
+            padding-block: 62px;
+        }
+        .pati-footer .footer-grid > div { min-width: 0; }
+        .pati-footer .footer-logo { flex-wrap: wrap; }
+        .pati-footer .footer-logo img { width: 64px; height: 64px; }
+        .pati-footer h3 { font-size: 17px; margin-bottom: 24px; }
+        .pati-footer .footer-linkler { gap: 14px; }
+        .pati-footer .footer-linkler a { font-size: 14px; }
+        .footer-yuva-band { background: #355c3d; border-bottom: 1px solid #557558; }
+        .footer-yuva-icerik { display: flex; align-items: center; justify-content: space-between; gap: 35px; padding-block: 34px; }
+        .footer-yuva-icerik h2 { margin: 10px 0; font-size: 28px; color: #fffdf8; }
+        .footer-yuva-icerik p { margin: 0; max-width: 700px; color: #dce6d5; line-height: 1.8; font-size: 14px; }
+        .footer-kucuk-baslik { color: #dce6d5; font-size: 11px; letter-spacing: 1.5px; font-weight: bold; }
+        .footer-ana-buton, .footer-iletisim-buton { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 18px; border-radius: 10px; background: #eee6d2; color: #284b32; font-size: 14px; font-weight: bold; text-decoration: none; }
+        .footer-ana-buton { flex-shrink: 0; }
+        .footer-marka-sozu { margin: 22px 0 12px; font-size: 14px; font-weight: bold; color: #f1ead8; }
+        .footer-hikaye { color: #d4dfcc; font-size: 13px; text-decoration: none; }
+        .footer-iletisim-yazi, .footer-rehber-not { color: #d4dfcc; font-size: 13px; line-height: 1.9; margin: 0 0 18px; }
+        .footer-rehber-not { margin-top: 24px; padding-top: 16px; border-top: 1px solid #48664b; }
+        .footer-bilgi-kutu { background: #35573c; border: 1px solid #527258; border-radius: 14px; padding: 18px; margin-top: 22px; }
+        .footer-bilgi-kutu strong { display: block; font-size: 13px; line-height: 1.7; color: #f1ead8; }
+        .footer-bilgi-kutu p { color: #d4dfcc; font-size: 12px; line-height: 1.8; margin: 10px 0 0; }
+        .footer-sehirler { border-top: 1px solid #48664b; }
+        .footer-sehir-icerik { padding-block: 26px; }
+        .footer-sehir-icerik > strong { display: block; margin-bottom: 16px; font-size: 14px; }
+        .footer-sehir-icerik nav { display: flex; flex-wrap: wrap; gap: 10px; }
+        .footer-sehir-icerik a { border: 1px solid #557558; border-radius: 7px; color: #dce6d5; padding: 7px 11px; font-size: 12px; text-decoration: none; }
+        .pati-footer a:focus-visible { outline: 2px solid #f1ead8; outline-offset: 4px; }
+        .footer-ana-buton:hover, .footer-iletisim-buton:hover { background: #fffdf8; }
+        .footer-sehir-icerik a:hover { background: #355c3d; color: white; }
+        @media (max-width: 1100px) {
+            .pati-footer .footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; }
+            .footer-yuva-icerik { align-items: flex-start; }
+        }
+        @media (max-width: 700px) {
+            .pati-footer .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 22px; padding-block: 38px; }
+            .footer-marka-alani, .footer-iletisim-alani { grid-column: 1 / -1; }
+            .footer-yuva-icerik { flex-direction: column; gap: 22px; }
+            .footer-yuva-icerik h2 { font-size: 24px; }
+        }
+        @media (max-width: 440px) {
+            .pati-footer .footer-grid { grid-template-columns: 1fr; }
+        }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -1516,148 +1565,7 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
     <?= aa_h(aa_t("Ana içeriğe geç", "Skip to main content")) ?>
 </a>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="<?= aa_h(aa_t(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            )) ?>"
-            width="54"
-            height="54"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?= aa_h(aa_t(
-                    "Her can dostuna bir yuva",
-                    "A home for every companion"
-                )) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <nav
-            class="dil-secici"
-            aria-label="<?= aa_h(aa_t("Dil seçimi", "Language selection")) ?>"
-        >
-            <a
-                href="index.php?lang=tr"
-                lang="tr"
-                hreflang="tr"
-                aria-label="Türkçe"
-                <?= $dil === "tr" ? 'aria-current="true"' : '' ?>
-            >TR</a>
-
-            <a
-                href="index.php?lang=en"
-                lang="en"
-                hreflang="en"
-                aria-label="English"
-                <?= $dil === "en" ? 'aria-current="true"' : '' ?>
-            >EN</a>
-        </nav>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?= aa_h(aa_t("Ana menü", "Main navigation")) ?>"
-        >
-            <a href="index.php" aria-current="page">
-                <?= aa_h(aa_t("Ana Sayfa", "Home")) ?>
-            </a>
-
-            <a href="ilanlar.php">
-                <?= aa_h(aa_t("İlanlar", "Listings")) ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button
-                    type="button"
-                    class="kategori-baslik"
-                    aria-controls="aris-kategori-listesi"
-                >
-                    <?= aa_h(aa_t("Hayvan Kategorileri", "Animal Categories")) ?>
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir" id="aris-kategori-listesi">
-                    <?php foreach ($kategoriler as $ad => $dosya): ?>
-                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
-                            <img
-                                src="<?= aa_h(
-                                    aa_image(
-                                        $bolumler["kategoriler"]["ogeler"][$ad]["gorsel"]
-                                    ) ?: "images/" . $dosya
-                                ) ?>"
-                                alt=""
-                                width="32"
-                                height="32"
-                                loading="lazy"
-                            >
-
-                            <span><?= aa_h(aa_category_name($ad)) ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= aa_h(aa_t("Hakkımızda", "About Us")) ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= aa_h(aa_t("İletişim", "Contact")) ?>
-            </a>
-
-            <?php if ($uye_id > 0): ?>
-                <a href="mesajlar.php">
-                    <?= aa_h(aa_t("Mesajlarım", "Messages")) ?>
-
-                    <?php if ($okunmamis_mesaj_var): ?>
-                        <span
-                            class="mesaj-bildirim"
-                            role="img"
-                            aria-label="<?= aa_h(aa_t(
-                                "Okunmamış mesajınız var",
-                                "You have unread messages"
-                            )) ?>"
-                        ></span>
-                    <?php endif; ?>
-                </a>
-
-                <a href="profil.php">
-                    <?= aa_h(aa_t("Profilim", "My Profile")) ?>
-                </a>
-
-                <a
-                    href="cikis.php"
-                    onclick="return confirm(<?= aa_h(json_encode(
-                        aa_t(
-                            "Çıkış yapmak istediğinize emin misiniz?",
-                            "Are you sure you want to sign out?"
-                        ),
-                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-                    )) ?>);"
-                >
-                    <?= aa_h(aa_t("Çıkış Yap", "Sign Out")) ?>
-                </a>
-            <?php else: ?>
-                <a href="giris.php">
-                    <?= aa_h(aa_t("Giriş Yap", "Sign In")) ?>
-                </a>
-            <?php endif; ?>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main id="ana-icerik">
 
@@ -1968,102 +1876,82 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 </main>
 
 <footer class="pati-footer">
-    <div class="kapsayici footer-grid">
-        <div>
-            <a href="index.php" class="footer-logo">
-                <img
-                    src="images/aris-logoo.png"
-                    alt=""
-                    width="48"
-                    height="48"
-                >
+    <div class="footer-yuva-band">
+        <div class="kapsayici footer-yuva-icerik">
+            <div>
+                <span class="footer-kucuk-baslik"><?= aa_h(aa_t("BİRLİKTE DAHA FAZLA DOSTA YUVA BULALIM", "HELP MORE COMPANIONS FIND A HOME")) ?></span>
+                <h2><?= aa_h(aa_t("Bir yuva, yepyeni bir başlangıç.", "A home. A whole new beginning.")) ?></h2>
+                <p><?= aa_h(aa_t("İlanları keşfet, sahiplenme sürecini öğren veya yuva arayan bir dostumuz için ilan oluştur.", "Explore listings, learn about adoption or post a listing for a companion who needs a home.")) ?></p>
+            </div>
+            <a class="footer-ana-buton" href="ilanlar.php"><?= aa_h(aa_t("Dostlarımızla Tanış", "Meet Our Companions")) ?> <span aria-hidden="true">↗</span></a>
+        </div>
+    </div>
 
+    <div class="kapsayici footer-grid">
+        <div class="footer-marka-alani">
+            <a href="index.php" class="footer-logo">
+                <img src="images/aris-logoo.png" alt="" width="64" height="64">
                 <strong>Aris Pati Yuvası</strong>
             </a>
-
-            <p class="footer-tanitim">
-                <?= aa_h($bolumler["footer"]["aciklama"]) ?>
-            </p>
+            <p class="footer-tanitim"><?= aa_h($bolumler["footer"]["aciklama"]) ?></p>
+            <p class="footer-marka-sozu"><?= aa_h(aa_t("Her can dostuna bir yuva.", "A loving home for every companion.")) ?></p>
+            <a class="footer-hikaye" href="hakkimizda.php"><?= aa_h(aa_t("Hikâyemizi Keşfet", "Discover Our Story")) ?> <span aria-hidden="true">→</span></a>
         </div>
 
         <div>
             <h3><?= aa_h(aa_t("Keşfet", "Explore")) ?></h3>
-
-            <nav
-                class="footer-linkler"
-                aria-label="<?= aa_h(aa_t("Alt menü", "Footer navigation")) ?>"
-            >
-                <a href="index.php">
-                    <?= aa_h(aa_t("Ana Sayfa", "Home")) ?>
-                </a>
-
-                <a href="ilanlar.php">
-                    <?= aa_h(aa_t(
-                        "Sahiplendirme İlanları",
-                        "Adoption Listings"
-                    )) ?>
-                </a>
-
-                <a href="blog.php">Blog</a>
-
-                <a href="ilan-ver.php">
-                    <?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?>
-                </a>
-
-                <?php if ($bolumler["surec"]["aktif"]): ?>
-                    <a href="#nasil-sahiplenirim">
-                        <?= aa_h(aa_t(
-                            "Nasıl Sahiplenirim?",
-                            "How Do I Adopt?"
-                        )) ?>
-                    </a>
-                <?php endif; ?>
+            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Hızlı bağlantılar", "Quick links")) ?>">
+                <a href="index.php"><?= aa_h(aa_t("Ana Sayfa", "Home")) ?></a>
+                <a href="ilanlar.php"><?= aa_h(aa_t("Tüm İlanlar", "All Listings")) ?></a>
+                <a href="ilan-ver.php"><?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?></a>
+                <a href="blog.php"><?= aa_h(aa_t("Blog ve Yararlı Bilgiler", "Blog and Useful Guides")) ?></a>
+                <a href="hakkimizda.php"><?= aa_h(aa_t("Hakkımızda", "About Us")) ?></a>
+                <a href="<?= $uye_id > 0 ? 'profil.php' : 'giris.php' ?>"><?= aa_h(aa_t("Hesabım", "My Account")) ?></a>
+                <a href="fotograf-kaynaklari.html"><?= aa_h(aa_t("Fotoğraf Kaynakları", "Photo Credits")) ?></a>
             </nav>
         </div>
 
         <div>
             <h3><?= aa_h(aa_t("Dostlarımız", "Our Companions")) ?></h3>
-
-            <nav
-                class="footer-linkler"
-                aria-label="<?= aa_h(aa_t("Hayvan türleri", "Animal types")) ?>"
-            >
-                <a href="ilanlar.php?tur=<?= rawurlencode("Kedi") ?>">
-                    <?= aa_h(aa_t("Kedi İlanları", "Cat Listings")) ?>
-                </a>
-
-                <a href="ilanlar.php?tur=<?= rawurlencode("Köpek") ?>">
-                    <?= aa_h(aa_t("Köpek İlanları", "Dog Listings")) ?>
-                </a>
-
-                <a href="ilanlar.php?tur=<?= rawurlencode("Kuş") ?>">
-                    <?= aa_h(aa_t("Kuş İlanları", "Bird Listings")) ?>
-                </a>
-
-                <a href="ilanlar.php">
-                    <?= aa_h(aa_t("Tüm Dostlarımız", "All Companions")) ?>
-                </a>
+            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Hayvan kategorileri", "Animal categories")) ?>">
+                <?php foreach ([['Kedi', 'Kedi İlanları', 'Cats'], ['Köpek', 'Köpek İlanları', 'Dogs'], ['Kuş', 'Kuş İlanları', 'Birds'], ['Balık', 'Balık İlanları', 'Fish'], ['Tavşan', 'Tavşan İlanları', 'Rabbits'], ['Kemirgen', 'Kemirgen İlanları', 'Rodents'], ['Sürüngen', 'Sürüngen İlanları', 'Reptiles'], ['Diğer', 'Diğer Dostlarımız', 'Other Animals']] as $footer_tur): ?>
+                    <a href="ilanlar.php?tur=<?= rawurlencode($footer_tur[0]) ?>"><?= aa_h(aa_t($footer_tur[1], $footer_tur[2])) ?></a>
+                <?php endforeach; ?>
             </nav>
         </div>
 
         <div>
-            <h3><?= aa_h(aa_t("Bizi Tanıyın", "Get to Know Us")) ?></h3>
+            <h3><?= aa_h(aa_t("Sahiplenme Rehberi", "Adoption Guide")) ?></h3>
+            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Bakım ve sahiplenme", "Care and adoption")) ?>">
+                <?php if ($bolumler["surec"]["aktif"]): ?>
+                    <a href="#nasil-sahiplenirim"><?= aa_h(aa_t("Nasıl Sahiplenirim?", "How Do I Adopt?")) ?></a>
+                <?php endif; ?>
+                <?php foreach ([['Sahiplenme', 'Sahiplenmeye Hazırlık', 'Preparing to Adopt'], ['Kedi Bakımı', 'Kedi Bakımı', 'Cat Care'], ['Köpek Bakımı', 'Köpek Bakımı', 'Dog Care'], ['Kuş Bakımı', 'Kuş Bakımı', 'Bird Care'], ['Pet Dünyası', 'Dostlarımızla Yaşam', 'Life with Companions']] as $footer_rehber): ?>
+                    <a href="blog.php?kategori=<?= rawurlencode($footer_rehber[0]) ?>"><?= aa_h(aa_t($footer_rehber[1], $footer_rehber[2])) ?></a>
+                <?php endforeach; ?>
+            </nav>
+            <p class="footer-rehber-not"><?= aa_h(aa_t("Sahiplenmek, birlikte yaşayacağınız yıllar için sorumluluk almaktır.", "Adoption means taking responsibility for your years together.")) ?></p>
+        </div>
 
-            <nav
-                class="footer-linkler"
-                aria-label="<?= aa_h(aa_t("Bilgi menüsü", "Information")) ?>"
-            >
-                <a href="hakkimizda.php">
-                    <?= aa_h(aa_t("Hakkımızda", "About Us")) ?>
-                </a>
+        <div class="footer-iletisim-alani">
+            <h3><?= aa_h(aa_t("Bize Ulaşın", "Get in Touch")) ?></h3>
+            <p class="footer-iletisim-yazi"><?= aa_h(aa_t("Bir sorunuz, öneriniz veya paylaşmak istediğiniz bir konu mu var? İletişim formumuzdan bize yazabilirsiniz.", "Have a question, suggestion or something to share? Send us a message using our contact form.")) ?></p>
+            <a class="footer-iletisim-buton" href="iletisim.php"><?= aa_h(aa_t("Mesaj Gönder", "Send a Message")) ?> <span aria-hidden="true">→</span></a>
+            <div class="footer-bilgi-kutu">
+                <strong><?= aa_h(aa_t("Üyelik olmadan da yazabilirsiniz.", "You can write to us without an account.")) ?></strong>
+                <p><?= aa_h(aa_t("İletişim formunu doldurmanız yeterli. İlan sahipleriyle görüşmek için hesabınızla giriş yapabilirsiniz.", "Simply fill in the contact form. Sign in to your account to message listing owners.")) ?></p>
+            </div>
+        </div>
+    </div>
 
-                <a href="iletisim.php">
-                    <?= aa_h(aa_t("Bize Ulaşın", "Contact Us")) ?>
-                </a>
-
-                <a href="fotograf-kaynaklari.html">
-                    <?= aa_h(aa_t("Fotoğraf Kaynakları", "Photo Credits")) ?>
-                </a>
+    <div class="footer-sehirler">
+        <div class="kapsayici footer-sehir-icerik">
+            <strong><?= aa_h(aa_t("Şehrinde Yuva Arayanlar", "Find a Companion in Your City")) ?></strong>
+            <nav aria-label="<?= aa_h(aa_t("Şehirlere göre ilanlar", "Listings by city")) ?>">
+                <?php foreach (['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Eskişehir', 'Konya', 'Adana'] as $footer_sehir): ?>
+                    <a href="ilanlar.php?sehir=<?= rawurlencode($footer_sehir) ?>"><?= aa_h($footer_sehir) ?></a>
+                <?php endforeach; ?>
+                <a href="ilanlar.php"><?= aa_h(aa_t("Tüm Şehirler", "All Cities")) ?> →</a>
             </nav>
         </div>
     </div>
@@ -2071,17 +1959,8 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
     <div class="footer-taban">
         <div class="kapsayici">
             <span>© <?= date("Y") ?> Aris Pati Yuvası</span>
-
-            <span>
-                <?= aa_h(aa_t(
-                    "Satın alma, sahiplen.",
-                    "Adopt, don't shop."
-                )) ?>
-            </span>
-
-            <a href="#aris-ortak-ust">
-                <?= aa_h(aa_t("Yukarı dön", "Back to top")) ?> ↑
-            </a>
+            <span><?= aa_h(aa_t("Satın alma, sahiplen. Birlikte bir hayatı değiştirelim.", "Adopt, don't shop. Let's change a life together.")) ?></span>
+            <a href="#aris-ortak-ust"><?= aa_h(aa_t("Yukarı dön", "Back to top")) ?> ↑</a>
         </div>
     </div>
 </footer>

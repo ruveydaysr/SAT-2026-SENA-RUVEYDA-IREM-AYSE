@@ -1,13 +1,15 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (
-    !isset($_SESSION["admin"])
-    || !is_string($_SESSION["admin"])
-    || $_SESSION["admin"] === ""
+    !isset($_SESSION["admin"]) ||
+    !is_string($_SESSION["admin"]) ||
+    $_SESSION["admin"] === ""
 ) {
     header("Location: admin-giris.php");
-    exit;
+    exit();
 }
 
 require_once __DIR__ . "/../baglanti.php";
@@ -19,7 +21,9 @@ function ap_guvenli($deger)
 
 function ap_post($alan)
 {
-    return is_string($_POST[$alan] ?? null) ? $_POST[$alan] : "";
+    return is_string($_POST[$alan] ?? null)
+        ? $_POST[$alan]
+        : "";
 }
 
 function ap_getir($baglanti, $sql, $tipler, ...$degerler)
@@ -36,8 +40,6 @@ function ap_getir($baglanti, $sql, $tipler, ...$degerler)
     return $veriler;
 }
 
-/* Giriş yapan adminin kaydını getir. */
-
 $kayitlar = ap_getir(
     $baglanti,
     "SELECT id, kullanici_adi, ad_soyad, email, telefon, sifre
@@ -50,8 +52,9 @@ $kayitlar = ap_getir(
 
 if (count($kayitlar) !== 1) {
     unset($_SESSION["admin"], $_SESSION["admin_profil_csrf"]);
+
     header("Location: admin-giris.php");
-    exit;
+    exit();
 }
 
 $yonetici = $kayitlar[0];
@@ -75,8 +78,6 @@ $form_kullanici = (string) $yonetici["kullanici_adi"];
 $form_email = (string) ($yonetici["email"] ?? "");
 $form_telefon = (string) ($yonetici["telefon"] ?? "");
 
-/* Profil işlemleri */
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $islem = ap_post("islem");
     $token = ap_post("csrf_token");
@@ -96,31 +97,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
             $bilgi_hata = $mesaj;
         }
+
     } elseif ($islem === "bilgi_guncelle") {
         $mevcut_sifre = ap_post("bilgi_sifre");
 
         if (
-            $form_ad === ""
-            || $form_kullanici === ""
-            || $form_email === ""
-            || $form_telefon === ""
-            || $mevcut_sifre === ""
+            $form_ad === "" ||
+            $form_kullanici === "" ||
+            $form_email === "" ||
+            $form_telefon === "" ||
+            $mevcut_sifre === ""
         ) {
             $bilgi_hata = "Lütfen tüm alanları doldurunuz.";
+
         } elseif (
-            preg_match_all('/./us', $form_ad) > 100
-            || preg_match_all('/./us', $form_kullanici) > 50
+            preg_match_all('/./us', $form_ad) > 100 ||
+            preg_match_all('/./us', $form_kullanici) > 50
         ) {
             $bilgi_hata = "Ad soyad en fazla 100, kullanıcı adı en fazla 50 karakter olabilir.";
+
         } elseif (
-            strlen($form_email) > 254
-            || !filter_var($form_email, FILTER_VALIDATE_EMAIL)
+            strlen($form_email) > 254 ||
+            !filter_var($form_email, FILTER_VALIDATE_EMAIL)
         ) {
             $bilgi_hata = "Geçerli bir e-posta adresi giriniz.";
+
         } elseif (!preg_match('/^05[0-9]{9}$/', $form_telefon)) {
             $bilgi_hata = "Telefon numarası 05 ile başlamalı ve 11 haneli olmalıdır.";
-        } elseif (!password_verify($mevcut_sifre, (string) $yonetici["sifre"])) {
+
+        } elseif (
+            !password_verify(
+                $mevcut_sifre,
+                (string) $yonetici["sifre"]
+            )
+        ) {
             $bilgi_hata = "Mevcut şifreniz yanlış.";
+
         } else {
             try {
                 $ayni_kayit = ap_getir(
@@ -157,44 +169,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     );
 
                     $kaydedildi = mysqli_stmt_execute($sorgu);
+
                     mysqli_stmt_close($sorgu);
 
                     if ($kaydedildi) {
                         $_SESSION["admin"] = $form_kullanici;
+
                         $_SESSION["admin_profil_basari"] =
                             "Bilgileriniz başarıyla güncellendi.";
 
                         header("Location: admin-profil.php");
-                        exit;
+                        exit();
                     }
 
-                    $bilgi_hata = "Bilgiler kaydedilemedi. Tekrar deneyiniz.";
+                    $bilgi_hata = "Bilgiler kaydedilemedi. Girdiğiniz bilgileri kontrol ediniz.";
                 }
             } catch (mysqli_sql_exception $e) {
                 $bilgi_hata = "Bilgiler kaydedilemedi. Girdiğiniz bilgileri kontrol ediniz.";
             }
         }
+
     } elseif ($islem === "sifre_degistir") {
         $mevcut_sifre = ap_post("mevcut_sifre");
         $yeni_sifre = ap_post("yeni_sifre");
         $sifre_tekrar = ap_post("sifre_tekrar");
 
         if (
-            $mevcut_sifre === ""
-            || $yeni_sifre === ""
-            || $sifre_tekrar === ""
+            $mevcut_sifre === "" ||
+            $yeni_sifre === "" ||
+            $sifre_tekrar === ""
         ) {
             $sifre_hata = "Lütfen tüm şifre alanlarını doldurunuz.";
-        } elseif (!password_verify($mevcut_sifre, (string) $yonetici["sifre"])) {
+
+        } elseif (
+            !password_verify(
+                $mevcut_sifre,
+                (string) $yonetici["sifre"]
+            )
+        ) {
             $sifre_hata = "Mevcut şifreniz yanlış.";
+
         } elseif (preg_match_all('/./us', $yeni_sifre) < 8) {
             $sifre_hata = "Yeni şifreniz en az 8 karakter olmalıdır.";
+
         } elseif (strlen($yeni_sifre) > 72) {
             $sifre_hata = "Yeni şifreniz çok uzun. Daha kısa bir şifre giriniz.";
+
         } elseif ($yeni_sifre !== $sifre_tekrar) {
             $sifre_hata = "Yeni şifreler birbiriyle eşleşmiyor.";
-        } elseif (password_verify($yeni_sifre, (string) $yonetici["sifre"])) {
+
+        } elseif (
+            password_verify(
+                $yeni_sifre,
+                (string) $yonetici["sifre"]
+            )
+        ) {
             $sifre_hata = "Yeni şifreniz mevcut şifrenizden farklı olmalıdır.";
+
         } else {
             $yeni_hash = password_hash($yeni_sifre, PASSWORD_DEFAULT);
 
@@ -222,33 +253,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($kaydedildi && $degisen === 1) {
                     session_regenerate_id(true);
 
-                    $_SESSION["admin_profil_csrf"] = bin2hex(random_bytes(32));
+                    $_SESSION["admin_profil_csrf"] =
+                        bin2hex(random_bytes(32));
+
                     $_SESSION["admin_profil_basari"] =
                         "Şifreniz başarıyla değiştirildi.";
 
                     header("Location: admin-profil.php");
-                    exit;
+                    exit();
                 }
 
                 $sifre_hata = "Şifre değiştirilemedi. Sayfayı yenileyip tekrar deneyiniz.";
+
             } catch (mysqli_sql_exception $e) {
                 $sifre_hata = "Şifre değiştirilemedi. Tekrar deneyiniz.";
             }
         }
+
     } else {
         $bilgi_hata = "Geçersiz işlem.";
     }
 }
 ?>
+
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Profilim | Admin Paneli</title>
+    <title>
+        <?= admin_h(admin_t("Profilim | Admin Paneli")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .ap-profil,
@@ -481,6 +520,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -488,60 +529,83 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <?php require __DIR__ . "/admin-menu.php"; ?>
 
 <main class="icerik ap-profil">
-    <h2>Profilim</h2>
+
+    <h2><?= admin_h(admin_t("Profilim")) ?></h2>
 
     <p class="ap-aciklama">
-        Kendi yönetici bilgilerinizi ve şifrenizi buradan değiştirebilirsiniz.
+        <?= admin_h(admin_t(
+            "Kendi yönetici bilgilerinizi ve şifrenizi buradan değiştirebilirsiniz."
+        )) ?>
     </p>
 
     <section class="ap-ozet">
-        <h3>Yönetici Bilgilerim</h3>
+        <h3><?= admin_h(admin_t("Yönetici Bilgilerim")) ?></h3>
 
         <div class="ap-bilgiler">
             <p>
-                <strong>Ad Soyad</strong>
-                <?= ap_guvenli($yonetici["ad_soyad"] ?: "Henüz eklenmedi") ?>
+                <strong><?= admin_h(admin_t("Ad Soyad")) ?></strong>
+                <?= ap_guvenli(
+                    $yonetici["ad_soyad"] ?: admin_t("Henüz eklenmedi")
+                ) ?>
             </p>
 
             <p>
-                <strong>Kullanıcı Adı</strong>
+                <strong><?= admin_h(admin_t("Kullanıcı Adı")) ?></strong>
                 <?= ap_guvenli($yonetici["kullanici_adi"]) ?>
             </p>
 
             <p>
-                <strong>E-posta</strong>
-                <?= ap_guvenli($yonetici["email"] ?: "Henüz eklenmedi") ?>
+                <strong><?= admin_h(admin_t("E-posta")) ?></strong>
+                <?= ap_guvenli(
+                    $yonetici["email"] ?: admin_t("Henüz eklenmedi")
+                ) ?>
             </p>
 
             <p>
-                <strong>Telefon</strong>
-                <?= ap_guvenli($yonetici["telefon"] ?: "Henüz eklenmedi") ?>
+                <strong><?= admin_h(admin_t("Telefon")) ?></strong>
+                <?= ap_guvenli(
+                    $yonetici["telefon"] ?: admin_t("Henüz eklenmedi")
+                ) ?>
             </p>
         </div>
     </section>
 
     <div class="ap-kutular">
-        <section class="ap-kutu">
-            <h3>Bilgilerimi Düzenle</h3>
 
-            <p>Değişiklikleri kaydetmek için mevcut şifrenizi giriniz.</p>
+        <section class="ap-kutu">
+            <h3><?= admin_h(admin_t("Bilgilerimi Düzenle")) ?></h3>
+
+            <p>
+                <?= admin_h(admin_t(
+                    "Değişiklikleri kaydetmek için mevcut şifrenizi giriniz."
+                )) ?>
+            </p>
 
             <?php if ($bilgi_hata !== ""): ?>
                 <div class="ap-hata" role="alert">
-                    <?= ap_guvenli($bilgi_hata) ?>
+                    <?= admin_h(admin_t($bilgi_hata)) ?>
                 </div>
             <?php endif; ?>
 
             <form action="admin-profil.php" method="POST" class="ap-form">
-                <input type="hidden" name="islem" value="bilgi_guncelle">
+
+                <input
+                    type="hidden"
+                    name="islem"
+                    value="bilgi_guncelle"
+                >
+
                 <input
                     type="hidden"
                     name="csrf_token"
-                    value="<?= ap_guvenli($_SESSION["admin_profil_csrf"]) ?>"
+                    value="<?= ap_guvenli($_SESSION['admin_profil_csrf']) ?>"
                 >
 
                 <div>
-                    <label for="ad_soyad">Ad Soyad</label>
+                    <label for="ad_soyad">
+                        <?= admin_h(admin_t("Ad Soyad")) ?>
+                    </label>
+
                     <input
                         type="text"
                         id="ad_soyad"
@@ -554,7 +618,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div>
-                    <label for="kullanici_adi">Kullanıcı Adı</label>
+                    <label for="kullanici_adi">
+                        <?= admin_h(admin_t("Kullanıcı Adı")) ?>
+                    </label>
+
                     <input
                         type="text"
                         id="kullanici_adi"
@@ -565,13 +632,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         aria-describedby="kullanici-notu"
                         required
                     >
+
                     <small id="kullanici-notu">
-                        Değiştirirseniz sonraki girişinizde yeni kullanıcı adınızı kullanınız.
+                        <?= admin_h(admin_t(
+                            "Değiştirirseniz sonraki girişinizde yeni kullanıcı adınızı kullanınız."
+                        )) ?>
                     </small>
                 </div>
 
                 <div>
-                    <label for="email">E-posta Adresi</label>
+                    <label for="email">
+                        <?= admin_h(admin_t("E-posta Adresi")) ?>
+                    </label>
+
                     <input
                         type="email"
                         id="email"
@@ -584,7 +657,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div>
-                    <label for="telefon">Telefon Numarası</label>
+                    <label for="telefon">
+                        <?= admin_h(admin_t("Telefon Numarası")) ?>
+                    </label>
+
                     <input
                         type="tel"
                         id="telefon"
@@ -598,13 +674,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         aria-describedby="telefon-notu"
                         required
                     >
+
                     <small id="telefon-notu">
-                        05 ile başlayan 11 haneli numaranızı boşluksuz yazınız.
+                        <?= admin_h(admin_t(
+                            "05 ile başlayan 11 haneli numaranızı boşluksuz yazınız."
+                        )) ?>
                     </small>
                 </div>
 
                 <div>
-                    <label for="bilgi_sifre">Mevcut Şifreniz</label>
+                    <label for="bilgi_sifre">
+                        <?= admin_h(admin_t("Mevcut Şifreniz")) ?>
+                    </label>
+
                     <input
                         type="password"
                         id="bilgi_sifre"
@@ -616,33 +698,47 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div>
                     <button type="submit" class="ap-buton">
-                        Bilgilerimi Kaydet
+                        <?= admin_h(admin_t("Bilgilerimi Kaydet")) ?>
                     </button>
                 </div>
+
             </form>
         </section>
 
         <section class="ap-kutu">
-            <h3>Şifremi Değiştir</h3>
+            <h3><?= admin_h(admin_t("Şifremi Değiştir")) ?></h3>
 
-            <p>Yeni şifreniz en az 8 karakter olmalıdır.</p>
+            <p>
+                <?= admin_h(admin_t(
+                    "Yeni şifreniz en az 8 karakter olmalıdır."
+                )) ?>
+            </p>
 
             <?php if ($sifre_hata !== ""): ?>
                 <div class="ap-hata" role="alert">
-                    <?= ap_guvenli($sifre_hata) ?>
+                    <?= admin_h(admin_t($sifre_hata)) ?>
                 </div>
             <?php endif; ?>
 
             <form action="admin-profil.php" method="POST" class="ap-form">
-                <input type="hidden" name="islem" value="sifre_degistir">
+
+                <input
+                    type="hidden"
+                    name="islem"
+                    value="sifre_degistir"
+                >
+
                 <input
                     type="hidden"
                     name="csrf_token"
-                    value="<?= ap_guvenli($_SESSION["admin_profil_csrf"]) ?>"
+                    value="<?= ap_guvenli($_SESSION['admin_profil_csrf']) ?>"
                 >
 
                 <div>
-                    <label for="mevcut_sifre">Mevcut Şifre</label>
+                    <label for="mevcut_sifre">
+                        <?= admin_h(admin_t("Mevcut Şifre")) ?>
+                    </label>
+
                     <input
                         type="password"
                         id="mevcut_sifre"
@@ -653,7 +749,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div>
-                    <label for="yeni_sifre">Yeni Şifre</label>
+                    <label for="yeni_sifre">
+                        <?= admin_h(admin_t("Yeni Şifre")) ?>
+                    </label>
+
                     <input
                         type="password"
                         id="yeni_sifre"
@@ -665,7 +764,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div>
-                    <label for="sifre_tekrar">Yeni Şifre Tekrarı</label>
+                    <label for="sifre_tekrar">
+                        <?= admin_h(admin_t("Yeni Şifre Tekrarı")) ?>
+                    </label>
+
                     <input
                         type="password"
                         id="sifre_tekrar"
@@ -678,18 +780,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div>
                     <button type="submit" class="ap-buton">
-                        Şifremi Değiştir
+                        <?= admin_h(admin_t("Şifremi Değiştir")) ?>
                     </button>
                 </div>
+
             </form>
         </section>
+
     </div>
+
 </main>
 
 <?php if ($basari !== ""): ?>
     <div class="ap-basari" id="ap-basari" role="status">
         <span aria-hidden="true">✓</span>
-        <p><?= ap_guvenli($basari) ?></p>
+        <p><?= admin_h(admin_t($basari)) ?></p>
     </div>
 <?php endif; ?>
 

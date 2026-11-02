@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -27,15 +29,17 @@ $sayilar = mysqli_fetch_assoc($sonuc);
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Genel Bakış | Admin Paneli</title>
+    <title>
+        <?= admin_h(admin_t("Genel Bakış | Admin Paneli")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .panel-aciklama {
@@ -102,6 +106,8 @@ $sayilar = mysqli_fetch_assoc($sonuc);
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -110,67 +116,122 @@ $sayilar = mysqli_fetch_assoc($sonuc);
 
 <main class="icerik">
 
-    <h2>Genel Bakış</h2>
+    <h2><?= admin_h(admin_t("Genel Bakış")) ?></h2>
 
     <p class="panel-aciklama">
-        Yönetim paneline hoş geldiniz.
-        Sistemdeki kayıt sayılarını buradan takip edebilirsiniz.
+        <?= admin_h(admin_t(
+            "Yönetim paneline hoş geldiniz. Sistemdeki kayıt sayılarını buradan takip edebilirsiniz."
+        )) ?>
     </p>
 
     <div class="istatistikler">
 
         <a href="admin-uyeler.php" class="istatistik-karti">
-            <span>Toplam Üye</span>
-            <strong><?php echo (int)$sayilar["toplam_uye"]; ?></strong>
-            <small>Üyeleri görüntüle →</small>
+            <span>
+                <?= admin_h(admin_t("Toplam Üye")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["toplam_uye"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Üyeleri görüntüle →")) ?>
+            </small>
         </a>
 
         <a href="admin-panel.php?durum=" class="istatistik-karti">
-            <span>Toplam İlan</span>
-            <strong><?php echo (int)$sayilar["toplam_ilan"]; ?></strong>
-            <small>Tüm ilanları görüntüle →</small>
-        </a>
+            <span>
+                <?= admin_h(admin_t("Toplam İlan")) ?>
+            </span>
 
-        <a href="admin-panel.php?durum=Bekliyor" class="istatistik-karti">
-            <span>Bekleyen İlan</span>
-            <strong><?php echo (int)$sayilar["bekleyen_ilan"]; ?></strong>
-            <small>Bekleyen ilanları incele →</small>
+            <strong><?= (int) $sayilar["toplam_ilan"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Tüm ilanları görüntüle →")) ?>
+            </small>
         </a>
 
         <a
-            href="admin-panel.php?durum=<?php echo rawurlencode('Onaylandı'); ?>"
+            href="admin-panel.php?durum=Bekliyor"
             class="istatistik-karti"
         >
-            <span>Onaylanan İlan</span>
-            <strong><?php echo (int)$sayilar["onaylanan_ilan"]; ?></strong>
-            <small>Onaylanan ilanları görüntüle →</small>
+            <span>
+                <?= admin_h(admin_t("Bekleyen İlan")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["bekleyen_ilan"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Bekleyen ilanları incele →")) ?>
+            </small>
         </a>
 
-        <a href="admin-panel.php?durum=Reddedildi" class="istatistik-karti">
-            <span>Reddedilen İlan</span>
-            <strong><?php echo (int)$sayilar["reddedilen_ilan"]; ?></strong>
-            <small>Reddedilen ilanları görüntüle →</small>
+        <a
+            href="admin-panel.php?durum=<?= rawurlencode('Onaylandı') ?>"
+            class="istatistik-karti"
+        >
+            <span>
+                <?= admin_h(admin_t("Onaylanan İlan")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["onaylanan_ilan"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Onaylanan ilanları görüntüle →")) ?>
+            </small>
+        </a>
+
+        <a
+            href="admin-panel.php?durum=Reddedildi"
+            class="istatistik-karti"
+        >
+            <span>
+                <?= admin_h(admin_t("Reddedilen İlan")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["reddedilen_ilan"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Reddedilen ilanları görüntüle →")) ?>
+            </small>
         </a>
 
         <a href="admin-basvurular.php" class="istatistik-karti">
-            <span>Toplam Sahiplenme Başvurusu</span>
-            <strong><?php echo (int)$sayilar["toplam_basvuru"]; ?></strong>
-            <small>Tüm başvuruları görüntüle →</small>
+            <span>
+                <?= admin_h(admin_t("Toplam Sahiplenme Başvurusu")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["toplam_basvuru"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Tüm başvuruları görüntüle →")) ?>
+            </small>
         </a>
 
         <a
             href="admin-basvurular.php?durum=Bekliyor"
             class="istatistik-karti"
         >
-            <span>Bekleyen Başvuru</span>
-            <strong><?php echo (int)$sayilar["bekleyen_basvuru"]; ?></strong>
-            <small>Bekleyen başvuruları incele →</small>
+            <span>
+                <?= admin_h(admin_t("Bekleyen Başvuru")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["bekleyen_basvuru"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Bekleyen başvuruları incele →")) ?>
+            </small>
         </a>
 
         <a href="admin-mesajlar.php" class="istatistik-karti">
-            <span>Toplam Mesaj</span>
-            <strong><?php echo (int)$sayilar["toplam_mesaj"]; ?></strong>
-            <small>Gelen mesajları görüntüle →</small>
+            <span>
+                <?= admin_h(admin_t("Toplam Mesaj")) ?>
+            </span>
+
+            <strong><?= (int) $sayilar["toplam_mesaj"] ?></strong>
+
+            <small>
+                <?= admin_h(admin_t("Gelen mesajları görüntüle →")) ?>
+            </small>
         </a>
 
     </div>

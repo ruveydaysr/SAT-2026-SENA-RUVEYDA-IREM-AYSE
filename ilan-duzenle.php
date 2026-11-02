@@ -1,13 +1,29 @@
-
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 if (!isset($_SESSION["uye_id"])) {
     header("Location: giris.php");
     exit();
 }
 
-include("baglanti.php");
+require_once __DIR__ . "/baglanti.php";
+
+function id_guvenli($deger)
+{
+    return htmlspecialchars(
+        (string) $deger,
+        ENT_QUOTES,
+        "UTF-8"
+    );
+}
+
+function id_post($alan)
+{
+    return is_string($_POST[$alan] ?? null)
+        ? trim($_POST[$alan])
+        : "";
+}
 
 $uye_id = (int) $_SESSION["uye_id"];
 $ilan_id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
@@ -17,9 +33,10 @@ if (!$ilan_id || $ilan_id < 1) {
     exit();
 }
 
-// İlanın giriş yapan kullanıcıya ait olup olmadığını kontrol et
-$sql = "SELECT * FROM ilanlar WHERE id = ? AND uye_id = ?";
-$sorgu = mysqli_prepare($baglanti, $sql);
+$sorgu = mysqli_prepare(
+    $baglanti,
+    "SELECT * FROM ilanlar WHERE id = ? AND uye_id = ?"
+);
 
 mysqli_stmt_bind_param($sorgu, "ii", $ilan_id, $uye_id);
 mysqli_stmt_execute($sorgu);
@@ -34,6 +51,30 @@ if (!$ilan) {
     exit("Bu ilanı düzenleme yetkiniz yok veya ilan bulunamadı.");
 }
 
+$iller = [
+    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı",
+    "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan",
+    "Artvin", "Aydın", "Balıkesir", "Bartın", "Batman",
+    "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu",
+    "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum",
+    "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ",
+    "Erzincan", "Erzurum", "Eskişehir", "Gaziantep",
+    "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır",
+    "Isparta", "İstanbul", "İzmir", "Kahramanmaraş",
+    "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri",
+    "Kırıkkale", "Kırklareli", "Kırşehir", "Kilis",
+    "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa",
+    "Mardin", "Mersin", "Muğla", "Muş", "Nevşehir",
+    "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya",
+    "Samsun", "Siirt", "Sinop", "Sivas", "Şanlıurfa",
+    "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli",
+    "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+];
+
+$turler = [
+    "Kedi", "Köpek", "Kuş", "Tavşan",
+    "Balık", "Kemirgen", "Sürüngen", "Diğer"
+];
 
 $ozellik_secenekleri = [
     "Karakter Özellikleri" => [
@@ -58,105 +99,173 @@ $ozellik_secenekleri = [
     ]
 ];
 
-$kayitli_aciklama = $ilan["aciklama"] ?? "";
-$parcalar = explode("\n\nEk Açıklama: ", $kayitli_aciklama, 2);
+$tum_ozellikler = array_merge(
+    ...array_values($ozellik_secenekleri)
+);
 
-$kayitli_ozellikler = array_map("trim", explode(",", $parcalar[0]));
+$kayitli_aciklama = (string) ($ilan["aciklama"] ?? "");
+
+$parcalar = explode(
+    "\n\nEk Açıklama: ",
+    $kayitli_aciklama,
+    2
+);
+
+$ilk_bolum = array_values(array_filter(
+    array_map("trim", explode(",", $parcalar[0])),
+    function ($deger) {
+        return $deger !== "";
+    }
+));
+
+$kayitli_ozellikler = array_values(
+    array_intersect($tum_ozellikler, $ilk_bolum)
+);
+
 $kayitli_ek_aciklama = $parcalar[1] ?? "";
 
-$tum_ozellikler = array_merge(...array_values($ozellik_secenekleri));
-$eski_aciklama = array_diff($kayitli_ozellikler, $tum_ozellikler);
+$eski_aciklama = array_diff(
+    $ilk_bolum,
+    $tum_ozellikler
+);
 
-if (!empty($eski_aciklama)) {
+if ($eski_aciklama) {
     $kayitli_ek_aciklama = trim(
-        implode(", ", $eski_aciklama) . "\n" . $kayitli_ek_aciklama
+        implode(", ", $eski_aciklama)
+        . "\n" . $kayitli_ek_aciklama
     );
 }
 
+$form = [
+    "ilan_basligi" => (string) ($ilan["ilan_basligi"] ?? ""),
+    "hayvan_adi" => (string) ($ilan["hayvan_adi"] ?? ""),
+    "tur" => (string) ($ilan["tur"] ?? ""),
+    "yas" => (string) ($ilan["yas"] ?? ""),
+    "cinsiyet" => (string) ($ilan["cinsiyet"] ?? ""),
+    "sehir" => (string) ($ilan["sehir"] ?? "")
+];
+
+$eski_sehir = $form["sehir"];
 $hata = "";
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["guncelle"])) {
-    $ilan_basligi = trim($_POST["ilan_basligi"] ?? "");
-    $hayvan_adi = trim($_POST["hayvan_adi"] ?? "");
-    $tur = trim($_POST["tur"] ?? "");
-    $yas = filter_var($_POST["yas"] ?? "", FILTER_VALIDATE_INT);
-    $cinsiyet = $_POST["cinsiyet"] ?? "";
-    $sehir = trim($_POST["sehir"] ?? "");
-    
-$ozellikler = $_POST["ozellikler"] ?? [];
-
-if (!is_array($ozellikler)) {
-    $ozellikler = [];
+if (!is_string($_SESSION["ilan_duzenle_token"] ?? null)) {
+    $_SESSION["ilan_duzenle_token"] = bin2hex(random_bytes(32));
 }
 
-$tum_ozellikler = array_merge(...array_values($ozellik_secenekleri));
-$ozellikler = array_values(array_intersect($tum_ozellikler, $ozellikler));
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    foreach (array_keys($form) as $alan) {
+        $form[$alan] = id_post($alan);
+    }
 
-$ek_aciklama = trim($_POST["ek_aciklama"] ?? "");
+    $gelen_ozellikler = $_POST["ozellikler"] ?? [];
 
-$aciklama = implode(", ", $ozellikler);
+    if (!is_array($gelen_ozellikler)) {
+        $gelen_ozellikler = [];
+    }
 
-if ($ek_aciklama !== "") {
-    $aciklama .= "\n\nEk Açıklama: " . $ek_aciklama;
-}
+    $gelen_ozellikler = array_filter(
+        $gelen_ozellikler,
+        "is_string"
+    );
 
+    $kayitli_ozellikler = array_values(
+        array_intersect($tum_ozellikler, $gelen_ozellikler)
+    );
 
-    if (
-        $hayvan_adi === "" ||
-        $tur === "" ||
-        $yas === false || $yas < 0 ||
-        !in_array($cinsiyet, ["Dişi", "Erkek"], true) ||
-        $sehir === "" ||
-        
-empty($ozellikler)
+    $kayitli_ek_aciklama = id_post("ek_aciklama");
 
+    $yas = filter_var($form["yas"], FILTER_VALIDATE_INT);
+
+    $sehir_gecerli = in_array($form["sehir"], $iller, true)
+        || (
+            $eski_sehir !== ""
+            && $form["sehir"] === $eski_sehir
+        );
+
+    if (!hash_equals(
+        $_SESSION["ilan_duzenle_token"],
+        id_post("token")
+    )) {
+        $hata = "Sayfayı yenileyip tekrar deneyiniz.";
+
+    } elseif (
+        $form["ilan_basligi"] === "" ||
+        $form["hayvan_adi"] === "" ||
+        !in_array($form["tur"], $turler, true) ||
+        $yas === false ||
+        $yas < 0 ||
+        !in_array($form["cinsiyet"], ["Dişi", "Erkek"], true) ||
+        !$sehir_gecerli ||
+        !$kayitli_ozellikler
     ) {
-        $hata = "Lütfen tüm alanları doğru doldurunuz.";
+        $hata = "Lütfen tüm alanları doğru doldurunuz ve en az bir özellik seçiniz.";
+
+    } elseif (
+        preg_match_all('/./us', $form["ilan_basligi"]) > 150
+    ) {
+        $hata = "İlan başlığı en fazla 150 karakter olabilir.";
+
     } else {
+        $aciklama = implode(", ", $kayitli_ozellikler);
 
-       
-$sql = "UPDATE ilanlar
-                SET ilan_basligi = ?,
-                    hayvan_adi = ?,
-                    tur = ?,
-                    yas = ?,
-                    cinsiyet = ?,
-                    sehir = ?,
-                    aciklama = ?
-                WHERE id = ? AND uye_id = ?";
-
-
-        $guncelle = mysqli_prepare($baglanti, $sql);
-
-       
-mysqli_stmt_bind_param(
-    $guncelle,
-    "sssisssii",
-    $ilan_basligi,
-    $hayvan_adi,
-    $tur,
-    $yas,
-    $cinsiyet,
-    $sehir,
-    $aciklama,
-    $ilan_id,
-    $uye_id
-);
-
-
-        if (mysqli_stmt_execute($guncelle)) {
-            mysqli_stmt_close($guncelle);
-
-            header("Location: profil.php");
-            exit();
-        } else {
-            $hata = "İlan güncellenirken bir hata oluştu.";
+        if ($kayitli_ek_aciklama !== "") {
+            $aciklama .= "\n\nEk Açıklama: "
+                . $kayitli_ek_aciklama;
         }
 
+        $guncelle = mysqli_prepare(
+            $baglanti,
+            "UPDATE ilanlar
+             SET ilan_basligi = ?,
+                 hayvan_adi = ?,
+                 tur = ?,
+                 yas = ?,
+                 cinsiyet = ?,
+                 sehir = ?,
+                 aciklama = ?
+             WHERE id = ? AND uye_id = ?"
+        );
+
+        mysqli_stmt_bind_param(
+            $guncelle,
+            "sssisssii",
+            $form["ilan_basligi"],
+            $form["hayvan_adi"],
+            $form["tur"],
+            $yas,
+            $form["cinsiyet"],
+            $form["sehir"],
+            $aciklama,
+            $ilan_id,
+            $uye_id
+        );
+
+        $kaydedildi = mysqli_stmt_execute($guncelle);
+
         mysqli_stmt_close($guncelle);
+
+        if ($kaydedildi) {
+            header("Location: profil.php");
+            exit();
+        }
+
+        $hata = "İlan güncellenirken bir hata oluştu.";
     }
 }
 
+/* Mevcut CSS dosyasını bul ve önbellek sürümünü güncelle. */
+$css_dosyasi = "";
+
+foreach (["style.css", "css/style.css"] as $aday) {
+    if (is_file(__DIR__ . "/" . $aday)) {
+        $css_dosyasi = $aday;
+        break;
+    }
+}
+
+$css_surumu = $css_dosyasi !== ""
+    ? filemtime(__DIR__ . "/" . $css_dosyasi)
+    : "";
 ?>
 
 <!DOCTYPE html>
@@ -165,289 +274,527 @@ mysqli_stmt_bind_param(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İlan Düzenle</title>
-    <link rel="stylesheet" href="css/style.css">
-    
-<style>
-    body {
-        background-color: #f5f8f5;
-    }
 
-    .duzenle-baslik {
-        text-align: center;
-        margin: 45px auto 30px;
-    }
+    <title>İlanımı Düzenle | Aris Pati Yuvası</title>
 
-    .duzenle-baslik h2 {
-        color: #184f3c;
-        font-size: 32px;
-        margin-bottom: 12px;
-    }
+    <?php if ($css_dosyasi !== ""): ?>
+        <link
+            rel="stylesheet"
+            href="<?= id_guvenli($css_dosyasi) ?>?v=<?= id_guvenli($css_surumu) ?>"
+        >
+    <?php endif; ?>
 
-    .duzenle-baslik p {
-        color: #71867a;
-    }
+    <style>
+        body.ilan-duzenle-sayfasi {
+            margin: 0;
+            background: #f5f0e6;
+            color: #284b32;
+            font-family: Arial, sans-serif;
+        }
 
-    .duzenle-kutusu {
-        max-width: 800px;
-        margin: 0 auto 50px;
-        padding: 35px;
-        background-color: white;
-        border: 1px solid #dce8df;
-        border-radius: 16px;
-    }
+        .ilan-duzenle-sayfasi .duzenle-ust {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 18px 5%;
+            border-bottom: 1px solid #ded6c6;
+            background: #fffdf8;
+        }
 
-    .duzenle-kutusu label {
-        display: block;
-        color: #184f3c;
-        font-weight: bold;
-        margin-bottom: 8px;
-    }
+        .ilan-duzenle-sayfasi .duzenle-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: #284b32;
+            text-decoration: none;
+        }
 
-    .duzenle-kutusu input,
-    .duzenle-kutusu select,
-    .duzenle-kutusu textarea {
-        width: 100%;
-        padding: 13px;
-        border: 1px solid #d3e0d6;
-        border-radius: 8px;
-        background-color: #f9fbf9;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-    }
+        .ilan-duzenle-sayfasi .duzenle-logo img {
+            display: block;
+            width: 58px;
+            height: 58px;
+            max-width: 58px;
+            flex-shrink: 0;
+            object-fit: contain;
+        }
 
-    .duzenle-kutusu input:focus,
-    .duzenle-kutusu select:focus,
-    .duzenle-kutusu textarea:focus {
-        outline: none;
-        border-color: #347a53;
-    }
+        .duzenle-logo strong {
+            display: block;
+            font-size: 22px;
+        }
 
-    .duzenle-kutusu button {
-        background-color: #347a53;
-        color: white;
-        padding: 13px 22px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-    }
+        .duzenle-logo small {
+            display: block;
+            margin-top: 5px;
+            color: #687361;
+            font-size: 12px;
+        }
 
-    .duzenle-kutusu button:hover {
-        background-color: #245c3d;
-    }
+        .ilan-duzenle-sayfasi .duzenle-menu {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
 
-    .duzenle-kutusu .iptal-buton {
-        display: inline-block;
-        margin-left: 12px;
-        padding: 12px 20px;
-        color: #347a53;
-        text-decoration: none;
-    }
+        .ilan-duzenle-sayfasi .duzenle-menu a {
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #284b32;
+            font-size: 14px;
+            text-decoration: none;
+        }
 
-    .duzenle-hata {
-        color: #c62828;
-        margin-bottom: 20px;
-    }
-    
-/* Hayvan özellikleri */
-.ozellik-listesi {
-    margin-top: 15px;
+        .duzenle-menu a:hover,
+        .duzenle-menu a[aria-current="page"] {
+            background: #e6eddf;
+        }
+
+        .duzenle-ana {
+            width: min(900px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .duzenle-baslik {
+            margin: 38px 0 24px;
+            text-align: center;
+        }
+
+        .duzenle-baslik h1 {
+            margin: 0 0 12px;
+            color: #284b32;
+            font-size: 30px;
+        }
+
+        .duzenle-baslik p {
+            color: #687361;
+            line-height: 1.6;
+        }
+
+        .duzenle-kutusu {
+            margin-bottom: 45px;
+            padding: 30px;
+            border: 1px solid #ded6c6;
+            border-top: 4px solid #80a86d;
+            border-radius: 16px;
+            background: #fffdf8;
+            box-shadow: 0 6px 20px rgba(40, 75, 50, .06);
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-form {
+            display: block;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .duzenle-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .duzenle-alan {
+            min-width: 0;
+        }
+
+        .duzenle-alan label,
+        .duzenle-ek-etiket {
+            display: block;
+            margin-bottom: 8px;
+            color: #284b32;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-alan input,
+        .ilan-duzenle-sayfasi .duzenle-alan select,
+        .ilan-duzenle-sayfasi .duzenle-form textarea {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 13px;
+            border: 1px solid #d3ddce;
+            border-radius: 8px;
+            background: white;
+            color: #284b32;
+            font: normal 14px Arial, sans-serif;
+        }
+
+        .duzenle-form textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .duzenle-ozellikler {
+            min-width: 0;
+            margin: 28px 0 24px;
+            padding: 0;
+            border: 0;
+        }
+
+        .duzenle-ozellikler legend {
+            padding: 0;
+            color: #284b32;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .duzenle-ozellikler > p {
+            color: #687361;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .duzenle-ozellikler h3 {
+            margin: 22px 0 12px;
+            color: #426b46;
+            font-size: 15px;
+        }
+
+        .duzenle-ozellik-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-ozellik-secimi {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0;
+            color: #284b32;
+            font-size: 13px;
+            font-weight: normal;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-ozellik-secimi input {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            padding: 0;
+            flex-shrink: 0;
+            accent-color: #426b46;
+        }
+
+        .duzenle-islemler {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-kaydet,
+        .ilan-duzenle-sayfasi .duzenle-iptal {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            margin: 0;
+            padding: 13px 20px;
+            border: 0;
+            border-radius: 8px;
+            background: #426b46;
+            color: white;
+            font: bold 14px Arial, sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ilan-duzenle-sayfasi .duzenle-iptal {
+            background: #eee5d3;
+            color: #284b32;
+        }
+
+        .duzenle-kaydet:hover {
+            background: #284b32;
+        }
+
+        .duzenle-hata {
+            margin-bottom: 22px;
+            padding: 14px;
+            border: 1px solid #e2bbb3;
+            border-radius: 8px;
+            background: #f9e8e3;
+            color: #923e30;
+            line-height: 1.6;
+        }
+
+        .ilan-duzenle-sayfasi :focus-visible {
+            outline: 2px solid #426b46;
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 800px) {
+            .ilan-duzenle-sayfasi .duzenle-ust {
+                justify-content: center;
+            }
+
+            .ilan-duzenle-sayfasi .duzenle-menu {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .duzenle-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .duzenle-ozellik-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .duzenle-kutusu {
+                padding: 20px;
+            }
+
+            .duzenle-logo strong {
+                font-size: 19px;
+            }
+
+            .duzenle-baslik h1 {
+                font-size: 25px;
+            }
+        }
+        .ilan-duzenle-sayfasi .duzenle-ust {
+    background: #284b32;
+    border-bottom-color: #426b46;
 }
 
-.ozellik-listesi h4 {
-    color: #245c3d;
-    margin-top: 22px;
-    margin-bottom: 12px;
+.ilan-duzenle-sayfasi .duzenle-logo,
+.ilan-duzenle-sayfasi .duzenle-logo strong,
+.ilan-duzenle-sayfasi .duzenle-menu a {
+    color: #fffdf8;
 }
 
-.ozellik-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+.ilan-duzenle-sayfasi .duzenle-logo small {
+    color: #e6eddf;
 }
 
-.duzenle-kutusu .ozellik-secimi {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    font-weight: normal;
-    font-size: 14px;
-    cursor: pointer;
+.ilan-duzenle-sayfasi .duzenle-menu a:hover,
+.ilan-duzenle-sayfasi .duzenle-menu a[aria-current="page"] {
+    background: #426b46;
+    color: #fffdf8;
 }
 
-.duzenle-kutusu .ozellik-secimi input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 0;
-    accent-color: #347a53;
+.ilan-duzenle-sayfasi .duzenle-logo img {
+    background: #fffdf8;
+    border-radius: 50%;
+    padding: 5px;
+    box-sizing: border-box;
 }
-
-@media (max-width: 600px) {
-    .ozellik-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-</style>
-
+    </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
-<body>
+<body class="ilan-duzenle-sayfasi">
 
-<header class="ilan-ust">
-    <a href="index.php" class="ilan-logo">
-        <span class="logo-pati">🐾</span>
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
-    <nav class="ilan-menu">
-        <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php">İlanlar</a>
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="blog.php">Blog</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-        <a href="profil.php">Profilim</a>
-        <a href="cikis.php">Çıkış Yap</a>
-    </nav>
-</header>
+<main class="duzenle-ana">
 
-<main>
-<div class="duzenle-baslik">
-    <h2>İlanımı Düzenle</h2>
-    <p>Dostumuzun bilgilerini buradan güncelleyebilirsiniz.</p>
-</div>
+    <div class="duzenle-baslik">
+        <h1>İlanımı Düzenle</h1>
+        <p>Dostumuzun bilgilerini buradan güncelleyebilirsiniz.</p>
+    </div>
 
-<div class="duzenle-kutusu">
-    
-<?php if ($hata !== ""): ?>
-    <p style="color: red;">
-        <?php echo htmlspecialchars($hata, ENT_QUOTES, "UTF-8"); ?>
-    </p>
-<?php endif; ?>
+    <div class="duzenle-kutusu">
 
-    <form method="POST">
+        <?php if ($hata !== ""): ?>
+            <div class="duzenle-hata" role="alert">
+                <?= id_guvenli($hata) ?>
+            </div>
+        <?php endif; ?>
 
-        <label>Hayvan Adı:</label>
-        
-<label>İlan Başlığı:</label>
-<input type="text" name="ilan_basligi"
-       value="<?php echo htmlspecialchars($ilan['ilan_basligi'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-       maxlength="150" required>
+        <form method="POST" class="duzenle-form">
 
-<br><br>
+            <input
+                type="hidden"
+                name="token"
+                value="<?= id_guvenli($_SESSION['ilan_duzenle_token']) ?>"
+            >
 
-        <input type="text" name="hayvan_adi"
-               value="<?php echo htmlspecialchars($ilan['hayvan_adi'], ENT_QUOTES, 'UTF-8'); ?>"
-               required>
+            <div class="duzenle-form-grid">
 
-        <br><br>
+                <div class="duzenle-alan">
+                    <label for="ilan_basligi">İlan Başlığı</label>
 
-        <label>Tür:</label>
-<select name="tur" required>
-    <option value="">Tür seçiniz</option>
-    <option value="Kedi" <?php if ($ilan['tur'] === 'Kedi') echo 'selected'; ?>>Kedi</option>
-    <option value="Köpek" <?php if ($ilan['tur'] === 'Köpek') echo 'selected'; ?>>Köpek</option>
-    <option value="Kuş" <?php if ($ilan['tur'] === 'Kuş') echo 'selected'; ?>>Kuş</option>
-    <option value="Tavşan" <?php if ($ilan['tur'] === 'Tavşan') echo 'selected'; ?>>Tavşan</option>
-<option value="Balık" <?php if ($ilan['tur'] === 'Balık') echo 'selected'; ?>>Balık</option>
-<option value="Kemirgen" <?php if ($ilan['tur'] === 'Kemirgen') echo 'selected'; ?>>Kemirgen</option>
-<option value="Sürüngen" <?php if ($ilan['tur'] === 'Sürüngen') echo 'selected'; ?>>Sürüngen</option>
-<option value="Diğer" <?php if ($ilan['tur'] === 'Diğer') echo 'selected'; ?>>Diğer</option>
-
-</select>
-
-
-        <br><br>
-
-        <label>Yaş:</label>
-        <input type="number" name="yas" min="0"
-               value="<?php echo (int)$ilan['yas']; ?>"
-               required>
-
-        <br><br>
-
-        <label>Cinsiyet:</label>
-        <select name="cinsiyet" required>
-            <option value="Dişi" <?php if ($ilan['cinsiyet'] === 'Dişi') echo 'selected'; ?>>
-                Dişi
-            </option>
-            <option value="Erkek" <?php if ($ilan['cinsiyet'] === 'Erkek') echo 'selected'; ?>>
-                Erkek
-            </option>
-        </select>
-
-        <br><br>
-
-        <label>Şehir:</label>
-       
-<select name="sehir" required>
-    <option value="">Şehir seçiniz</option>
-
-    <option value="Yozgat" <?php if (($ilan['sehir'] ?? '') === 'Yozgat') echo 'selected'; ?>>Yozgat</option>
-
-    <option value="Ankara" <?php if (($ilan['sehir'] ?? '') === 'Ankara') echo 'selected'; ?>>Ankara</option>
-
-    <option value="Konya" <?php if (($ilan['sehir'] ?? '') === 'Konya') echo 'selected'; ?>>Konya</option>
-
-    <option value="Kayseri" <?php if (($ilan['sehir'] ?? '') === 'Kayseri') echo 'selected'; ?>>Kayseri</option>
-</select>
-        <br><br>
-
-      
-<label>Hayvanın Özellikleri:</label>
-<p>Hayvanınıza uygun özellikleri işaretleyiniz.</p>
-
-<div class="ozellik-listesi">
-    <?php foreach ($ozellik_secenekleri as $kategori => $secenekler): ?>
-        <h4><?php echo htmlspecialchars($kategori, ENT_QUOTES, "UTF-8"); ?></h4>
-
-        <div class="ozellik-grid">
-            <?php foreach ($secenekler as $secenek): ?>
-                <label class="ozellik-secimi">
                     <input
-                        type="checkbox"
-                        name="ozellikler[]"
-                        value="<?php echo htmlspecialchars($secenek, ENT_QUOTES, 'UTF-8'); ?>"
-                        <?php echo in_array($secenek, $kayitli_ozellikler, true) ? 'checked' : ''; ?>
+                        type="text"
+                        id="ilan_basligi"
+                        name="ilan_basligi"
+                        value="<?= id_guvenli($form['ilan_basligi']) ?>"
+                        maxlength="150"
+                        required
                     >
-                    <?php echo htmlspecialchars($secenek, ENT_QUOTES, "UTF-8"); ?>
-                </label>
-            <?php endforeach; ?>
-        </div>
-    <?php endforeach; ?>
-</div>
+                </div>
 
-<br>
+                <div class="duzenle-alan">
+                    <label for="hayvan_adi">Hayvan Adı</label>
 
-<label for="ek_aciklama">Ek Açıklama (İsteğe Bağlı):</label>
-<textarea
-    id="ek_aciklama"
-    name="ek_aciklama"
-    rows="3"
-    maxlength="500"
-    placeholder="Hayvanınızın alışkanlıkları veya özel ihtiyaçları hakkında bilgi verebilirsiniz."
-><?php echo htmlspecialchars($kayitli_ek_aciklama, ENT_QUOTES, "UTF-8"); ?></textarea>
+                    <input
+                        type="text"
+                        id="hayvan_adi"
+                        name="hayvan_adi"
+                        value="<?= id_guvenli($form['hayvan_adi']) ?>"
+                        required
+                    >
+                </div>
 
-<br><br>
+                <div class="duzenle-alan">
+                    <label for="tur">Tür</label>
 
+                    <select id="tur" name="tur" required>
+                        <option value="">Tür seçiniz</option>
 
-        <button type="submit" name="guncelle">
-            Değişiklikleri Kaydet
-        </button>
+                        <?php foreach ($turler as $tur): ?>
+                            <option
+                                value="<?= id_guvenli($tur) ?>"
+                                <?= $form["tur"] === $tur ? "selected" : "" ?>
+                            >
+                                <?= id_guvenli($tur) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-       <a href="profil.php" class="iptal-buton">İptal</a>
+                <div class="duzenle-alan">
+                    <label for="yas">Yaş</label>
 
-    </form>
-</div>
+                    <input
+                        type="number"
+                        id="yas"
+                        name="yas"
+                        min="0"
+                        step="1"
+                        value="<?= id_guvenli($form['yas']) ?>"
+                        required
+                    >
+                </div>
+
+                <div class="duzenle-alan">
+                    <label for="cinsiyet">Cinsiyet</label>
+
+                    <select id="cinsiyet" name="cinsiyet" required>
+                        <option value="">Cinsiyet seçiniz</option>
+
+                        <?php foreach (["Dişi", "Erkek"] as $cinsiyet): ?>
+                            <option
+                                value="<?= id_guvenli($cinsiyet) ?>"
+                                <?= $form["cinsiyet"] === $cinsiyet ? "selected" : "" ?>
+                            >
+                                <?= id_guvenli($cinsiyet) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="duzenle-alan">
+                    <label for="sehir">Şehir</label>
+
+                    <select id="sehir" name="sehir" required>
+                        <option value="">Şehir seçiniz</option>
+
+                        <?php if (
+                            $eski_sehir !== "" &&
+                            !in_array($eski_sehir, $iller, true)
+                        ): ?>
+                            <option
+                                value="<?= id_guvenli($eski_sehir) ?>"
+                                <?= $form["sehir"] === $eski_sehir ? "selected" : "" ?>
+                            >
+                                <?= id_guvenli($eski_sehir) ?>
+                            </option>
+                        <?php endif; ?>
+
+                        <?php foreach ($iller as $il): ?>
+                            <option
+                                value="<?= id_guvenli($il) ?>"
+                                <?= $form["sehir"] === $il ? "selected" : "" ?>
+                            >
+                                <?= id_guvenli($il) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+            </div>
+
+            <fieldset class="duzenle-ozellikler">
+                <legend>Hayvanın Özellikleri</legend>
+                <p>Hayvanınıza uygun özellikleri işaretleyiniz.</p>
+
+                <?php foreach ($ozellik_secenekleri as $kategori => $secenekler): ?>
+
+                    <h3><?= id_guvenli($kategori) ?></h3>
+
+                    <div class="duzenle-ozellik-grid">
+
+                        <?php foreach ($secenekler as $secenek): ?>
+                            <label class="duzenle-ozellik-secimi">
+                                <input
+                                    type="checkbox"
+                                    name="ozellikler[]"
+                                    value="<?= id_guvenli($secenek) ?>"
+                                    <?= in_array($secenek, $kayitli_ozellikler, true) ? "checked" : "" ?>
+                                >
+                                <?= id_guvenli($secenek) ?>
+                            </label>
+                        <?php endforeach; ?>
+
+                    </div>
+
+                <?php endforeach; ?>
+            </fieldset>
+
+            <label for="ek_aciklama" class="duzenle-ek-etiket">
+                Ek Açıklama (İsteğe Bağlı)
+            </label>
+
+            <textarea
+                id="ek_aciklama"
+                name="ek_aciklama"
+                rows="4"
+                placeholder="Hayvanınızın alışkanlıkları veya özel ihtiyaçları hakkında bilgi verebilirsiniz."
+            ><?= id_guvenli($kayitli_ek_aciklama) ?></textarea>
+
+            <div class="duzenle-islemler">
+                <button
+                    type="submit"
+                    name="guncelle"
+                    value="1"
+                    class="duzenle-kaydet"
+                >
+                    Değişiklikleri Kaydet
+                </button>
+
+                <a href="profil.php" class="duzenle-iptal">
+                    İptal
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
 </main>
 
 </body>

@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -15,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
 
-$bildirim = "Geçersiz ilan numarası.";
+$bildirim = admin_t("Geçersiz ilan numarası.");
 
 if ($id && $id > 0) {
     try {
@@ -25,22 +27,24 @@ if ($id && $id > 0) {
         );
 
         if (!$sorgu) {
-            $bildirim = "Silme işlemi hazırlanamadı.";
+            $bildirim = admin_t("Silme işlemi hazırlanamadı.");
         } else {
             mysqli_stmt_bind_param($sorgu, "i", $id);
 
             if (mysqli_stmt_execute($sorgu)) {
                 $bildirim = mysqli_stmt_affected_rows($sorgu) > 0
-                    ? "İlan başarıyla silindi."
-                    : "Silinecek ilan bulunamadı.";
+                    ? admin_t("İlan başarıyla silindi.")
+                    : admin_t("Silinecek ilan bulunamadı.");
             } else {
-                $bildirim = "İlan silinemedi.";
+                $bildirim = admin_t("İlan silinemedi.");
             }
 
             mysqli_stmt_close($sorgu);
         }
     } catch (mysqli_sql_exception $hata) {
-        $bildirim = "İlan silinemedi. İlişkili kayıtlar bulunuyor olabilir.";
+        $bildirim = admin_t(
+            "İlan silinemedi. İlişkili kayıtlar bulunuyor olabilir."
+        );
     }
 }
 

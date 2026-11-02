@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 require_once __DIR__ . "/baglanti.php";
 
@@ -502,99 +503,12 @@ if ($post_istegi && !$dil_degisti) {
             }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="kayit-ust">
-    <a href="index.php" class="kayit-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="<?= guvenli(ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            )) ?>"
-            width="48"
-            height="48"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?= guvenli(ceviri(
-                    "Her can dostuna bir yuva",
-                    "A home for every companion"
-                )) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <nav
-            class="dil-secici"
-            aria-label="<?= guvenli(ceviri(
-                "Dil seçimi",
-                "Language selection"
-            )) ?>"
-        >
-            <button
-                type="submit"
-                form="kayit-form"
-                name="dil_secimi"
-                value="tr"
-                formnovalidate
-                lang="tr"
-                aria-label="Türkçe"
-                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-            >TR</button>
-
-            <button
-                type="submit"
-                form="kayit-form"
-                name="dil_secimi"
-                value="en"
-                formnovalidate
-                lang="en"
-                aria-label="English"
-                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-            >EN</button>
-        </nav>
-
-        <nav
-            class="kayit-menu"
-            aria-label="<?= guvenli(ceviri(
-                "Site menüsü",
-                "Site navigation"
-            )) ?>"
-        >
-            <a href="index.php">
-                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
-            </a>
-
-            <a href="ilanlar.php">
-                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
-            </a>
-
-            <a href="ilan-ver.php">
-                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= guvenli(ceviri("İletişim", "Contact")) ?>
-            </a>
-
-            <a href="giris.php">
-                <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
-            </a>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main class="kayit-alani">
     <section class="kayit-kart" aria-labelledby="kayit-baslik">

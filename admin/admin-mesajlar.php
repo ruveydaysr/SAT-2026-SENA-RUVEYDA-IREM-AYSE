@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -11,7 +13,7 @@ require_once __DIR__ . "/../baglanti.php";
 function guvenli($deger)
 {
     return htmlspecialchars(
-        (string)$deger,
+        (string) $deger,
         ENT_QUOTES,
         "UTF-8"
     );
@@ -30,15 +32,17 @@ $toplam = $mesajlar
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Gelen Kutusu | Aris Pati Yuvası</title>
+    <title>
+        <?= admin_h(admin_t("Gelen Kutusu | Aris Pati Yuvası")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=14">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .gelen-kutusu-baslik {
@@ -73,7 +77,9 @@ $toplam = $mesajlar
 
         .mesaj-listesi {
             display: grid;
-            gap: 22px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: start;
+            gap: 18px;
         }
 
         .mesaj-karti {
@@ -85,13 +91,28 @@ $toplam = $mesajlar
             box-shadow: 0 6px 22px rgba(40, 75, 50, 0.08);
         }
 
-        .mesaj-karti-ust {
+        .mesaj-karti > summary {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 22px;
-            border-bottom: 1px solid #ded6c6;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 18px;
             background: #eee7d8;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .mesaj-karti > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .mesaj-karti > summary:hover {
+            background: #e5ddcb;
+        }
+
+        .mesaj-karti > summary:focus-visible {
+            outline: 3px solid #426b46;
+            outline-offset: -3px;
         }
 
         .mesaj-avatar {
@@ -116,28 +137,57 @@ $toplam = $mesajlar
         .mesaj-kisi h3 {
             margin: 0 0 7px;
             color: #284b32;
-            font-size: 18px;
+            font-size: 16px;
             overflow-wrap: anywhere;
         }
 
-        .mesaj-kisi a,
         .mesaj-kisi span {
             color: #58664f;
             font-size: 14px;
             overflow-wrap: anywhere;
         }
 
-        .mesaj-kisi a:hover {
-            text-decoration: underline;
+        .mesaj-tarih {
+            width: 100%;
+            color: #687361;
+            font-size: 12px;
         }
 
-        .mesaj-tarih {
-            color: #687361;
+        .mesaj-ac-isaret {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding-top: 12px;
+            border-top: 1px solid #d6cdbb;
+            color: #426b46;
             font-size: 13px;
+            font-weight: bold;
+        }
+
+        .mesaj-ac-isaret::before {
+            content: <?= admin_json("Mesajı aç") ?>;
+        }
+
+        .mesaj-ac-isaret::after {
+            content: "+";
+            font-size: 20px;
+        }
+
+        .mesaj-karti[open] .mesaj-ac-isaret::before {
+            content: <?= admin_json("Mesajı kapat") ?>;
+        }
+
+        .mesaj-karti[open] .mesaj-ac-isaret::after {
+            content: "−";
+        }
+
+        .mesaj-karti[open] > summary {
+            border-bottom: 1px solid #ded6c6;
         }
 
         .mesaj-karti-icerik {
-            padding: 26px;
+            padding: 18px;
         }
 
         .mesaj-etiket {
@@ -172,12 +222,15 @@ $toplam = $mesajlar
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            box-sizing: border-box;
+            width: 100%;
             padding: 12px 20px;
             border-radius: 8px;
             background: #426b46;
             color: #fff;
             font-size: 14px;
             font-weight: bold;
+            text-align: center;
             text-decoration: none;
         }
 
@@ -205,119 +258,20 @@ $toplam = $mesajlar
             text-align: center;
         }
 
-        @media (max-width: 700px) {
-            .mesaj-karti-ust {
-                flex-wrap: wrap;
-                padding: 18px;
-            }
-
-            .mesaj-tarih {
-                width: 100%;
-                padding-left: 65px;
-            }
-
-            .mesaj-karti-icerik {
-                padding: 18px;
-            }
-
-            .cevapla-buton {
-                width: 100%;
+        @media (max-width: 1000px) {
+            .mesaj-listesi {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
-        .mesaj-listesi {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    gap: 18px;
-}
 
-.mesaj-karti > summary {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 18px;
-    background: #eee7d8;
-    cursor: pointer;
-    list-style: none;
-}
-
-.mesaj-karti > summary::-webkit-details-marker {
-    display: none;
-}
-
-.mesaj-karti > summary:hover {
-    background: #e5ddcb;
-}
-
-.mesaj-karti > summary:focus-visible {
-    outline: 3px solid #426b46;
-    outline-offset: -3px;
-}
-
-.mesaj-karti .mesaj-kisi h3 {
-    font-size: 16px;
-}
-
-.mesaj-karti .mesaj-tarih {
-    width: 100%;
-    padding-left: 0;
-    font-size: 12px;
-}
-
-.mesaj-ac-isaret {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding-top: 12px;
-    border-top: 1px solid #d6cdbb;
-    color: #426b46;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.mesaj-ac-isaret::before {
-    content: "Mesajı aç";
-}
-
-.mesaj-ac-isaret::after {
-    content: "+";
-    font-size: 20px;
-}
-
-.mesaj-karti[open] .mesaj-ac-isaret::before {
-    content: "Mesajı kapat";
-}
-
-.mesaj-karti[open] .mesaj-ac-isaret::after {
-    content: "−";
-}
-
-.mesaj-karti[open] > summary {
-    border-bottom: 1px solid #ded6c6;
-}
-
-.mesaj-karti .mesaj-karti-icerik {
-    padding: 18px;
-}
-
-.mesaj-karti .cevapla-buton {
-    width: 100%;
-    text-align: center;
-}
-
-@media (max-width: 1000px) {
-    .mesaj-listesi {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 650px) {
-    .mesaj-listesi {
-        grid-template-columns: 1fr;
-    }
-}
+        @media (max-width: 650px) {
+            .mesaj-listesi {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
 
 <body>
@@ -328,13 +282,19 @@ $toplam = $mesajlar
 
     <div class="gelen-kutusu-baslik">
         <div>
-            <h2>Gelen Kutusu</h2>
-            <p>İletişim formundan gönderilen soru ve mesajlar.</p>
+            <h2><?= admin_h(admin_t("Gelen Kutusu")) ?></h2>
+
+            <p>
+                <?= admin_h(admin_t(
+                    "İletişim formundan gönderilen soru ve mesajlar."
+                )) ?>
+            </p>
         </div>
 
         <?php if ($mesajlar): ?>
             <span class="mesaj-sayaci">
-                <?php echo $toplam; ?> mesaj
+                <?= $toplam ?>
+                <?= admin_h(admin_t("mesaj")) ?>
             </span>
         <?php endif; ?>
     </div>
@@ -342,14 +302,25 @@ $toplam = $mesajlar
     <?php if (!$mesajlar): ?>
 
         <div class="mesaj-bos" role="alert">
-            <p>Mesajlar yüklenemedi. Lütfen tekrar deneyiniz.</p>
+            <p>
+                <?= admin_h(admin_t(
+                    "Mesajlar yüklenemedi. Lütfen tekrar deneyiniz."
+                )) ?>
+            </p>
         </div>
 
     <?php elseif ($toplam === 0): ?>
 
         <div class="mesaj-bos">
-            <h3>Gelen kutusu henüz boş</h3>
-            <p>Gönderilen mesajlar burada listelenecek.</p>
+            <h3>
+                <?= admin_h(admin_t("Gelen kutusu henüz boş")) ?>
+            </h3>
+
+            <p>
+                <?= admin_h(admin_t(
+                    "Gönderilen mesajlar burada listelenecek."
+                )) ?>
+            </p>
         </div>
 
     <?php else: ?>
@@ -357,12 +328,11 @@ $toplam = $mesajlar
         <div class="mesaj-listesi">
 
             <?php while ($mesaj = mysqli_fetch_assoc($mesajlar)): ?>
-
                 <?php
-                $ad = trim((string)($mesaj["ad_soyad"] ?? ""));
+                $ad = trim((string) ($mesaj["ad_soyad"] ?? ""));
 
                 if ($ad === "") {
-                    $ad = "Ziyaretçi";
+                    $ad = admin_t("Ziyaretçi");
                 }
 
                 $harf = mb_strtoupper(
@@ -370,14 +340,14 @@ $toplam = $mesajlar
                     "UTF-8"
                 );
 
-                $email = trim((string)($mesaj["email"] ?? ""));
+                $email = trim((string) ($mesaj["email"] ?? ""));
 
                 $gecerli_email = filter_var(
                     $email,
                     FILTER_VALIDATE_EMAIL
                 );
 
-                $tarih = (string)($mesaj["tarih"] ?? "");
+                $tarih = (string) ($mesaj["tarih"] ?? "");
                 $zaman = $tarih !== "" ? strtotime($tarih) : false;
 
                 $gorunen_tarih = $zaman !== false
@@ -387,8 +357,9 @@ $toplam = $mesajlar
                 $cevap_linki = "";
 
                 if ($gecerli_email) {
-                    $konu = "Aris Pati Yuvası - Mesajınıza Yanıt #"
-                        . (int)$mesaj["id"];
+                    $konu = admin_t(
+                        "Aris Pati Yuvası - Mesajınıza Yanıt #"
+                    ) . (int) $mesaj["id"];
 
                     $cevap_linki = "mailto:" . $email
                         . "?subject=" . rawurlencode($konu);
@@ -397,62 +368,67 @@ $toplam = $mesajlar
 
                 <details class="mesaj-karti">
 
-    <summary>
-        <span class="mesaj-avatar" aria-hidden="true">
-            <?php echo guvenli($harf); ?>
-        </span>
+                    <summary>
+                        <span class="mesaj-avatar" aria-hidden="true">
+                            <?= guvenli($harf) ?>
+                        </span>
 
-        <div class="mesaj-kisi">
-            <h3><?php echo guvenli($ad); ?></h3>
-            <span><?php echo guvenli($email); ?></span>
-        </div>
+                        <div class="mesaj-kisi">
+                            <h3><?= guvenli($ad) ?></h3>
+                            <span><?= guvenli($email) ?></span>
+                        </div>
 
-        <span class="mesaj-tarih">
-            <?php echo guvenli($gorunen_tarih); ?>
-        </span>
+                        <span class="mesaj-tarih">
+                            <?= guvenli($gorunen_tarih) ?>
+                        </span>
 
-        <span class="mesaj-ac-isaret" aria-hidden="true"></span>
-    </summary>
+                        <span
+                            class="mesaj-ac-isaret"
+                            aria-hidden="true"
+                        ></span>
+                    </summary>
 
-    <div class="mesaj-karti-icerik">
+                    <div class="mesaj-karti-icerik">
 
-        <span class="mesaj-etiket">
-            İletişim Mesajı
-        </span>
+                        <span class="mesaj-etiket">
+                            <?= admin_h(admin_t("İletişim Mesajı")) ?>
+                        </span>
 
-        <p class="mesaj-metni"><?php
-            echo guvenli($mesaj["mesaj"] ?? "");
-        ?></p>
+                        <p class="mesaj-metni"><?= guvenli($mesaj["mesaj"] ?? "") ?></p>
 
-        <div class="mesaj-alt">
+                        <div class="mesaj-alt">
 
-            <?php if ($gecerli_email): ?>
+                            <?php if ($gecerli_email): ?>
 
-                <a
-                    href="<?php echo guvenli($cevap_linki); ?>"
-                    class="cevapla-buton"
-                >
-                    E-posta ile Cevapla
-                </a>
+                                <a
+                                    href="<?= guvenli($cevap_linki) ?>"
+                                    class="cevapla-buton"
+                                >
+                                    <?= admin_h(admin_t(
+                                        "E-posta ile Cevapla"
+                                    )) ?>
+                                </a>
 
-                <p class="cevap-aciklama">
-                    E-posta uygulamanız açılır.
-                    Yanıtınızı oradan gönderebilirsiniz.
-                </p>
+                                <p class="cevap-aciklama">
+                                    <?= admin_h(admin_t(
+                                        "E-posta uygulamanız açılır. Yanıtınızı oradan gönderebilirsiniz."
+                                    )) ?>
+                                </p>
 
-            <?php else: ?>
+                            <?php else: ?>
 
-                <p class="cevap-aciklama">
-                    Geçerli bir e-posta adresi bulunmuyor.
-                </p>
+                                <p class="cevap-aciklama">
+                                    <?= admin_h(admin_t(
+                                        "Geçerli bir e-posta adresi bulunmuyor."
+                                    )) ?>
+                                </p>
 
-            <?php endif; ?>
+                            <?php endif; ?>
 
-        </div>
+                        </div>
+                    </div>
 
-    </div>
-
-</details>
+                </details>
 
             <?php endwhile; ?>
 

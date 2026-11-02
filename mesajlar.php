@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 if (!isset($_SESSION["uye_id"])) {
     header("Location: giris.php");
@@ -691,73 +692,12 @@ $menu_kategorileri = [
             }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
-            width="54"
-            height="54"
-        >
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-
-    <nav class="ilan-menu" aria-label="Ana menü">
-        <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php">İlanlar</a>
-
-        <div class="kategori-menu">
-            <button
-                type="button"
-                class="kategori-baslik"
-                aria-controls="aris-kategori-listesi"
-            >
-                Hayvan Kategorileri
-                <span aria-hidden="true">▾</span>
-            </button>
-
-            <div class="kategori-acilir" id="aris-kategori-listesi">
-                <?php foreach ($menu_kategorileri as $kategori_adi => $simge): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($kategori_adi) ?>">
-                        <span aria-hidden="true"><?= $simge ?></span>
-                        <span><?= guvenli($kategori_adi) ?></span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="blog.php">Blog</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-
-        <a href="mesajlar.php" aria-current="page">
-            Mesajlarım
-
-            <?php if ($okunmamis_mesaj_var): ?>
-                <span
-                    class="mesaj-bildirim"
-                    role="img"
-                    aria-label="Okunmamış mesajınız var"
-                ></span>
-            <?php endif; ?>
-        </a>
-
-        <a href="profil.php">Profilim</a>
-
-        <a
-            href="cikis.php"
-            onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-        >Çıkış Yap</a>
-    </nav>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <h1>Mesajlarım</h1>

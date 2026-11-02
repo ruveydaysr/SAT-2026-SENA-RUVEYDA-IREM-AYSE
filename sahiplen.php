@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 /* Dil tercihi */
 $post_istegi = $_SERVER["REQUEST_METHOD"] === "POST";
@@ -611,157 +612,12 @@ function dil_linki($yeni_dil, $ilan_id)
             }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            width="54"
-            height="54"
-            alt="<?= guvenli(ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            )) ?>"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?= guvenli(ceviri(
-                    "Her can dostuna bir yuva",
-                    "A home for every companion"
-                )) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <nav
-            class="dil-secici"
-            aria-label="<?= guvenli(ceviri(
-                "Dil seçimi",
-                "Language selection"
-            )) ?>"
-        >
-            <?php if ($ilan && !$basarili): ?>
-                <button
-                    type="submit"
-                    form="basvuru-form"
-                    name="dil_secimi"
-                    value="tr"
-                    formnovalidate
-                    lang="tr"
-                    aria-label="Türkçe"
-                    <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-                >TR</button>
-
-                <button
-                    type="submit"
-                    form="basvuru-form"
-                    name="dil_secimi"
-                    value="en"
-                    formnovalidate
-                    lang="en"
-                    aria-label="English"
-                    <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-                >EN</button>
-            <?php else: ?>
-                <a
-                    href="<?= guvenli(dil_linki("tr", $ilan_id)) ?>"
-                    lang="tr"
-                    hreflang="tr"
-                    aria-label="Türkçe"
-                    <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-                >TR</a>
-
-                <a
-                    href="<?= guvenli(dil_linki("en", $ilan_id)) ?>"
-                    lang="en"
-                    hreflang="en"
-                    aria-label="English"
-                    <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-                >EN</a>
-            <?php endif; ?>
-        </nav>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?= guvenli(ceviri(
-                "Ana menü",
-                "Main navigation"
-            )) ?>"
-        >
-            <a href="index.php">
-                <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
-            </a>
-
-            <a href="ilanlar.php" class="menu-aktif">
-                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button
-                    type="button"
-                    class="kategori-baslik"
-                    aria-controls="kategori-listesi"
-                >
-                    <?= guvenli(ceviri(
-                        "Hayvan Kategorileri",
-                        "Animal Categories"
-                    )) ?>
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir" id="kategori-listesi">
-                    <?php foreach ($menu_kategorileri as $ad => $simge): ?>
-                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
-                            <span aria-hidden="true"><?= $simge ?></span>
-                            <span><?= guvenli(tur_adi($ad)) ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= guvenli(ceviri("İletişim", "Contact")) ?>
-            </a>
-
-            <a href="mesajlar.php">
-                <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
-            </a>
-
-            <a href="profil.php">
-                <?= guvenli(ceviri("Profilim", "My Profile")) ?>
-            </a>
-
-            <a
-                href="cikis.php"
-                onclick="return confirm(<?= guvenli(json_encode(
-                    ceviri(
-                        "Çıkış yapmak istediğinize emin misiniz?",
-                        "Are you sure you want to sign out?"
-                    ),
-                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-                )) ?>);"
-            >
-                <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
-            </a>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <section class="basvuru-alani">

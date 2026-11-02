@@ -1,0 +1,16 @@
+/* Admin de kullanıcı sayfalarıyla aynı site-ust.css dosyasını kullanır. */
+#aris-site-header.aris-admin-header .aris-navigation {
+    flex-wrap: wrap;
+}
+#aris-site-header .aris-admin-counter {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; min-height: 20px; margin: 0; padding: 1px 6px;
+    border: 0; border-radius: 12px; background: #eee5d3; color: #284b32;
+    font: bold 11px/18px Arial, sans-serif;
+}
+#aris-site-header.aris-admin-header .aris-brand {
+    text-align: left;
+}
+/* Admin bağlantıları daha uzun olduğu için aralarındaki boşluğu daralt. */
+#aris-site-header.aris-admin-header .aris-navigation { gap: 2px; }
+#aris-site-header.aris-admin-header .aris-navigation > a { padding: 10px 6px; }

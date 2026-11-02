@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/admin-dil.php";
 require_once __DIR__ . "/../baglanti.php";
 
 $aktif_sayfa = basename($_SERVER["SCRIPT_NAME"] ?? "");
@@ -48,60 +49,26 @@ $menu = [
 ];
 ?>
 
-<header class="admin-ust">
-    <a
-        href="../index.php"
-        class="admin-logo"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >
-        <img
-            src="../images/aris-logoo.png"
-            alt="Aris Pati Yuvası logosu"
-            style="display:block; width:48px; height:48px; max-width:48px; object-fit:contain; flex-shrink:0;"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
+<?php require_once __DIR__ . "/admin-ust-ortak.php"; ?>
+<header id="aris-site-header" class="aris-site-header aris-admin-header">
+    <?php admin_ortak_logo(); ?>
+    <div class="aris-header-right">
+        <?php admin_ortak_diller(); ?>
+        <nav class="aris-navigation" aria-label="<?= admin_h(admin_t('Yönetim menüsü')) ?>">
+            <?php foreach ($menu as $dosya => $oge): ?>
+                <a href="<?= admin_h($dosya) ?>" <?= $aktif_sayfa === $dosya ? 'aria-current="page"' : '' ?>>
+                    <?= admin_h(admin_t($oge["baslik"])) ?>
+                    <?php if ($oge["sayi"] > 0): ?>
+                        <span class="aris-admin-counter" aria-label="<?= (int) $oge['sayi'] ?> <?= admin_h(admin_t('bekleyen kayıt')) ?>"><?= (int) $oge["sayi"] ?></span>
+                    <?php endif; ?>
+                </a>
+            <?php endforeach; ?>
+            <a href="../index.php" onclick="return confirm(<?= admin_h(admin_json('Siteye gitmek istediğinize emin misiniz?')) ?>);">
+                <?= admin_h(admin_t("Siteye Git")) ?>
+            </a>
+            <a href="admin-cikis.php" onclick="return confirm(<?= admin_h(admin_json('Çıkış yapmak istediğinize emin misiniz?')) ?>);">
+                <?= admin_h(admin_t("Çıkış Yap")) ?>
+            </a>
+        </nav>
+    </div>
 </header>
-
-<nav class="admin-menu" aria-label="Yönetim menüsü">
-    <?php foreach ($menu as $dosya => $oge): ?>
-        <a
-            href="<?= htmlspecialchars($dosya, ENT_QUOTES, "UTF-8") ?>"
-            <?= $aktif_sayfa === $dosya ? 'aria-current="page"' : "" ?>
-        >
-            <?= htmlspecialchars($oge["baslik"], ENT_QUOTES, "UTF-8") ?>
-
-            <?php if ($oge["sayi"] > 0): ?>
-                <span
-                    aria-label="<?= $oge["sayi"] ?> bekleyen kayıt"
-                    style="
-                        display: inline-block;
-                        margin-left: 5px;
-                        padding: 3px 7px;
-                        border-radius: 12px;
-                        background: #eee5d3;
-                        color: #284b32;
-                        font-size: 12px;
-                        font-weight: bold;
-                        line-height: 1.2;
-                    "
-                ><?= $oge["sayi"] ?></span>
-            <?php endif; ?>
-        </a>
-    <?php endforeach; ?>
-
-    <a
-        href="../index.php"
-        onclick="return confirm('Siteye gitmek istediğinize emin misiniz?');"
-    >Siteye Git</a>
-
-    <a
-        href="admin-cikis.php"
-        class="cikis-buton"
-        onclick="return confirm('Çıkış yapmak istediğinize emin misiniz?');"
-    >Çıkış Yap</a>
-</nav>

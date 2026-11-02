@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 if (!isset($_SESSION["uye_id"])) {
     header("Location: giris.php");
@@ -154,30 +155,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             color: white;
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust">
-    <a href="index.php" class="ilan-logo">
-        <span class="logo-pati">🐾</span>
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>Her can dostuna bir yuva</small>
-        </span>
-    </a>
-
-    <nav class="ilan-menu">
-        <a href="index.php">Ana Sayfa</a>
-        <a href="ilanlar.php">İlanlar</a>
-        <a href="ilan-ver.php">İlan Ver</a>
-        <a href="blog.php">Blog</a>
-        <a href="hakkimizda.php">Hakkımızda</a>
-        <a href="iletisim.php">İletişim</a>
-        <a href="profil.php">Profilim</a>
-        <a href="cikis.php">Çıkış Yap</a>
-    </nav>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <div class="sil-kutusu">

@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . "/admin-dil.php";
+
 if (!isset($_SESSION["admin"])) {
     header("Location: admin-giris.php");
     exit();
@@ -166,8 +168,6 @@ function aa_merge($defaults, $data)
 
 function aa_read($db)
 {
-    $defaults = aa_defaults();
-
     $result = mysqli_query(
         $db,
         "SELECT icerik_json FROM anasayfa_bolumler WHERE id = 1"
@@ -175,9 +175,15 @@ function aa_read($db)
 
     $row = mysqli_fetch_assoc($result);
 
-    $data = json_decode((string) ($row["icerik_json"] ?? ""), true);
+    $data = json_decode(
+        (string) ($row["icerik_json"] ?? ""),
+        true
+    );
 
-    return aa_merge($defaults, is_array($data) ? $data : []);
+    return aa_merge(
+        aa_defaults(),
+        is_array($data) ? $data : []
+    );
 }
 
 function aa_image($path)
@@ -246,17 +252,21 @@ function ay_field($name, $label, $value, $multi = false, $max = 3000)
     $id = "alan-" . substr(hash("sha256", $name), 0, 12);
 
     echo '<div class="ay-alan">';
-    echo '<label for="' . aa_h($id) . '">' . aa_h($label) . '</label>';
+
+    echo '<label for="' . aa_h($id) . '">'
+        . aa_h(admin_t($label))
+        . '</label>';
 
     if ($multi) {
-        echo '<textarea id="' . $id . '" name="' . aa_h($name)
-            . '" maxlength="' . $max . '">'
+        echo '<textarea id="' . aa_h($id)
+            . '" name="' . aa_h($name)
+            . '" maxlength="' . (int) $max . '">'
             . aa_h($value) . '</textarea>';
     } else {
-        echo '<input type="text" id="' . $id
+        echo '<input type="text" id="' . aa_h($id)
             . '" name="' . aa_h($name)
             . '" value="' . aa_h($value)
-            . '" maxlength="' . $max . '">';
+            . '" maxlength="' . (int) $max . '">';
     }
 
     echo '</div>';
@@ -281,11 +291,10 @@ function ay_clean($defaults, $posted, $current)
         } elseif (is_int($value)) {
             $output[$key] = isset($posted[$key]) ? 1 : 0;
         } else {
-            if (
-                isset($posted[$key])
-                && !is_string($posted[$key])
-            ) {
-                throw new RuntimeException("Geçersiz form alanı.");
+            if (isset($posted[$key]) && !is_string($posted[$key])) {
+                throw new RuntimeException(
+                    admin_t("Geçersiz form alanı.")
+                );
             }
 
             $text = trim($posted[$key] ?? "");
@@ -296,7 +305,7 @@ function ay_clean($defaults, $posted, $current)
 
             if (ay_len($text) > $max) {
                 throw new RuntimeException(
-                    "Metin alanlarının karakter sınırlarını aşmayınız."
+                    admin_t("Metin alanlarının karakter sınırlarını aşmayınız.")
                 );
             }
 
@@ -315,11 +324,10 @@ function ay_upload($field, $prefix, &$created)
         return null;
     }
 
-    if (
-        !is_array($file)
-        || !is_int($file["error"] ?? null)
-    ) {
-        throw new RuntimeException("Geçersiz görsel yüklemesi.");
+    if (!is_array($file) || !is_int($file["error"] ?? null)) {
+        throw new RuntimeException(
+            admin_t("Geçersiz görsel yüklemesi.")
+        );
     }
 
     if ($file["error"] === UPLOAD_ERR_NO_FILE) {
@@ -328,23 +336,21 @@ function ay_upload($field, $prefix, &$created)
 
     if ($file["error"] !== UPLOAD_ERR_OK) {
         throw new RuntimeException(
-            "Görsel yüklenemedi. Dosya boyutu veya sunucu yükleme sınırını kontrol ediniz."
+            admin_t("Görsel yüklenemedi. Dosya boyutu veya sunucu yükleme sınırını kontrol ediniz.")
         );
     }
 
     if (
-        !is_string($file["tmp_name"] ?? null)
-        || !is_uploaded_file($file["tmp_name"])
-        || ($file["size"] ?? 0) > 5 * 1024 * 1024
+        !is_string($file["tmp_name"] ?? null) ||
+        !is_uploaded_file($file["tmp_name"]) ||
+        ($file["size"] ?? 0) > 5 * 1024 * 1024
     ) {
         throw new RuntimeException(
-            "Her görsel en fazla 5 MB olabilir."
+            admin_t("Her görsel en fazla 5 MB olabilir.")
         );
     }
 
-    $mime = (new finfo(FILEINFO_MIME_TYPE))->file(
-        $file["tmp_name"]
-    );
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file["tmp_name"]);
 
     $extensions = [
         "image/jpeg" => "jpg",
@@ -355,25 +361,25 @@ function ay_upload($field, $prefix, &$created)
     $dimensions = @getimagesize($file["tmp_name"]);
 
     if (
-        !isset($extensions[$mime])
-        || !$dimensions
-        || $dimensions[0] > 8000
-        || $dimensions[1] > 8000
+        !isset($extensions[$mime]) ||
+        !$dimensions ||
+        $dimensions[0] > 8000 ||
+        $dimensions[1] > 8000
     ) {
         throw new RuntimeException(
-            "JPG, PNG veya WEBP seçiniz. Görsel en fazla 8000 × 8000 piksel olabilir."
+            admin_t("JPG, PNG veya WEBP seçiniz. Görsel en fazla 8000 × 8000 piksel olabilir.")
         );
     }
 
     $directory = __DIR__ . "/../uploads";
 
     if (
+        !is_dir($directory) &&
+        !mkdir($directory, 0755, true) &&
         !is_dir($directory)
-        && !mkdir($directory, 0755, true)
-        && !is_dir($directory)
     ) {
         throw new RuntimeException(
-            "Görsel klasörü oluşturulamadı."
+            admin_t("Görsel klasörü oluşturulamadı.")
         );
     }
 
@@ -381,13 +387,13 @@ function ay_upload($field, $prefix, &$created)
         . bin2hex(random_bytes(16))
         . "." . $extensions[$mime];
 
-    if (
-        !move_uploaded_file(
-            $file["tmp_name"],
-            $directory . "/" . $name
-        )
-    ) {
-        throw new RuntimeException("Görsel kaydedilemedi.");
+    if (!move_uploaded_file(
+        $file["tmp_name"],
+        $directory . "/" . $name
+    )) {
+        throw new RuntimeException(
+            admin_t("Görsel kaydedilemedi.")
+        );
     }
 
     $created[] = $directory . "/" . $name;
@@ -395,15 +401,15 @@ function ay_upload($field, $prefix, &$created)
     return $name;
 }
 
-/* Mevcut kayıtları getir. */
-
 $result = mysqli_query(
     $baglanti,
     "SHOW TABLES LIKE 'anasayfa_bolumler'"
 );
 
 if (!mysqli_num_rows($result)) {
-    exit("Önce verilen SQL sorgusunu phpMyAdmin üzerinden çalıştırınız.");
+    exit(admin_t(
+        "Önce verilen SQL sorgusunu phpMyAdmin üzerinden çalıştırınız."
+    ));
 }
 
 $result = mysqli_query(
@@ -423,10 +429,9 @@ $result = mysqli_query(
 $ayar = mysqli_fetch_assoc($result);
 
 if (!$icerik || !$ayar) {
-    exit(
-        "Ana sayfa kayıtları bulunamadı. anasayfa_icerik ve "
-        . "anasayfa_ayarlar tablolarında id=1 kaydını kontrol ediniz."
-    );
+    exit(admin_t(
+        "Ana sayfa kayıtları bulunamadı. anasayfa_icerik ve anasayfa_ayarlar tablolarında id=1 kaydını kontrol ediniz."
+    ));
 }
 
 $b = aa_read($baglanti);
@@ -450,13 +455,12 @@ while ($row = mysqli_fetch_assoc($result)) {
 }
 
 $ids = json_decode((string) $ayar["vitrin_idler"], true);
-
 $secili = [];
 
 foreach (is_array($ids) ? $ids : [] as $id) {
     if (
-        (is_string($id) || is_int($id))
-        && isset($onayli[(int) $id])
+        (is_string($id) || is_int($id)) &&
+        isset($onayli[(int) $id])
     ) {
         $secili[] = (int) $id;
     }
@@ -496,22 +500,17 @@ $basari = is_string($_SESSION["anasayfa_bildirim"] ?? null)
 
 unset($_SESSION["anasayfa_bildirim"]);
 
-/* Kaydetme işlemi. */
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $created = [];
     $transaction = false;
 
     try {
-        if (
-            !hash_equals(
-                $_SESSION["anasayfa_token"],
-                ay_post("token")
-            )
-        ) {
+        if (!hash_equals(
+            $_SESSION["anasayfa_token"],
+            ay_post("token")
+        )) {
             throw new RuntimeException(
-                "İşlem doğrulanamadı. Sayfayı yenileyiniz. "
-                . "Büyük dosya yüklediyseniz sunucu yükleme sınırını kontrol ediniz."
+                admin_t("İşlem doğrulanamadı. Sayfayı yenileyiniz. Büyük dosya yüklediyseniz sunucu yükleme sınırını kontrol ediniz.")
             );
         }
 
@@ -527,33 +526,35 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if (
-            $icerik["baslik"] === ""
-            || $icerik["aciklama"] === ""
-            || $icerik["buton_yazisi"] === ""
+            $icerik["baslik"] === "" ||
+            $icerik["aciklama"] === "" ||
+            $icerik["buton_yazisi"] === ""
         ) {
             throw new RuntimeException(
-                "Karşılama başlığını, açıklamasını ve buton yazısını doldurunuz."
+                admin_t("Karşılama başlığını, açıklamasını ve buton yazısını doldurunuz.")
             );
         }
 
         if (
-            ay_len($icerik["baslik"]) > 150
-            || ay_len($icerik["aciklama"]) > 3000
-            || ay_len($icerik["buton_yazisi"]) > 80
-            || ay_len($ayar["duyuru"]) > 300
+            ay_len($icerik["baslik"]) > 150 ||
+            ay_len($icerik["aciklama"]) > 3000 ||
+            ay_len($icerik["buton_yazisi"]) > 80 ||
+            ay_len($ayar["duyuru"]) > 300
         ) {
-            throw new RuntimeException("Karakter sınırlarını aşmayınız.");
+            throw new RuntimeException(
+                admin_t("Karakter sınırlarını aşmayınız.")
+            );
         }
 
         if (!isset(aa_links()[$ayar["buton_linki"]])) {
             throw new RuntimeException(
-                "Geçerli bir buton bağlantısı seçiniz."
+                admin_t("Geçerli bir buton bağlantısı seçiniz.")
             );
         }
 
         if ($ayar["duyuru_aktif"] && $ayar["duyuru"] === "") {
             throw new RuntimeException(
-                "Duyuru bandı açıkken duyuru metnini doldurunuz."
+                admin_t("Duyuru bandı açıkken duyuru metnini doldurunuz.")
             );
         }
 
@@ -561,7 +562,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $posted = $_POST["vitrin"] ?? [];
 
         if (!is_array($posted)) {
-            throw new RuntimeException("Geçersiz vitrin seçimi.");
+            throw new RuntimeException(
+                admin_t("Geçersiz vitrin seçimi.")
+            );
         }
 
         foreach ($posted as $value) {
@@ -580,7 +583,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (count($secili) > 12) {
             throw new RuntimeException(
-                "En fazla 12 vitrin ilanı seçebilirsiniz."
+                admin_t("En fazla 12 vitrin ilanı seçebilirsiniz.")
             );
         }
 
@@ -592,7 +595,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (!isset(aa_links()[$b["davet"]["buton_linki"]])) {
             throw new RuntimeException(
-                "Davet butonu için geçerli bir bağlantı seçiniz."
+                admin_t("Davet butonu için geçerli bir bağlantı seçiniz.")
             );
         }
 
@@ -603,15 +606,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if ($key === "surec" && $b[$key]["baslik"] === "") {
                 throw new RuntimeException(
-                    "Sahiplenme adımları başlığını doldurunuz."
+                    admin_t("Sahiplenme adımları başlığını doldurunuz.")
                 );
             }
 
             foreach ($b[$key]["ogeler"] as $row) {
                 if ($row["baslik"] === "" || $row["aciklama"] === "") {
                     throw new RuntimeException(
-                        $titles[$key]
-                        . " içindeki başlık ve açıklamaları doldurunuz."
+                        admin_t($titles[$key])
+                        . admin_t(" içindeki başlık ve açıklamaları doldurunuz.")
                     );
                 }
             }
@@ -620,19 +623,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         foreach (["sehir", "sss", "davet"] as $key) {
             if ($b[$key]["aktif"] && $b[$key]["baslik"] === "") {
                 throw new RuntimeException(
-                    $titles[$key] . " başlığını doldurunuz."
+                    admin_t($titles[$key])
+                    . admin_t(" başlığını doldurunuz.")
                 );
             }
         }
 
         foreach ($b["sss"]["ogeler"] as $row) {
-            if (
-                ($row["baslik"] === "")
-                !== ($row["aciklama"] === "")
-            ) {
+            if (($row["baslik"] === "") !== ($row["aciklama"] === "")) {
                 throw new RuntimeException(
-                    "SSS satırlarında soru ve cevabı birlikte "
-                    . "doldurunuz veya ikisini de boş bırakınız."
+                    admin_t("SSS satırlarında soru ve cevabı birlikte doldurunuz veya ikisini de boş bırakınız.")
                 );
             }
         }
@@ -646,49 +646,53 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($b["sss"]["aktif"] && !$dolu_sorular) {
             throw new RuntimeException(
-                "SSS bölümü için en az bir soru ve cevap giriniz."
+                admin_t("SSS bölümü için en az bir soru ve cevap giriniz.")
             );
         }
 
         if (
-            $ayar["kategoriler_aktif"]
-            && $b["kategoriler"]["baslik"] === ""
+            $ayar["kategoriler_aktif"] &&
+            $b["kategoriler"]["baslik"] === ""
         ) {
-            throw new RuntimeException("Kategori başlığını doldurunuz.");
+            throw new RuntimeException(
+                admin_t("Kategori başlığını doldurunuz.")
+            );
         }
 
         if ($ayar["vitrin_aktif"] && $b["vitrin"]["baslik"] === "") {
-            throw new RuntimeException("Vitrin başlığını doldurunuz.");
+            throw new RuntimeException(
+                admin_t("Vitrin başlığını doldurunuz.")
+            );
         }
 
         $cities = aa_cities($b["sehir"]["liste"]);
 
         if (count($cities) > 24) {
             throw new RuntimeException(
-                "Ana sayfada en fazla 24 şehir gösterilebilir."
+                admin_t("Ana sayfada en fazla 24 şehir gösterilebilir.")
             );
         }
 
         foreach ($cities as $city) {
             if (ay_len($city) > 100) {
                 throw new RuntimeException(
-                    "Şehir adları en fazla 100 karakter olabilir."
+                    admin_t("Şehir adları en fazla 100 karakter olabilir.")
                 );
             }
         }
 
         if ($b["sehir"]["aktif"] && !$cities) {
             throw new RuntimeException(
-                "Şehir bölümü için en az bir şehir giriniz."
+                admin_t("Şehir bölümü için en az bir şehir giriniz.")
             );
         }
 
         if (
-            $b["davet"]["aktif"]
-            && $b["davet"]["buton_yazisi"] === ""
+            $b["davet"]["aktif"] &&
+            $b["davet"]["buton_yazisi"] === ""
         ) {
             throw new RuntimeException(
-                "Davet butonunun yazısını doldurunuz."
+                admin_t("Davet butonunun yazısını doldurunuz.")
             );
         }
 
@@ -814,7 +818,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         $hata = $exception instanceof mysqli_sql_exception
-            ? "Değişiklikler kaydedilemedi. Veritabanı bağlantısını kontrol ediniz."
+            ? admin_t("Değişiklikler kaydedilemedi. Veritabanı bağlantısını kontrol ediniz.")
             : $exception->getMessage();
     }
 }
@@ -823,14 +827,17 @@ $cover = aa_cover($ayar);
 ?>
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<?= admin_h($admin_dil) ?>">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Ana Sayfa Yönetimi | Aris Pati Yuvası</title>
+    <title>
+        <?= admin_h(admin_t("Ana Sayfa Yönetimi | Aris Pati Yuvası")) ?>
+    </title>
 
-    <link rel="stylesheet" href="admin-style.css?v=15">
+    <link rel="stylesheet" href="admin-style.css?v=20261102">
 
     <style>
         .ay-panel {
@@ -1139,7 +1146,10 @@ $cover = aa_cover($ayar);
             }
         }
     </style>
+<link rel="stylesheet" href="../site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-ust.css?v=20261102-1">
 </head>
+
 <body>
 
 <?php require __DIR__ . "/admin-menu.php"; ?>
@@ -1148,8 +1158,13 @@ $cover = aa_cover($ayar);
 
     <div class="ay-ust">
         <div>
-            <h2>Ana Sayfa Yönetimi</h2>
-            <p>Başlıkları, görselleri ve bölümleri bu ekrandan yönetin.</p>
+            <h2><?= admin_h(admin_t("Ana Sayfa Yönetimi")) ?></h2>
+
+            <p>
+                <?= admin_h(admin_t(
+                    "Başlıkları, görselleri ve bölümleri bu ekrandan yönetin."
+                )) ?>
+            </p>
         </div>
 
         <a
@@ -1158,21 +1173,21 @@ $cover = aa_cover($ayar);
             target="_blank"
             rel="noopener noreferrer"
         >
-            Ana Sayfayı Aç ↗
+            <?= admin_h(admin_t("Ana Sayfayı Aç ↗")) ?>
         </a>
     </div>
 
     <?php if ($basari !== ""): ?>
         <div class="ay-basari" id="ay-basari" role="status">
             <b aria-hidden="true">✓</b>
-            <?= aa_h($basari) ?>
+            <?= admin_h(admin_t($basari)) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($hata !== ""): ?>
         <div class="ay-hata" role="alert">
             <?= aa_h($hata) ?>
-            Dosya seçtiyseniz tekrar seçiniz.
+            <?= admin_h(admin_t("Dosya seçtiyseniz tekrar seçiniz.")) ?>
         </div>
     <?php endif; ?>
 
@@ -1190,7 +1205,7 @@ $cover = aa_cover($ayar);
         >
 
         <section class="ay-kart">
-            <h3>Karşılama Alanı</h3>
+            <h3><?= admin_h(admin_t("Karşılama Alanı")) ?></h3>
 
             <label class="ay-secim ay-toggle">
                 <input
@@ -1198,12 +1213,19 @@ $cover = aa_cover($ayar);
                     name="tanitim_aktif"
                     <?= $ayar["tanitim_aktif"] ? "checked" : "" ?>
                 >
-                Karşılama alanını göster
+                <?= admin_h(admin_t("Karşılama alanını göster")) ?>
             </label>
 
             <div class="ay-grid">
                 <?php
-                ay_field("baslik", "Başlık", $icerik["baslik"], false, 150);
+                ay_field(
+                    "baslik",
+                    "Başlık",
+                    $icerik["baslik"],
+                    false,
+                    150
+                );
+
                 ay_field(
                     "buton_yazisi",
                     "Buton yazısı",
@@ -1211,11 +1233,19 @@ $cover = aa_cover($ayar);
                     false,
                     80
                 );
-                ay_field("aciklama", "Açıklama", $icerik["aciklama"], true);
+
+                ay_field(
+                    "aciklama",
+                    "Açıklama",
+                    $icerik["aciklama"],
+                    true
+                );
                 ?>
 
                 <div class="ay-alan">
-                    <label for="buton-linki">Butonun açacağı sayfa</label>
+                    <label for="buton-linki">
+                        <?= admin_h(admin_t("Butonun açacağı sayfa")) ?>
+                    </label>
 
                     <select name="buton_linki" id="buton-linki">
                         <?php foreach (aa_links() as $url => $name): ?>
@@ -1223,20 +1253,20 @@ $cover = aa_cover($ayar);
                                 value="<?= aa_h($url) ?>"
                                 <?= $ayar["buton_linki"] === $url ? "selected" : "" ?>
                             >
-                                <?= aa_h($name) ?>
+                                <?= admin_h(admin_t($name)) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
             </div>
 
-            <h4>Kapak Görseli</h4>
+            <h4><?= admin_h(admin_t("Kapak Görseli")) ?></h4>
 
             <?php if ($cover !== ""): ?>
                 <img
                     class="ay-kapak"
                     src="../<?= aa_h($cover) ?>"
-                    alt="Mevcut kapak"
+                    alt="<?= admin_h(admin_t('Mevcut kapak')) ?>"
                 >
             <?php endif; ?>
 
@@ -1247,19 +1277,22 @@ $cover = aa_cover($ayar);
             >
 
             <p class="ay-not">
-                Görsel ana sayfada yazının sağında gösterilir.
-                Her görsel en fazla 5 MB olabilir.
-                Yeni görsel seçerseniz yüklediğiniz görsel kullanılır.
+                <?= admin_h(admin_t(
+                    "Görsel ana sayfada yazının sağında gösterilir. Her görsel en fazla 5 MB olabilir. Yeni görsel seçerseniz yüklediğiniz görsel kullanılır."
+                )) ?>
             </p>
 
             <label class="ay-secim">
                 <input type="checkbox" name="kapak_kaldir">
-                Yüklenen kapağı kaldır, images/anasayfa.png görseline dön
+
+                <?= admin_h(admin_t(
+                    "Yüklenen kapağı kaldır, images/anasayfa.png görseline dön"
+                )) ?>
             </label>
         </section>
 
         <section class="ay-kart">
-            <h3>Duyuru Bandı</h3>
+            <h3><?= admin_h(admin_t("Duyuru Bandı")) ?></h3>
 
             <label class="ay-secim ay-toggle">
                 <input
@@ -1267,11 +1300,17 @@ $cover = aa_cover($ayar);
                     name="duyuru_aktif"
                     <?= $ayar["duyuru_aktif"] ? "checked" : "" ?>
                 >
-                Duyuru bandını göster
+                <?= admin_h(admin_t("Duyuru bandını göster")) ?>
             </label>
 
             <?php
-            ay_field("duyuru", "Duyuru metni", $ayar["duyuru"], true, 300);
+            ay_field(
+                "duyuru",
+                "Duyuru metni",
+                $ayar["duyuru"],
+                true,
+                300
+            );
             ?>
         </section>
 
@@ -1279,7 +1318,7 @@ $cover = aa_cover($ayar);
             <?php $section = $b[$key]; ?>
 
             <section class="ay-kart">
-                <h3><?= aa_h($title) ?></h3>
+                <h3><?= admin_h(admin_t($title)) ?></h3>
 
                 <?php if (array_key_exists("aktif", $section)): ?>
                     <label class="ay-secim ay-toggle">
@@ -1288,7 +1327,9 @@ $cover = aa_cover($ayar);
                             name="bolum[<?= aa_h($key) ?>][aktif]"
                             <?= $section["aktif"] ? "checked" : "" ?>
                         >
-                        Bu bölümü ana sayfada göster
+                        <?= admin_h(admin_t(
+                            "Bu bölümü ana sayfada göster"
+                        )) ?>
                     </label>
                 <?php endif; ?>
 
@@ -1305,7 +1346,9 @@ $cover = aa_cover($ayar);
                             name="<?= aa_h($flag) ?>"
                             <?= $ayar[$flag] ? "checked" : "" ?>
                         >
-                        Bu bölümü ana sayfada göster
+                        <?= admin_h(admin_t(
+                            "Bu bölümü ana sayfada göster"
+                        )) ?>
                     </label>
                 <?php endif; ?>
 
@@ -1313,9 +1356,9 @@ $cover = aa_cover($ayar);
                     <?php
                     foreach ($section as $field => $value) {
                         if (
-                            is_array($value)
-                            || is_int($value)
-                            || $field === "buton_linki"
+                            is_array($value) ||
+                            is_int($value) ||
+                            $field === "buton_linki"
                         ) {
                             continue;
                         }
@@ -1345,7 +1388,9 @@ $cover = aa_cover($ayar);
                     <?php if ($key === "davet"): ?>
                         <div class="ay-alan">
                             <label for="davet-link">
-                                Butonun açacağı sayfa
+                                <?= admin_h(admin_t(
+                                    "Butonun açacağı sayfa"
+                                )) ?>
                             </label>
 
                             <select
@@ -1357,7 +1402,7 @@ $cover = aa_cover($ayar);
                                         value="<?= aa_h($url) ?>"
                                         <?= $section["buton_linki"] === $url ? "selected" : "" ?>
                                     >
-                                        <?= aa_h($name) ?>
+                                        <?= admin_h(admin_t($name)) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -1367,17 +1412,17 @@ $cover = aa_cover($ayar);
 
                 <?php if ($key === "sehir"): ?>
                     <p class="ay-not">
-                        Her satıra bir şehir yazınız. En fazla 24 şehir
-                        ekleyebilirsiniz. Şehir düğmeleri ilgili şehrin
-                        ilanlarını açar.
+                        <?= admin_h(admin_t(
+                            "Her satıra bir şehir yazınız. En fazla 24 şehir ekleyebilirsiniz. Şehir düğmeleri ilgili şehrin ilanlarını açar."
+                        )) ?>
                     </p>
                 <?php endif; ?>
 
                 <?php if ($key === "kategoriler"): ?>
                     <p class="ay-not">
-                        Yeni görsel seçmezseniz mevcut görsel korunur.
-                        Varsayılan görseller images klasöründeki
-                        hayvan resimleridir.
+                        <?= admin_h(admin_t(
+                            "Yeni görsel seçmezseniz mevcut görsel korunur. Varsayılan görseller images klasöründeki hayvan resimleridir."
+                        )) ?>
                     </p>
 
                     <div class="ay-kategoriler">
@@ -1393,13 +1438,15 @@ $cover = aa_cover($ayar);
                             <div class="ay-kategori">
                                 <img
                                     src="../<?= aa_h($img ?: 'images/aris-logoo.png') ?>"
-                                    alt="<?= aa_h($name) ?>"
+                                    alt="<?= admin_h(admin_t($name)) ?>"
                                 >
 
-                                <strong><?= aa_h($name) ?></strong>
+                                <strong>
+                                    <?= admin_h(admin_t($name)) ?>
+                                </strong>
 
                                 <label for="kat-<?= $i ?>" class="ay-not">
-                                    Yeni görsel
+                                    <?= admin_h(admin_t("Yeni görsel")) ?>
                                 </label>
 
                                 <input
@@ -1414,7 +1461,10 @@ $cover = aa_cover($ayar);
                                         type="checkbox"
                                         name="kat_sifirla_<?= $i ?>"
                                     >
-                                    Varsayılan görsele dön
+
+                                    <?= admin_h(admin_t(
+                                        "Varsayılan görsele dön"
+                                    )) ?>
                                 </label>
                             </div>
 
@@ -1426,8 +1476,9 @@ $cover = aa_cover($ayar);
 
                     <?php if ($key === "sss"): ?>
                         <p class="ay-not">
-                            Bir soruyu gizlemek için soru ve cevap
-                            alanlarını birlikte boş bırakınız.
+                            <?= admin_h(admin_t(
+                                "Bir soruyu gizlemek için soru ve cevap alanlarını birlikte boş bırakınız."
+                            )) ?>
                         </p>
                     <?php endif; ?>
 
@@ -1435,10 +1486,12 @@ $cover = aa_cover($ayar);
                         <div class="ay-alt-kart">
                             <h4>
                                 <?php
-                                echo ($key === "sss"
+                                $satir_basligi = $key === "sss"
                                     ? "Soru "
-                                    : ($key === "surec" ? "Adım " : "Tanıtım "))
-                                    . ($i + 1);
+                                    : ($key === "surec" ? "Adım " : "Tanıtım ");
+
+                                echo admin_h(admin_t($satir_basligi))
+                                    . (int) ($i + 1);
                                 ?>
                             </h4>
 
@@ -1467,9 +1520,9 @@ $cover = aa_cover($ayar);
 
                 <?php if ($key === "vitrin"): ?>
                     <p class="ay-not">
-                        En fazla 12 onaylı ilan seçebilirsiniz.
-                        İlanlar en yeniden eskiye sıralanır.
-                        Onaydan kaldırılan ilan ana sayfada gösterilmez.
+                        <?= admin_h(admin_t(
+                            "En fazla 12 onaylı ilan seçebilirsiniz. İlanlar en yeniden eskiye sıralanır. Onaydan kaldırılan ilan ana sayfada gösterilmez."
+                        )) ?>
                     </p>
 
                     <p id="vitrin-sayac" class="ay-not"></p>
@@ -1480,16 +1533,16 @@ $cover = aa_cover($ayar);
                                 <input
                                     type="checkbox"
                                     name="vitrin[]"
-                                    value="<?= $id ?>"
+                                    value="<?= (int) $id ?>"
                                     <?= in_array($id, $secili, true) ? "checked" : "" ?>
                                 >
 
                                 <span>
-                                    #<?= $id ?> —
+                                    #<?= (int) $id ?> —
                                     <?= aa_h($ilan["hayvan_adi"]) ?>
 
                                     <small>
-                                        <?= aa_h($ilan["tur"]) ?>
+                                        <?= admin_h(admin_t($ilan["tur"])) ?>
                                         ·
                                         <?= aa_h($ilan["sehir"]) ?>
                                     </small>
@@ -1499,16 +1552,21 @@ $cover = aa_cover($ayar);
                     </div>
 
                     <?php if (!$onayli): ?>
-                        <p>Henüz onaylanmış ilan yok.</p>
+                        <p>
+                            <?= admin_h(admin_t(
+                                "Henüz onaylanmış ilan yok."
+                            )) ?>
+                        </p>
                     <?php endif; ?>
                 <?php endif; ?>
 
             </section>
+
         <?php endforeach; ?>
 
         <div class="ay-kart ay-islemler">
             <button type="submit" class="ay-buton">
-                Tüm Değişiklikleri Kaydet
+                <?= admin_h(admin_t("Tüm Değişiklikleri Kaydet")) ?>
             </button>
 
             <a
@@ -1517,27 +1575,33 @@ $cover = aa_cover($ayar);
                 rel="noopener noreferrer"
                 class="ay-buton acik"
             >
-                Ana Sayfayı Aç ↗
+                <?= admin_h(admin_t("Ana Sayfayı Aç ↗")) ?>
             </a>
 
             <span class="ay-not">
-                Değişiklikler kaydedildikten sonra ziyaretçilere yansır.
+                <?= admin_h(admin_t(
+                    "Değişiklikler kaydedildikten sonra ziyaretçilere yansır."
+                )) ?>
             </span>
         </div>
+
     </form>
 
     <section class="ay-kart">
-        <h3>Kaydedilmiş Ana Sayfa Önizlemesi</h3>
+        <h3>
+            <?= admin_h(admin_t("Kaydedilmiş Ana Sayfa Önizlemesi")) ?>
+        </h3>
 
         <p class="ay-not">
-            Bu alan gerçek ana sayfayı gösterir.
-            Değişiklikleri kaydedince önizleme yenilenir.
+            <?= admin_h(admin_t(
+                "Bu alan gerçek ana sayfayı gösterir. Değişiklikleri kaydedince önizleme yenilenir."
+            )) ?>
         </p>
 
         <iframe
             class="ay-onizleme"
             src="../index.php?onizleme=<?= time() ?>"
-            title="Kaydedilmiş ana sayfa önizlemesi"
+            title="<?= admin_h(admin_t('Kaydedilmiş ana sayfa önizlemesi')) ?>"
             loading="lazy"
         ></iframe>
     </section>
@@ -1553,7 +1617,7 @@ $cover = aa_cover($ayar);
             'input[name="vitrin[]"]:checked'
         ).length;
 
-        count.textContent = adet + " / 12 ilan seçildi";
+        count.textContent = adet + <?= admin_json(" / 12 ilan seçildi") ?>;
 
         return adet;
     }
@@ -1563,7 +1627,10 @@ $cover = aa_cover($ayar);
     form.addEventListener("submit", function (event) {
         if (secilenleriSay() > 12) {
             event.preventDefault();
-            alert("En fazla 12 vitrin ilanı seçebilirsiniz.");
+
+            alert(
+                <?= admin_json("En fazla 12 vitrin ilanı seçebilirsiniz.") ?>
+            );
         }
     });
 

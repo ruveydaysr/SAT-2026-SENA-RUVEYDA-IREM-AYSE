@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . "/site-ust-ayar.php";
 
 require_once __DIR__ . "/baglanti.php";
 
@@ -1295,148 +1296,12 @@ $js_metinleri = [
             .ilan-karti:hover { transform: none; }
         }
     </style>
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 </head>
 
 <body>
 
-<header class="ilan-ust" id="aris-ortak-ust">
-    <a href="index.php" class="ilan-logo">
-        <img
-            src="images/aris-logoo.png"
-            alt="<?= guvenli(ceviri(
-                "Aris Pati Yuvası logosu",
-                "Aris Pati Yuvası logo"
-            )) ?>"
-            width="54"
-            height="54"
-        >
-
-        <span>
-            <strong>Aris Pati Yuvası</strong>
-            <small>
-                <?= guvenli(ceviri(
-                    "Her can dostuna bir yuva",
-                    "A home for every companion"
-                )) ?>
-            </small>
-        </span>
-    </a>
-
-    <div class="ust-sag">
-        <nav
-            class="dil-secici"
-            aria-label="<?= guvenli(ceviri("Dil seçimi", "Language selection")) ?>"
-        >
-            <a
-                href="<?= guvenli(dil_linki("tr", $sayfa_filtreleri, $sayfa)) ?>"
-                lang="tr"
-                hreflang="tr"
-                aria-label="Türkçe"
-                <?= $dil === "tr" ? 'aria-current="true"' : "" ?>
-            >TR</a>
-
-            <a
-                href="<?= guvenli(dil_linki("en", $sayfa_filtreleri, $sayfa)) ?>"
-                lang="en"
-                hreflang="en"
-                aria-label="English"
-                <?= $dil === "en" ? 'aria-current="true"' : "" ?>
-            >EN</a>
-        </nav>
-
-        <nav
-            class="ilan-menu"
-            aria-label="<?= guvenli(ceviri("Ana menü", "Main navigation")) ?>"
-        >
-            <a href="index.php"><?= guvenli(ceviri("Ana Sayfa", "Home")) ?></a>
-
-            <a href="ilanlar.php" aria-current="page">
-                <?= guvenli(ceviri("İlanlar", "Listings")) ?>
-            </a>
-
-            <div class="kategori-menu">
-                <button
-                    type="button"
-                    class="kategori-baslik"
-                    aria-controls="kategori-listesi"
-                >
-                    <?= guvenli(ceviri(
-                        "Hayvan Kategorileri",
-                        "Animal Categories"
-                    )) ?>
-                    <span aria-hidden="true">▾</span>
-                </button>
-
-                <div class="kategori-acilir" id="kategori-listesi">
-                    <?php foreach ($kategoriler as $ad => $dosya): ?>
-                        <a href="ilanlar.php?tur=<?= rawurlencode($ad) ?>">
-                            <img
-                                src="images/<?= guvenli($dosya) ?>"
-                                alt=""
-                                width="32"
-                                height="32"
-                                loading="lazy"
-                            >
-                            <span><?= guvenli(tur_adi($ad)) ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <a href="ilan-ver.php">
-                <?= guvenli(ceviri("İlan Ver", "Post a Listing")) ?>
-            </a>
-
-            <a href="blog.php">Blog</a>
-
-            <a href="hakkimizda.php">
-                <?= guvenli(ceviri("Hakkımızda", "About Us")) ?>
-            </a>
-
-            <a href="iletisim.php">
-                <?= guvenli(ceviri("İletişim", "Contact")) ?>
-            </a>
-
-            <?php if ($uye_id > 0): ?>
-                <a href="mesajlar.php">
-                    <?= guvenli(ceviri("Mesajlarım", "Messages")) ?>
-
-                    <?php if ($okunmamis_mesaj_var): ?>
-                        <span
-                            class="mesaj-bildirim"
-                            role="img"
-                            aria-label="<?= guvenli(ceviri(
-                                "Okunmamış mesajınız var",
-                                "You have unread messages"
-                            )) ?>"
-                        ></span>
-                    <?php endif; ?>
-                </a>
-
-                <a href="profil.php">
-                    <?= guvenli(ceviri("Profilim", "My Profile")) ?>
-                </a>
-
-                <a
-                    href="cikis.php"
-                    onclick="return confirm(<?= guvenli(json_encode(
-                        ceviri(
-                            "Çıkış yapmak istediğinize emin misiniz?",
-                            "Are you sure you want to sign out?"
-                        ),
-                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-                    )) ?>);"
-                >
-                    <?= guvenli(ceviri("Çıkış Yap", "Sign Out")) ?>
-                </a>
-            <?php else: ?>
-                <a href="giris.php">
-                    <?= guvenli(ceviri("Giriş Yap", "Sign In")) ?>
-                </a>
-            <?php endif; ?>
-        </nav>
-    </div>
-</header>
+<?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
     <nav
