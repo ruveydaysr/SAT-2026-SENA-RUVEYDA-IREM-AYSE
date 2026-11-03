@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/site-ust-ayar.php';
+require_once __DIR__ . '/soru-bildirim.php';
 
 function aris_ust_goster($db)
 {
@@ -44,6 +45,7 @@ function aris_ust_goster($db)
             }
         }
     }
+    if ($db && $member > 0 && !$unread) { $unread = (bool) qa_gelenler($db, $member, true); }
     $links = [
         ['index.php', 'Ana Sayfa', 'Home'],
         ['ilanlar.php', 'İlanlar', 'Listings'],
@@ -110,7 +112,7 @@ function aris_ust_goster($db)
                            <?php endif; ?>>
                             <?= aris_ust_h(aris_ust_t($tr, $en)) ?>
                             <?php if ($url === 'mesajlar.php' && $unread): ?>
-                                <span class="aris-unread" role="img" aria-label="<?= aris_ust_h(aris_ust_t('Okunmamış mesajınız var', 'You have unread messages')) ?>"></span>
+                                <span class="aris-unread" role="img" aria-label="<?= aris_ust_h(aris_ust_t('Okunmamış mesaj veya soru-cevap bildiriminiz var', 'You have unread messages or question notifications')) ?>"></span>
                             <?php endif; ?>
                         </a>
                     <?php endif; ?>

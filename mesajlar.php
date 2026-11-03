@@ -35,6 +35,8 @@ function sorgula($baglanti, $sql, $tipler, ...$degerler)
     }
 }
 
+require_once __DIR__ . "/soru-bildirim.php";
+
 $ben = (int) $_SESSION["uye_id"];
 $ilan_id = filter_input(INPUT_GET, "ilan_id", FILTER_VALIDATE_INT);
 $kisi = filter_input(INPUT_GET, "kisi", FILTER_VALIDATE_INT);
@@ -262,6 +264,8 @@ $liste_sonuc = sorgula(
 );
 
 $sohbetler = mysqli_fetch_all($liste_sonuc, MYSQLI_ASSOC);
+
+$qa_gelen_bildirimler = qa_gelenler($baglanti, $ben);
 
 $menu_kategorileri = [
     "Kedi" => "🐱",
@@ -707,6 +711,24 @@ $menu_kategorileri = [
             <?= guvenli($hata) ?>
         </div>
     <?php endif; ?>
+
+
+    <section class="liste" style="margin-bottom:20px" aria-label="Soru ve cevap bildirimleri">
+        <h2 class="liste-baslik"><?= guvenli(aris_ust_t('Sorularım ve Gelen Sorular', 'My Questions and Incoming Questions')) ?></h2>
+        <?php if (!$qa_gelen_bildirimler): ?>
+            <p class="bos"><?= guvenli(aris_ust_t('Henüz soru-cevap bildiriminiz yok.', 'No question notifications yet.')) ?></p>
+        <?php endif; ?>
+        <?php foreach ($qa_gelen_bildirimler as $qb): ?>
+            <a class="sohbet-link" href="ilan-detay.php?id=<?= (int) $qb['ilan_id'] ?>&amp;qa_sayfa=<?= (int) floor($qb['onceki'] / 10) + 1 ?>#qa-soru-<?= (int) $qb['id'] ?>">
+                <span class="sohbet-kisi"><strong><?= guvenli($qb['tur'] === 'soru' ? aris_ust_t('İlanınıza soru geldi', 'New question on your listing') : ($qb['tur'] === 'gonderilen' ? aris_ust_t('Gönderdiğiniz soru · Cevap bekleniyor', 'Your question · Awaiting an answer') : aris_ust_t('Sorunuz cevaplandı', 'Your question was answered'))) ?></strong>
+                <?php if (!(int) $qb['okundu']): ?><span class="mesaj-bildirim" role="img" aria-label="<?= guvenli(aris_ust_t('Okunmamış bildirim', 'Unread notification')) ?>"></span><?php endif; ?></span>
+                <small><?= guvenli($qb['ilan_basligi'] ?: $qb['hayvan_adi']) ?></small>
+                <small><?= guvenli(mb_strimwidth($qb['soru'], 0, 120, '...', 'UTF-8')) ?></small>
+                <?php if ($qb['cevap'] !== null): ?><small><strong><?= guvenli(aris_ust_t('Cevap: ', 'Answer: ')) ?></strong><?= guvenli(mb_strimwidth($qb['cevap'], 0, 120, '...', 'UTF-8')) ?></small><?php endif; ?>
+                <small><?= guvenli(aris_ust_t('Soruyu ve cevabı görüntüle →', 'View question and answer →')) ?></small>
+            </a>
+        <?php endforeach; ?>
+    </section>
 
     <div class="duzen">
         <aside class="liste" aria-label="Sohbetler">

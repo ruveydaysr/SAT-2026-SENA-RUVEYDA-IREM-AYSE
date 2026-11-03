@@ -19,6 +19,21 @@ try {
     mysqli_stmt_bind_param($s, 'ii', $qa_id, $qa_atla); mysqli_stmt_execute($s);
     $qa_kayitlar = mysqli_fetch_all(mysqli_stmt_get_result($s), MYSQLI_ASSOC); mysqli_stmt_close($s);
 } catch (Throwable $e) { $qa_hata = true; error_log('Soru listesi: ' . $e->getMessage()); }
+
+// Yalnızca bu sayfada gösterilen sorular ilgili alıcı için okundu sayılır.
+if (!$qa_hata && $uye_id > 0 && $qa_kayitlar) {
+    try {
+        $qa_gorulen = array_column($qa_kayitlar, 'id');
+        $qa_ids = implode(',', array_map('intval', $qa_gorulen));
+        if ($qa_sahip) {
+            $s = mysqli_prepare($baglanti, "UPDATE ilan_sorulari q JOIN ilanlar i ON i.id=q.ilan_id SET q.soru_okundu=1 WHERE q.id IN ($qa_ids) AND i.uye_id=?");
+        } else {
+            $s = mysqli_prepare($baglanti, "UPDATE ilan_sorulari SET cevap_okundu=1 WHERE id IN ($qa_ids) AND uye_id=? AND cevap IS NOT NULL");
+        }
+        if ($s) { mysqli_stmt_bind_param($s, 'i', $uye_id); mysqli_stmt_execute($s); mysqli_stmt_close($s); }
+    } catch (Throwable $e) { error_log('Soru okundu: ' . $e->getMessage()); }
+}
+
 $qa_mesajlar = [
     'soru_ok' => ['Sorunuz yayınlandı.', 'Your question has been posted.'],
     'cevap_ok' => ['Cevabınız yayınlandı.', 'Your answer has been posted.'],
@@ -82,7 +97,7 @@ if (is_array($qa_bildirim) && ($qa_bildirim['ilan_id'] ?? 0) === $qa_id) { unset
     <?php else: ?>
         <?php if (!$qa_kayitlar): ?><p class="qa-bos"><?= guvenli(ceviri('Henüz soru sorulmamış. İlan hakkında merak ettiklerinizi sorabilirsiniz.', 'No questions yet. Ask what you would like to know about this listing.')) ?></p><?php endif; ?>
         <?php foreach ($qa_kayitlar as $q): ?>
-            <article class="qa-soru">
+            <article class="qa-soru" id="qa-soru-<?= (int) $q['id'] ?>" style="scroll-margin-top:155px">
                 <div class="qa-kunye">
                     <?php if ($q['ad_soyad'] !== null): ?><a href="uye-profili.php?id=<?= (int) $q['uye_id'] ?>"><?= guvenli($q['ad_soyad']) ?></a><?php else: ?><strong><?= guvenli(ceviri('Eski üye', 'Former member')) ?></strong><?php endif; ?>
                     <time datetime="<?= guvenli(str_replace(' ', 'T', $q['soru_tarihi'])) ?>"><?= guvenli(date('d.m.Y H:i', strtotime($q['soru_tarihi']))) ?></time>
