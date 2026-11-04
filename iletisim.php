@@ -532,6 +532,7 @@ if ($post_istegi && !$dil_degisti) {
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -672,15 +673,7 @@ if ($post_istegi && !$dil_degisti) {
     </section>
 </main>
 
-<footer>
-    <p>
-        © <?php echo date("Y"); ?> Aris Pati Yuvası ·
-        <?php echo iletisim_ceviri(
-            "Hayvan Sahiplendirme Platformu",
-            "Pet Adoption Platform"
-        ); ?>
-    </p>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 </body>
 </html>

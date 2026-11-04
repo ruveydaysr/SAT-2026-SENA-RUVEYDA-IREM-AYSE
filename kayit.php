@@ -504,6 +504,7 @@ if ($post_istegi && !$dil_degisti) {
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -664,13 +665,7 @@ if ($post_istegi && !$dil_degisti) {
     </section>
 </main>
 
-<footer class="kayit-alt">
-    © <?= date("Y") ?> Aris Pati Yuvası ·
-    <?= guvenli(ceviri(
-        "Her can dostu sevgi dolu bir yuvayı hak eder.",
-        "Every companion deserves a loving home."
-    )) ?>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 </body>
 </html>

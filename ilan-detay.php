@@ -816,7 +816,8 @@ $menu_kategorileri = [
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
-<link rel="stylesheet" href="soru-cevap.css?v=1">
+
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1105,7 +1106,6 @@ $menu_kategorileri = [
             ) ?></p>
         </section>
 
-        <?php require __DIR__ . '/ilan-soru-cevap.php'; ?>
 
         <?php if ($admin_mi): ?>
             <section class="kart admin-kart">
@@ -1240,13 +1240,7 @@ $menu_kategorileri = [
 
 </main>
 
-<footer class="alt-bilgi">
-    © <?= date("Y") ?> Aris Pati Yuvası ·
-    <?= guvenli(ceviri(
-        "Hayvan Sahiplendirme Platformu",
-        "Pet Adoption Platform"
-    )) ?>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 </body>
 </html>

@@ -1,0 +1,38 @@
+/* Yalnızca ortak alt bölümün görünümü. */
+footer.aris-footer { display:block;width:100%;margin:56px 0 0;padding:0;border:0;border-top:1px solid #ded6c6;background:#eee8da;color:#284b32;font-family:Arial,sans-serif;text-align:left; }
+.aris-footer * { box-sizing:border-box; }
+.aris-footer .aris-footer-grid { display:grid;grid-template-columns:1.5fr 1fr 1fr 1.15fr;gap:48px;width:min(1200px,92%);margin:auto;padding:46px 0 38px; }
+.aris-footer .aris-footer-logo { display:flex;align-items:center;gap:12px;color:#284b32;text-decoration:none; }
+.aris-footer .aris-footer-logo img { display:block;flex-shrink:0;width:52px;height:52px;padding:5px;border:1px solid #ded6c6;border-radius:12px;background:#fffdf8;object-fit:contain; }
+.aris-footer .aris-footer-logo strong { font-size:19px;line-height:1.4; }
+.aris-footer .aris-footer-brand p { margin:14px 0 0;color:#65715f;font-size:13px;line-height:1.9; }
+.aris-footer nav { display:flex;flex-direction:column;align-items:flex-start;gap:13px;min-width:0;margin:0;padding:0;border:0;background:transparent; }
+.aris-footer nav h2 { margin:5px 0 9px;padding:0;border:0;color:#284b32;font-size:16px;line-height:1.5;text-align:left; }
+.aris-footer nav a { display:block;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#586650;font-size:13px;font-weight:normal;line-height:1.6;text-decoration:none;overflow-wrap:anywhere; }
+.aris-footer nav a:hover { background:transparent;color:#284b32;text-decoration:underline;text-underline-offset:4px; }
+.aris-footer a:focus-visible { outline:3px solid #80a86d;outline-offset:5px; }
+.aris-footer .aris-footer-bottom { display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;width:min(1200px,92%);margin:auto;padding:21px 0;border-top:1px solid #d9d2c1;color:#65715f;font-size:12px;line-height:1.7; }
+@media(max-width:900px) { .aris-footer .aris-footer-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:30px;padding:34px 0; } }
+@media(max-width:500px) { .aris-footer .aris-footer-grid { gap:26px 18px; } .aris-footer .aris-footer-brand { grid-column:1 / -1; } .aris-footer .aris-footer-bottom { flex-direction:column; } }
+
+/* Yeşil alt bölüm */
+footer.aris-footer {
+    background: #426b46;
+    color: #fffdf8;
+    border-top-color: #35583b;
+}
+.aris-footer .aris-footer-logo,
+.aris-footer nav h2 {
+    color: #fffdf8;
+}
+.aris-footer .aris-footer-brand p,
+.aris-footer nav a,
+.aris-footer .aris-footer-bottom {
+    color: #eee5d3;
+}
+.aris-footer nav a:hover {
+    color: #ffffff;
+}
+.aris-footer .aris-footer-bottom {
+    border-top-color: #6a8665;
+}

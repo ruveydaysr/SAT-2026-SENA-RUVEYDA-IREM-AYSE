@@ -24,6 +24,15 @@ function admin_t($metin)
     global $admin_dil;
 
     $ceviriler = [
+        'Tümü' => 'All',
+        'Filtrele' => 'Filter',
+        'Silinmiş ilan' => 'Deleted listing',
+        'İlan sahibi:' => 'Listing owner:',
+        'Sayfalama' => 'Pagination',
+        'Önceki' => 'Previous',
+        'Sonraki' => 'Next',
+        'Eski üye' => 'Former member',
+
         "Genel Bakış" => "Overview",
         "Admin Paneli" => "Admin Panel",
         "Ana Sayfa Yönetimi" => "Homepage Management",

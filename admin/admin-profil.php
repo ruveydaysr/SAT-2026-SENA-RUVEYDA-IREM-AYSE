@@ -259,7 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_SESSION["admin_profil_basari"] =
                         "Şifreniz başarıyla değiştirildi.";
 
-                    header("Location: admin-profil.php");
+                    header("Location: admin-profil.php?bolum=sifre");
                     exit();
                 }
 
@@ -274,6 +274,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $bilgi_hata = "Geçersiz işlem.";
     }
 }
+$ap_bolum = is_string($_GET['bolum'] ?? null) && $_GET['bolum'] === 'sifre' ? 'sifre' : 'hesap';
+if ($bilgi_hata !== '') { $ap_bolum = 'hesap'; }
+if ($sifre_hata !== '') { $ap_bolum = 'sifre'; }
 ?>
 
 <!DOCTYPE html>
@@ -522,23 +525,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </style>
 <link rel="stylesheet" href="../site-ust.css?v=20261102-1">
 <link rel="stylesheet" href="admin-ust.css?v=20261102-1">
+<link rel="stylesheet" href="admin-profil-hesap.css?v=20261104-1">
 </head>
 
 <body>
 
 <?php require __DIR__ . "/admin-menu.php"; ?>
 
-<main class="icerik ap-profil">
-
-    <h2><?= admin_h(admin_t("Profilim")) ?></h2>
-
-    <p class="ap-aciklama">
-        <?= admin_h(admin_t(
-            "Kendi yönetici bilgilerinizi ve şifrenizi buradan değiştirebilirsiniz."
-        )) ?>
-    </p>
-
-    <section class="ap-ozet">
+<main class="icerik ap-profil ap-hesap-duzen">
+<aside class="ap-yan">
+    <div class="ap-kimlik"><strong><?= ap_guvenli($yonetici['ad_soyad'] ?: $yonetici['kullanici_adi']) ?></strong><small><?= admin_h(admin_t('Admin Paneli')) ?></small></div>
+    <nav class="ap-hesap-menu" aria-label="<?= admin_h(admin_t('Profilim')) ?>">
+        <h2><?= admin_h(admin_t('Profilim')) ?></h2>
+        <a href="admin-profil.php" <?= $ap_bolum === 'hesap' ? 'aria-current="page"' : '' ?>><?= admin_h(admin_t('Yönetici Bilgilerim')) ?></a>
+        <a href="admin-profil.php?bolum=sifre" <?= $ap_bolum === 'sifre' ? 'aria-current="page"' : '' ?>><?= admin_h(admin_t('Şifremi Değiştir')) ?></a>
+        <h2><?= admin_h(admin_t('Admin Paneli')) ?></h2>
+        <a href="admin-genel-bakis.php"><?= admin_h(admin_t('Genel Bakış')) ?></a>
+        <a href="admin-panel.php"><?= admin_h(admin_t('İlan Yönetimi')) ?></a>
+    </nav>
+</aside>
+<div class="ap-hesap-icerik">
+<h1><?= admin_h(admin_t('Profilim')) ?></h1>
+<?php if ($ap_bolum === "hesap"): ?><section class="ap-ozet">
         <h3><?= admin_h(admin_t("Yönetici Bilgilerim")) ?></h3>
 
         <div class="ap-bilgiler">
@@ -568,11 +576,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 ) ?>
             </p>
         </div>
-    </section>
-
-    <div class="ap-kutular">
-
-        <section class="ap-kutu">
+    </section><?php endif; ?>
+<?php if ($ap_bolum === "hesap"): ?><section class="ap-kutu">
             <h3><?= admin_h(admin_t("Bilgilerimi Düzenle")) ?></h3>
 
             <p>
@@ -703,9 +708,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
             </form>
-        </section>
-
-        <section class="ap-kutu">
+        </section><?php endif; ?>
+<?php if ($ap_bolum === "sifre"): ?><section class="ap-kutu">
             <h3><?= admin_h(admin_t("Şifremi Değiştir")) ?></h3>
 
             <p>
@@ -720,7 +724,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
             <?php endif; ?>
 
-            <form action="admin-profil.php" method="POST" class="ap-form">
+            <form action="admin-profil.php?bolum=sifre" method="POST" class="ap-form">
 
                 <input
                     type="hidden"
@@ -785,10 +789,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
             </form>
-        </section>
-
-    </div>
-
+        </section><?php endif; ?>
+</div>
 </main>
 
 <?php if ($basari !== ""): ?>
@@ -808,5 +810,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 </script>
 
+<footer class="ap-alt"><div><strong>Aris Pati Yuvası</strong><nav aria-label="<?= admin_h(admin_t('Yönetim menüsü')) ?>"><a href="admin-genel-bakis.php"><?= admin_h(admin_t('Genel Bakış')) ?></a><a href="admin-profil.php"><?= admin_h(admin_t('Profilim')) ?></a><a href="../index.php"><?= admin_h(admin_t('Siteye Git')) ?></a></nav><small>© <?= date('Y') ?> Aris Pati Yuvası · <?= admin_h(admin_t('Admin Paneli')) ?></small></div></footer>
 </body>
 </html>

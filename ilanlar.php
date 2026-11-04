@@ -1297,6 +1297,7 @@ $js_metinleri = [
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1798,13 +1799,7 @@ $js_metinleri = [
     </div>
 </main>
 
-<footer>
-    © <?= date("Y") ?> Aris Pati Yuvası ·
-    <?= guvenli(ceviri(
-        "Her can dostuna bir yuva.",
-        "A home for every companion."
-    )) ?>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 <script>
 const metinler = <?= json_encode(

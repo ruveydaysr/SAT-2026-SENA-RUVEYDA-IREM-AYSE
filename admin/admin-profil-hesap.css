@@ -1,0 +1,24 @@
+main.ap-hesap-duzen { display:grid;grid-template-columns:230px minmax(0,1fr);align-items:start;gap:28px;width:min(1200px,92%);margin:32px auto 60px; }
+.ap-yan { min-width:0; }
+.ap-kimlik { padding:22px 18px;border:1px solid #ded6c6;border-radius:10px;background:#fffdf8;overflow-wrap:anywhere; }
+.ap-kimlik strong { display:block;color:#284b32;font-size:16px; }
+.ap-kimlik small { display:block;margin-top:8px;color:#687361;font-size:12px; }
+.ap-hesap-menu { margin-top:16px;padding-bottom:10px;border:1px solid #ded6c6;border-radius:10px;background:#fffdf8;overflow:hidden; }
+.ap-hesap-menu h2 { margin:0 0 7px;padding:17px 16px 13px;border-bottom:1px solid #ece7dc;font-size:14px;line-height:1.5; }
+.ap-hesap-menu h2:not(:first-child) { margin-top:14px;border-top:1px solid #ece7dc; }
+.ap-hesap-menu a { display:block;margin:4px 8px;padding:12px;border-left:3px solid transparent;border-radius:5px;color:#53604e;font-size:13px;line-height:1.5;text-decoration:none; }
+.ap-hesap-menu a:hover { background:#f1f4eb; }
+.ap-hesap-menu a[aria-current="page"] { border-left-color:#426b46;background:#eaf0e3;color:#284b32;font-weight:bold; }
+.ap-hesap-icerik { min-width:0; }
+.ap-hesap-icerik > h1 { margin:0 0 22px;color:#284b32;font-size:26px; }
+.ap-hesap-icerik > .ap-ozet,.ap-hesap-icerik > .ap-kutu { width:100%;margin:0 0 22px;padding:24px;border:1px solid #ded6c6;border-radius:10px;background:#fffdf8; }
+.ap-hesap-icerik .ap-bilgiler { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px; }
+.ap-hesap-icerik .ap-form { max-width:650px; }
+.ap-hesap-icerik .ap-form input { min-height:44px; }
+footer.ap-alt { display:block;margin:50px 0 0;padding:0;border-top:1px solid #35583b;background:#426b46;color:#fffdf8;font-family:Arial,sans-serif; }
+.ap-alt > div { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:22px;width:min(1200px,92%);margin:auto;padding:32px 0; }
+.ap-alt nav { display:flex;gap:20px;flex-wrap:wrap; }
+.ap-alt a,.ap-alt small { color:#eee5d3;font-size:13px;text-decoration:none; }
+.ap-alt a:hover { color:white;text-decoration:underline; }
+.ap-alt small { flex-basis:100%;padding-top:18px;border-top:1px solid #6a8665; }
+@media(max-width:700px) { main.ap-hesap-duzen { grid-template-columns:minmax(0,1fr);gap:20px; } .ap-hesap-menu { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px; } .ap-hesap-menu h2 { grid-column:1/-1; } .ap-hesap-icerik .ap-bilgiler { grid-template-columns:1fr; } .ap-hesap-icerik > .ap-kutu,.ap-hesap-icerik > .ap-ozet { padding:18px; } }

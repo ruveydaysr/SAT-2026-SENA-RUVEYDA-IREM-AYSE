@@ -34,7 +34,8 @@ if ($profil) {
 <html lang="<?= up_h($_SESSION['dil'] ?? 'tr') ?>">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= up_h($profil ? $profil['ad_soyad'] . ' | Aris Pati Yuvası' : up_t('Üye Bulunamadı', 'Member Not Found')) ?></title>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1"><link rel="stylesheet" href="soru-cevap.css?v=1">
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 <body class="up-sayfa">
 <?php require __DIR__ . '/site-ust.php'; ?>
@@ -58,5 +59,5 @@ if ($profil) {
 <?php else: ?><section class="up-baslik"><h1><?= up_h(up_t('Üye Bulunamadı', 'Member Not Found')) ?></h1><p><?= up_h(up_t('Bu profil artık mevcut olmayabilir.', 'This profile may no longer exist.')) ?></p></section><?php endif; ?>
 <a class="up-don" href="ilanlar.php">← <?= up_h(up_t('İlanlara Dön', 'Back to Listings')) ?></a>
 </main>
-<footer class="up-alt">© <?= date('Y') ?> Aris Pati Yuvası</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 </body></html>

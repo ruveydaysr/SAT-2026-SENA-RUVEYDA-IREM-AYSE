@@ -1557,6 +1557,7 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1875,95 +1876,7 @@ if ($ayar["vitrin_aktif"] && $temiz_idler) {
 
 </main>
 
-<footer class="pati-footer">
-    <div class="footer-yuva-band">
-        <div class="kapsayici footer-yuva-icerik">
-            <div>
-                <span class="footer-kucuk-baslik"><?= aa_h(aa_t("BİRLİKTE DAHA FAZLA DOSTA YUVA BULALIM", "HELP MORE COMPANIONS FIND A HOME")) ?></span>
-                <h2><?= aa_h(aa_t("Bir yuva, yepyeni bir başlangıç.", "A home. A whole new beginning.")) ?></h2>
-                <p><?= aa_h(aa_t("İlanları keşfet, sahiplenme sürecini öğren veya yuva arayan bir dostumuz için ilan oluştur.", "Explore listings, learn about adoption or post a listing for a companion who needs a home.")) ?></p>
-            </div>
-            <a class="footer-ana-buton" href="ilanlar.php"><?= aa_h(aa_t("Dostlarımızla Tanış", "Meet Our Companions")) ?> <span aria-hidden="true">↗</span></a>
-        </div>
-    </div>
-
-    <div class="kapsayici footer-grid">
-        <div class="footer-marka-alani">
-            <a href="index.php" class="footer-logo">
-                <img src="images/aris-logoo.png" alt="" width="64" height="64">
-                <strong>Aris Pati Yuvası</strong>
-            </a>
-            <p class="footer-tanitim"><?= aa_h($bolumler["footer"]["aciklama"]) ?></p>
-            <p class="footer-marka-sozu"><?= aa_h(aa_t("Her can dostuna bir yuva.", "A loving home for every companion.")) ?></p>
-            <a class="footer-hikaye" href="hakkimizda.php"><?= aa_h(aa_t("Hikâyemizi Keşfet", "Discover Our Story")) ?> <span aria-hidden="true">→</span></a>
-        </div>
-
-        <div>
-            <h3><?= aa_h(aa_t("Keşfet", "Explore")) ?></h3>
-            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Hızlı bağlantılar", "Quick links")) ?>">
-                <a href="index.php"><?= aa_h(aa_t("Ana Sayfa", "Home")) ?></a>
-                <a href="ilanlar.php"><?= aa_h(aa_t("Tüm İlanlar", "All Listings")) ?></a>
-                <a href="ilan-ver.php"><?= aa_h(aa_t("İlan Ver", "Post a Listing")) ?></a>
-                <a href="blog.php"><?= aa_h(aa_t("Blog ve Yararlı Bilgiler", "Blog and Useful Guides")) ?></a>
-                <a href="hakkimizda.php"><?= aa_h(aa_t("Hakkımızda", "About Us")) ?></a>
-                <a href="<?= $uye_id > 0 ? 'profil.php' : 'giris.php' ?>"><?= aa_h(aa_t("Hesabım", "My Account")) ?></a>
-                <a href="fotograf-kaynaklari.html"><?= aa_h(aa_t("Fotoğraf Kaynakları", "Photo Credits")) ?></a>
-            </nav>
-        </div>
-
-        <div>
-            <h3><?= aa_h(aa_t("Dostlarımız", "Our Companions")) ?></h3>
-            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Hayvan kategorileri", "Animal categories")) ?>">
-                <?php foreach ([['Kedi', 'Kedi İlanları', 'Cats'], ['Köpek', 'Köpek İlanları', 'Dogs'], ['Kuş', 'Kuş İlanları', 'Birds'], ['Balık', 'Balık İlanları', 'Fish'], ['Tavşan', 'Tavşan İlanları', 'Rabbits'], ['Kemirgen', 'Kemirgen İlanları', 'Rodents'], ['Sürüngen', 'Sürüngen İlanları', 'Reptiles'], ['Diğer', 'Diğer Dostlarımız', 'Other Animals']] as $footer_tur): ?>
-                    <a href="ilanlar.php?tur=<?= rawurlencode($footer_tur[0]) ?>"><?= aa_h(aa_t($footer_tur[1], $footer_tur[2])) ?></a>
-                <?php endforeach; ?>
-            </nav>
-        </div>
-
-        <div>
-            <h3><?= aa_h(aa_t("Sahiplenme Rehberi", "Adoption Guide")) ?></h3>
-            <nav class="footer-linkler" aria-label="<?= aa_h(aa_t("Bakım ve sahiplenme", "Care and adoption")) ?>">
-                <?php if ($bolumler["surec"]["aktif"]): ?>
-                    <a href="#nasil-sahiplenirim"><?= aa_h(aa_t("Nasıl Sahiplenirim?", "How Do I Adopt?")) ?></a>
-                <?php endif; ?>
-                <?php foreach ([['Sahiplenme', 'Sahiplenmeye Hazırlık', 'Preparing to Adopt'], ['Kedi Bakımı', 'Kedi Bakımı', 'Cat Care'], ['Köpek Bakımı', 'Köpek Bakımı', 'Dog Care'], ['Kuş Bakımı', 'Kuş Bakımı', 'Bird Care'], ['Pet Dünyası', 'Dostlarımızla Yaşam', 'Life with Companions']] as $footer_rehber): ?>
-                    <a href="blog.php?kategori=<?= rawurlencode($footer_rehber[0]) ?>"><?= aa_h(aa_t($footer_rehber[1], $footer_rehber[2])) ?></a>
-                <?php endforeach; ?>
-            </nav>
-            <p class="footer-rehber-not"><?= aa_h(aa_t("Sahiplenmek, birlikte yaşayacağınız yıllar için sorumluluk almaktır.", "Adoption means taking responsibility for your years together.")) ?></p>
-        </div>
-
-        <div class="footer-iletisim-alani">
-            <h3><?= aa_h(aa_t("Bize Ulaşın", "Get in Touch")) ?></h3>
-            <p class="footer-iletisim-yazi"><?= aa_h(aa_t("Bir sorunuz, öneriniz veya paylaşmak istediğiniz bir konu mu var? İletişim formumuzdan bize yazabilirsiniz.", "Have a question, suggestion or something to share? Send us a message using our contact form.")) ?></p>
-            <a class="footer-iletisim-buton" href="iletisim.php"><?= aa_h(aa_t("Mesaj Gönder", "Send a Message")) ?> <span aria-hidden="true">→</span></a>
-            <div class="footer-bilgi-kutu">
-                <strong><?= aa_h(aa_t("Üyelik olmadan da yazabilirsiniz.", "You can write to us without an account.")) ?></strong>
-                <p><?= aa_h(aa_t("İletişim formunu doldurmanız yeterli. İlan sahipleriyle görüşmek için hesabınızla giriş yapabilirsiniz.", "Simply fill in the contact form. Sign in to your account to message listing owners.")) ?></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="footer-sehirler">
-        <div class="kapsayici footer-sehir-icerik">
-            <strong><?= aa_h(aa_t("Şehrinde Yuva Arayanlar", "Find a Companion in Your City")) ?></strong>
-            <nav aria-label="<?= aa_h(aa_t("Şehirlere göre ilanlar", "Listings by city")) ?>">
-                <?php foreach (['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Eskişehir', 'Konya', 'Adana'] as $footer_sehir): ?>
-                    <a href="ilanlar.php?sehir=<?= rawurlencode($footer_sehir) ?>"><?= aa_h($footer_sehir) ?></a>
-                <?php endforeach; ?>
-                <a href="ilanlar.php"><?= aa_h(aa_t("Tüm Şehirler", "All Cities")) ?> →</a>
-            </nav>
-        </div>
-    </div>
-
-    <div class="footer-taban">
-        <div class="kapsayici">
-            <span>© <?= date("Y") ?> Aris Pati Yuvası</span>
-            <span><?= aa_h(aa_t("Satın alma, sahiplen. Birlikte bir hayatı değiştirelim.", "Adopt, don't shop. Let's change a life together.")) ?></span>
-            <a href="#aris-ortak-ust"><?= aa_h(aa_t("Yukarı dön", "Back to top")) ?> ↑</a>
-        </div>
-    </div>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 </body>
 </html>

@@ -613,6 +613,7 @@ function dil_linki($yeni_dil, $ilan_id)
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -844,13 +845,7 @@ function dil_linki($yeni_dil, $ilan_id)
     </section>
 </main>
 
-<footer>
-    © <?= date("Y") ?> Aris Pati Yuvası ·
-    <?= guvenli(ceviri(
-        "Hayvan Sahiplendirme Platformu",
-        "Pet Adoption Platform"
-    )) ?>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 </body>
 </html>

@@ -961,6 +961,7 @@ $dosya_yok_yazisi = ceviri("Dosya seçilmedi", "No file selected");
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1352,13 +1353,7 @@ $dosya_yok_yazisi = ceviri("Dosya seçilmedi", "No file selected");
 
 <?php endif; ?>
 
-<footer class="ilan-footer">
-    © <?= date("Y") ?> Aris Pati Yuvası ·
-    <?= guvenli(ceviri(
-        "Hayvan Sahiplendirme Platformu",
-        "Pet Adoption Platform"
-    )) ?>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 <script>
 const turSecimi = document.getElementById("tur");

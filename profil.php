@@ -164,6 +164,7 @@ function profil_fotografi($fotograf)
 function sayfa_linki($sayfa, $arama, $durum, $siralama)
 {
     return "profil.php?" . http_build_query([
+        "bolum" => "ilanlar",
         "arama" => $arama,
         "durum" => $durum,
         "siralama" => $siralama,
@@ -175,6 +176,7 @@ function dil_linki($yeni_dil, $sayfa, $arama, $durum, $siralama)
 {
     return "profil.php?" . http_build_query([
         "lang" => $yeni_dil,
+        "bolum" => $GLOBALS["profil_bolum"] ?? "ilanlar",
         "arama" => $arama,
         "durum" => $durum,
         "siralama" => $siralama,
@@ -341,7 +343,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["uye_email"] = $form_email;
                         $_SESSION["profil_basari"] = "bilgi_guncellendi";
 
-                        header("Location: profil.php#bilgilerim");
+                        header("Location: profil.php?bolum=hesap#bilgilerim");
                         exit();
                     }
 
@@ -437,7 +439,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_SESSION["profil_csrf"] = bin2hex(random_bytes(32));
                     $_SESSION["profil_basari"] = "sifre_degisti";
 
-                    header("Location: profil.php#sifre");
+                    header("Location: profil.php?bolum=sifre#sifre");
                     exit();
                 }
 
@@ -463,6 +465,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 $_SESSION["uye_adsoyad"] = $uye["ad_soyad"];
 $_SESSION["uye_email"] = $uye["email"];
+
+$profil_bolum = filtre_degeri("bolum");
+if (!in_array($profil_bolum, ["hesap", "sifre", "ilanlar", "basvurular", "favoriler"], true)) {
+    $profil_bolum = "ilanlar";
+}
+if ($bilgi_hata !== "") { $profil_bolum = "hesap"; }
+if ($sifre_hata !== "") { $profil_bolum = "sifre"; }
 
 /* İlanlar ve sayfalama */
 $arama = filtre_degeri("arama");
@@ -1058,6 +1067,8 @@ $menu_kategorileri = [
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="profil-hesap.css?v=20261104-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1071,7 +1082,31 @@ $menu_kategorileri = [
 
 <?php require __DIR__ . "/site-ust.php"; ?>
 
-<main>
+<main class="hesap-duzen">
+<aside class="hesap-yan">
+    <div class="hesap-kimlik">
+        <span class="hesap-avatar" aria-hidden="true"><?= guvenli(function_exists('mb_substr') ? mb_substr($uye['ad_soyad'], 0, 1, 'UTF-8') : substr($uye['ad_soyad'], 0, 1)) ?></span>
+        <strong><?= guvenli($uye['ad_soyad']) ?></strong>
+        <small><?= guvenli(ceviri('Hesabım', 'My Account')) ?></small>
+    </div>
+    <nav class="hesap-menu" aria-label="<?= guvenli(ceviri('Hesap menüsü', 'Account navigation')) ?>">
+        <h2><?= guvenli(ceviri('İlan ve Başvurularım', 'Listings and Applications')) ?></h2>
+        <?php foreach ([
+            'ilanlar' => ['İlanlarım', 'My Listings'],
+            'basvurular' => ['Sahiplenme Başvurularım', 'Adoption Applications'],
+            'favoriler' => ['Favorilerim', 'My Favourites']
+        ] as $anahtar => $etiket): ?>
+            <a href="profil.php?bolum=<?= $anahtar ?>" <?= $profil_bolum === $anahtar ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri($etiket[0], $etiket[1])) ?></a>
+        <?php endforeach; ?>
+        <a href="mesajlar.php"><?= guvenli(ceviri('Mesajlarım', 'My Messages')) ?></a>
+        <h2><?= guvenli(ceviri('Hesap Ayarlarım', 'Account Settings')) ?></h2>
+        <a href="profil.php?bolum=hesap" <?= $profil_bolum === 'hesap' ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri('Kullanıcı Bilgilerim', 'My Details')) ?></a>
+        <a href="profil.php?bolum=sifre" <?= $profil_bolum === 'sifre' ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri('Şifremi Değiştir', 'Change Password')) ?></a>
+    </nav>
+    <a class="hesap-yeni" href="ilan-ver.php">+ <?= guvenli(ceviri('Yeni İlan Ver', 'Post a New Listing')) ?></a>
+</aside>
+<div class="hesap-icerik">
+<?php if ($profil_bolum === "hesap"): ?>
     <section class="profil-bolum">
         <h1><?= guvenli(ceviri("Profil Bilgilerim", "My Profile Details")) ?></h1>
 
@@ -1091,10 +1126,10 @@ $menu_kategorileri = [
         </div>
 
         <div class="kart-islemler">
-            <a href="#bilgilerim" class="buton">
+            <a href="profil.php?bolum=hesap#bilgilerim" class="buton">
                 <?= guvenli(ceviri("Bilgilerimi Düzenle", "Edit My Details")) ?>
             </a>
-            <a href="#sifre" class="buton acik">
+            <a href="profil.php?bolum=sifre#sifre" class="buton acik">
                 <?= guvenli(ceviri("Şifremi Değiştir", "Change Password")) ?>
             </a>
             <a href="mesajlar.php" class="buton acik">
@@ -1105,7 +1140,8 @@ $menu_kategorileri = [
             </a>
         </div>
     </section>
-
+<?php endif; ?>
+<?php if ($profil_bolum === "hesap"): ?>
     <section class="profil-bolum" id="bilgilerim">
         <h2><?= guvenli(ceviri("Bilgilerimi Düzenle", "Edit My Details")) ?></h2>
 
@@ -1122,7 +1158,7 @@ $menu_kategorileri = [
             </div>
         <?php endif; ?>
 
-        <form action="profil.php#bilgilerim" method="POST" class="hesap-form">
+        <form action="profil.php?bolum=hesap#bilgilerim" method="POST" class="hesap-form">
             <input type="hidden" name="islem" value="bilgi_guncelle">
             <input
                 type="hidden"
@@ -1204,7 +1240,8 @@ $menu_kategorileri = [
             </div>
         </form>
     </section>
-
+<?php endif; ?>
+<?php if ($profil_bolum === "sifre"): ?>
     <section class="profil-bolum" id="sifre">
         <h2><?= guvenli(ceviri("Şifremi Değiştir", "Change Password")) ?></h2>
 
@@ -1221,7 +1258,7 @@ $menu_kategorileri = [
             </div>
         <?php endif; ?>
 
-        <form action="profil.php#sifre" method="POST" class="hesap-form">
+        <form action="profil.php?bolum=sifre#sifre" method="POST" class="hesap-form">
             <input type="hidden" name="islem" value="sifre_degistir">
             <input
                 type="hidden"
@@ -1277,7 +1314,8 @@ $menu_kategorileri = [
             </div>
         </form>
     </section>
-
+<?php endif; ?>
+<?php if ($profil_bolum === "ilanlar"): ?>
     <section class="profil-bolum">
         <div class="bolum-baslik">
             <h2><?= guvenli(ceviri("İlanlarım", "My Listings")) ?></h2>
@@ -1288,6 +1326,7 @@ $menu_kategorileri = [
         </div>
 
         <form method="GET" action="profil.php" class="profil-filtre">
+<input type="hidden" name="bolum" value="ilanlar">
             <div class="filtre-grup">
                 <label for="arama">
                     <?= guvenli(ceviri("İlan Ara", "Search Listings")) ?>
@@ -1468,7 +1507,8 @@ $menu_kategorileri = [
             </nav>
         <?php endif; ?>
     </section>
-
+<?php endif; ?>
+<?php if ($profil_bolum === "basvurular"): ?>
     <section class="profil-bolum">
         <h2>
             <?= guvenli(ceviri(
@@ -1526,9 +1566,10 @@ $menu_kategorileri = [
             </p>
         <?php endif; ?>
     </section>
-
+<?php endif; ?>
+<?php if ($profil_bolum === "favoriler"): ?>
     <section class="profil-bolum">
-        <h2>❤️ <?= guvenli(ceviri("Favorilerim", "My Favourites")) ?></h2>
+        <h2><?= guvenli(ceviri("Favorilerim", "My Favourites")) ?></h2>
 
         <?php if ($favoriler): ?>
             <?php foreach ($favoriler as $favori): ?>
@@ -1591,17 +1632,11 @@ $menu_kategorileri = [
             </p>
         <?php endif; ?>
     </section>
+<?php endif; ?>
+</div>
 </main>
 
-<footer>
-    <p>
-        © <?= date("Y") ?> Aris Pati Yuvası ·
-        <?= guvenli(ceviri(
-            "Hayvan Sahiplendirme Platformu",
-            "Pet Adoption Platform"
-        )) ?>
-    </p>
-</footer>
+<?php require __DIR__ . "/site-alt.php"; ?>
 
 <script>
 const basariKutusu = document.getElementById("basari-kutusu");

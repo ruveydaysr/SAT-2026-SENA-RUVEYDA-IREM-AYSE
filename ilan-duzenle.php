@@ -603,6 +603,7 @@ $css_surumu = $css_dosyasi !== ""
 }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body class="ilan-duzenle-sayfasi">
@@ -797,5 +798,6 @@ $css_surumu = $css_dosyasi !== ""
 
 </main>
 
+<?php require __DIR__ . "/site-alt.php"; ?>
 </body>
 </html>
