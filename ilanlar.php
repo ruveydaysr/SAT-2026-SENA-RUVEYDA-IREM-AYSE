@@ -1,10 +1,10 @@
 <?php
 session_start();
-require_once __DIR__ . "/site-ust-ayar.php";
 
+require_once __DIR__ . "/site-ust-ayar.php";
 require_once __DIR__ . "/baglanti.php";
 
-/* Dil tercihi: filtreleri ve sayfa numarasını korur. */
+/* Dil tercihi */
 if (
     is_string($_GET["lang"] ?? null)
     && in_array($_GET["lang"], ["tr", "en"], true)
@@ -293,11 +293,30 @@ foreach ($kayitli_sehirler as $kayit) {
     }
 }
 
+/* Sıralama seçenekleri */
 $siralamalar = [
     "yeni" => ceviri("En Yeni", "Newest"),
     "eski" => ceviri("En Eski", "Oldest"),
-    "yas_artan" => ceviri("Yaşı Küçükten Büyüğe", "Age: Youngest First"),
-    "yas_azalan" => ceviri("Yaşı Büyükten Küçüğe", "Age: Oldest First")
+
+    "yas_artan" => ceviri(
+        "Yaşı Küçükten Büyüğe",
+        "Age: Youngest First"
+    ),
+
+    "yas_azalan" => ceviri(
+        "Yaşı Büyükten Küçüğe",
+        "Age: Oldest First"
+    ),
+
+    "favori_azalan" => ceviri(
+        "En Çok Favorilenen",
+        "Most Favourited"
+    ),
+
+    "favori_artan" => ceviri(
+        "En Az Favorilenen",
+        "Least Favourited"
+    )
 ];
 
 $turler = array_values(
@@ -384,6 +403,7 @@ foreach ([
 ] as $alan => $degerler) {
     if ($degerler) {
         $isaretler = implode(",", array_fill(0, count($degerler), "?"));
+
         $kosullar[] = $alan . " IN (" . $isaretler . ")";
 
         foreach ($degerler as $deger) {
@@ -448,7 +468,6 @@ $sayim = veri_getir(
 );
 
 $toplam_ilan = (int)$sayim[0]["toplam"];
-
 $ilan_sayisi = 8;
 
 $sayfa = filter_input(INPUT_GET, "sayfa", FILTER_VALIDATE_INT);
@@ -458,11 +477,33 @@ $toplam_sayfa = max(1, (int)ceil($toplam_ilan / $ilan_sayisi));
 $sayfa = min($sayfa, $toplam_sayfa);
 $baslangic = ($sayfa - 1) * $ilan_sayisi;
 
+/* Favori sıralaması tüm filtreli ilanlara uygulanır. */
 $siralama_kodlari = [
-    "yeni" => "id DESC",
-    "eski" => "id ASC",
-    "yas_artan" => "yas ASC, id DESC",
-    "yas_azalan" => "yas DESC, id DESC"
+    "yeni" => "ilanlar.id DESC",
+
+    "eski" => "ilanlar.id ASC",
+
+    "yas_artan" => "ilanlar.yas ASC, ilanlar.id DESC",
+
+    "yas_azalan" => "ilanlar.yas DESC, ilanlar.id DESC",
+
+    "favori_azalan" => "
+        (
+            SELECT COUNT(DISTINCT f.uye_id)
+            FROM favoriler AS f
+            WHERE f.ilan_id = ilanlar.id
+        ) DESC,
+        ilanlar.id DESC
+    ",
+
+    "favori_artan" => "
+        (
+            SELECT COUNT(DISTINCT f.uye_id)
+            FROM favoriler AS f
+            WHERE f.ilan_id = ilanlar.id
+        ) ASC,
+        ilanlar.id DESC
+    "
 ];
 
 $liste_parametreleri = $parametreler;
@@ -540,7 +581,6 @@ if ($fotografli) {
     ];
 }
 
-/* JavaScript içinde gösterilecek metinler */
 $js_metinleri = [
     "favoride" => ceviri("Favorilerinizde", "In your favourites"),
     "hata" => ceviri(
@@ -586,9 +626,10 @@ $js_metinleri = [
         button, input, select { font: inherit; }
         img { max-width: 100%; }
 
-        a:focus-visible, button:focus-visible,
-        input:focus-visible, select:focus-visible,
-        summary:focus-visible {
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
             outline: 3px solid #8fa97d;
             outline-offset: 3px;
         }
@@ -686,7 +727,8 @@ $js_metinleri = [
             margin-left: auto;
         }
 
-        .ilan-menu > a, .kategori-baslik {
+        .ilan-menu > a,
+        .kategori-baslik {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -802,7 +844,7 @@ $js_metinleri = [
 
         .sayfa-baslik h1 {
             margin: 0;
-            font-size: clamp(25px,3vw,35px);
+            font-size: clamp(25px, 3vw, 35px);
             letter-spacing: -1px;
         }
 
@@ -825,11 +867,12 @@ $js_metinleri = [
 
         .liste-duzeni {
             display: grid;
-            grid-template-columns: 235px minmax(0,1fr);
+            grid-template-columns: 235px minmax(0, 1fr);
             align-items: start;
             gap: 24px;
         }
 
+        /* Filtreler sürekli açık */
         .filtre-panel {
             overflow: hidden;
             border: 1px solid var(--cizgi);
@@ -837,28 +880,18 @@ $js_metinleri = [
             background: var(--beyaz);
         }
 
-        .filtre-panel > summary {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
+        .filtre-baslik {
+            margin: 0;
             padding: 18px;
             border-bottom: 1px solid var(--cizgi);
-            list-style: none;
             font-size: 16px;
             font-weight: bold;
-            cursor: pointer;
         }
 
-        .filtre-panel > summary::-webkit-details-marker { display: none; }
-
-        .filtre-panel > summary span {
-            color: var(--metin);
-            font-size: 12px;
-            font-weight: normal;
+        .filtre-icerik {
+            display: block;
+            padding: 18px;
         }
-
-        .filtre-icerik { padding: 18px; }
 
         .filtre-grup {
             margin-bottom: 20px;
@@ -866,7 +899,8 @@ $js_metinleri = [
             border-bottom: 1px solid #e8e6dc;
         }
 
-        .filtre-grup h2, .filtre-grup > label {
+        .filtre-grup h3,
+        .filtre-grup > label {
             display: block;
             margin: 0 0 11px;
             font-size: 13px;
@@ -891,7 +925,8 @@ $js_metinleri = [
             accent-color: var(--yesil);
         }
 
-        .filtre-icerik input[type="search"], .yas-alanlari input {
+        .filtre-icerik input[type="search"],
+        .yas-alanlari input {
             width: 100%;
             min-width: 0;
             min-height: 38px;
@@ -903,7 +938,9 @@ $js_metinleri = [
             font-size: 12px;
         }
 
-        .filtre-icerik input[type="search"] { margin-bottom: 10px; }
+        .filtre-icerik input[type="search"] {
+            margin-bottom: 10px;
+        }
 
         .sehir-listesi {
             max-height: 210px;
@@ -930,7 +967,8 @@ $js_metinleri = [
             line-height: 1.5;
         }
 
-        .filtre-buton, .temizle {
+        .filtre-buton,
+        .temizle {
             display: block;
             width: 100%;
             padding: 11px 8px;
@@ -942,8 +980,16 @@ $js_metinleri = [
             cursor: pointer;
         }
 
-        .filtre-buton { background: var(--yesil); color: white; }
-        .temizle { margin-top: 8px; background: #eee5d3; }
+        .filtre-buton {
+            background: var(--yesil);
+            color: white;
+        }
+
+        .temizle {
+            margin-top: 8px;
+            background: #eee5d3;
+        }
+
         .sonuclar { min-width: 0; }
 
         .arama-satiri {
@@ -983,7 +1029,10 @@ $js_metinleri = [
             margin-bottom: 18px;
         }
 
-        .sonuc-ust h2 { margin: 0; font-size: 18px; }
+        .sonuc-ust h2 {
+            margin: 0;
+            font-size: 18px;
+        }
 
         .sonuc-ust h2 span {
             display: inline-block;
@@ -993,11 +1042,19 @@ $js_metinleri = [
             font-weight: normal;
         }
 
-        .siralama { display: flex; align-items: center; gap: 8px; }
-        .siralama label { color: var(--metin); font-size: 12px; }
+        .siralama {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .siralama label {
+            color: var(--metin);
+            font-size: 12px;
+        }
 
         .siralama select {
-            max-width: 200px;
+            max-width: 220px;
             min-height: 38px;
             padding: 8px;
             border: 1px solid var(--cizgi);
@@ -1041,7 +1098,7 @@ $js_metinleri = [
 
         .ilanlar {
             display: grid;
-            grid-template-columns: repeat(4,minmax(0,1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 17px;
         }
 
@@ -1068,7 +1125,11 @@ $js_metinleri = [
             background: #e8eddf;
         }
 
-        .fotograf-link { display: block; width: 100%; height: 100%; }
+        .fotograf-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
         .ilan-fotograf {
             display: block;
@@ -1121,8 +1182,10 @@ $js_metinleri = [
             text-decoration: none;
         }
 
-        .detay-buton:hover, .filtre-buton:hover,
-        .arama-satiri button:hover, .ilan-ver-link:hover {
+        .detay-buton:hover,
+        .filtre-buton:hover,
+        .arama-satiri button:hover,
+        .ilan-ver-link:hover {
             background: var(--koyu);
             color: white;
         }
@@ -1146,7 +1209,7 @@ $js_metinleri = [
             border-radius: 50%;
             background: #fffdf8;
             color: #687361;
-            font: 27px/1 Arial,sans-serif;
+            font: 27px/1 Arial, sans-serif;
             text-decoration: none;
             box-shadow: 0 2px 7px rgba(0,0,0,.12);
             cursor: pointer;
@@ -1159,7 +1222,11 @@ $js_metinleri = [
             z-index: 2;
         }
 
-        .kart-favori-kalp:hover { color: #c74658; border-color: #c74658; }
+        .kart-favori-kalp:hover {
+            color: #c74658;
+            border-color: #c74658;
+        }
+
         .kart-favori-kalp.secili { color: #c74658; }
         .kart-favori-kalp:disabled { cursor: default; }
 
@@ -1173,8 +1240,14 @@ $js_metinleri = [
             line-height: 1.5;
         }
 
-        .kalp-isaret { color: #c74658; font-size: 17px; }
-        .kart-favori-sayisi strong { color: var(--yesil); }
+        .kalp-isaret {
+            color: #c74658;
+            font-size: 17px;
+        }
+
+        .kart-favori-sayisi strong {
+            color: var(--yesil);
+        }
 
         .kart-islem-mesaji {
             margin: 0 0 10px;
@@ -1239,43 +1312,54 @@ $js_metinleri = [
             text-align: center;
         }
 
-        @media (min-width: 801px) {
-            .filtre-panel:not([open]) > .filtre-icerik { display: block; }
-        }
-
         @media (max-width: 1100px) {
             .ust-sag { flex-basis: 100%; }
             .ilan-menu { width: 100%; }
 
             .liste-duzeni {
-                grid-template-columns: 220px minmax(0,1fr);
+                grid-template-columns: 220px minmax(0, 1fr);
                 gap: 18px;
             }
 
-            .ilanlar { grid-template-columns: repeat(3,minmax(0,1fr)); }
+            .ilanlar {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 800px) {
             main { width: calc(100% - 30px); }
-            .liste-duzeni { grid-template-columns: 1fr; }
 
-            .filtre-panel:not([open]) > .filtre-icerik { display: none; }
+            .liste-duzeni {
+                grid-template-columns: 1fr;
+            }
 
             .filtre-icerik form {
                 display: grid;
-                grid-template-columns: repeat(2,minmax(0,1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 18px;
             }
 
             .filtre-grup { margin: 0; }
             .filtre-islemler { align-self: end; }
-            .ilanlar { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+            .ilanlar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .sayfa-baslik { padding: 23px; }
         }
 
         @media (max-width: 600px) {
-            .ilan-ust { padding: 15px 18px; gap: 15px; }
-            .ilan-menu > a, .kategori-baslik { padding: 8px; font-size: 13px; }
+            .ilan-ust {
+                padding: 15px 18px;
+                gap: 15px;
+            }
+
+            .ilan-menu > a,
+            .kategori-baslik {
+                padding: 8px;
+                font-size: 13px;
+            }
 
             .sonuc-ust {
                 align-items: flex-start;
@@ -1288,7 +1372,10 @@ $js_metinleri = [
         }
 
         @media (max-width: 380px) {
-            .ilanlar, .filtre-icerik form { grid-template-columns: 1fr; }
+            .ilanlar,
+            .filtre-icerik form {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1296,8 +1383,9 @@ $js_metinleri = [
             .ilan-karti:hover { transform: none; }
         }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
-<link rel="stylesheet" href="site-alt.css?v=20261104-1">
+
+    <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+    <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
 <body>
@@ -1309,7 +1397,10 @@ $js_metinleri = [
         class="yol"
         aria-label="<?= guvenli(ceviri("Sayfa yolu", "Breadcrumb")) ?>"
     >
-        <a href="index.php"><?= guvenli(ceviri("Ana Sayfa", "Home")) ?></a>
+        <a href="index.php">
+            <?= guvenli(ceviri("Ana Sayfa", "Home")) ?>
+        </a>
+
         <span aria-hidden="true">›</span>
         <span><?= guvenli(ceviri("İlanlar", "Listings")) ?></span>
     </nav>
@@ -1347,17 +1438,21 @@ $js_metinleri = [
     </section>
 
     <div class="liste-duzeni">
-        <aside aria-label="<?= guvenli(ceviri("İlan filtreleri", "Listing filters")) ?>">
-            <details class="filtre-panel">
-                <summary>
+
+        <!-- Sürekli açık filtre bölümü -->
+        <aside aria-labelledby="filtre-baslik">
+            <div class="filtre-panel">
+                <h2 class="filtre-baslik" id="filtre-baslik">
                     <?= guvenli(ceviri("Filtreler", "Filters")) ?>
-                    <span><?= guvenli(ceviri("Aç / Kapat", "Show / Hide")) ?></span>
-                </summary>
+                </h2>
 
                 <div class="filtre-icerik">
                     <form action="ilanlar.php" method="GET" id="filtre-form">
+
                         <div class="filtre-grup">
-                            <h2><?= guvenli(ceviri("Hayvan Türü", "Animal Type")) ?></h2>
+                            <h3>
+                                <?= guvenli(ceviri("Hayvan Türü", "Animal Type")) ?>
+                            </h3>
 
                             <?php foreach ($kategoriler as $ad => $dosya): ?>
                                 <label class="secenek">
@@ -1380,12 +1475,15 @@ $js_metinleri = [
                         </div>
 
                         <div class="filtre-grup">
-                            <h2><?= guvenli(ceviri("Şehir", "City")) ?></h2>
+                            <h3><?= guvenli(ceviri("Şehir", "City")) ?></h3>
 
                             <input
                                 type="search"
                                 id="sehir-ara"
-                                placeholder="<?= guvenli(ceviri("Şehir ara...", "Search cities...")) ?>"
+                                placeholder="<?= guvenli(ceviri(
+                                    "Şehir ara...",
+                                    "Search cities..."
+                                )) ?>"
                                 aria-label="<?= guvenli(ceviri(
                                     "Filtre seçeneklerinde şehir ara",
                                     "Search city filter options"
@@ -1418,7 +1516,9 @@ $js_metinleri = [
                         </div>
 
                         <div class="filtre-grup">
-                            <h2><?= guvenli(ceviri("Yaş Aralığı", "Age Range")) ?></h2>
+                            <h3>
+                                <?= guvenli(ceviri("Yaş Aralığı", "Age Range")) ?>
+                            </h3>
 
                             <div class="yas-alanlari">
                                 <div>
@@ -1463,7 +1563,9 @@ $js_metinleri = [
                         </div>
 
                         <div class="filtre-grup">
-                            <h2><?= guvenli(ceviri("Cinsiyet", "Sex")) ?></h2>
+                            <h3>
+                                <?= guvenli(ceviri("Cinsiyet", "Sex")) ?>
+                            </h3>
 
                             <?php foreach (["", "Dişi", "Erkek"] as $deger): ?>
                                 <label class="secenek">
@@ -1479,7 +1581,9 @@ $js_metinleri = [
                         </div>
 
                         <div class="filtre-grup">
-                            <h2><?= guvenli(ceviri("Fotoğraf", "Photo")) ?></h2>
+                            <h3>
+                                <?= guvenli(ceviri("Fotoğraf", "Photo")) ?>
+                            </h3>
 
                             <label class="secenek">
                                 <input
@@ -1498,16 +1602,22 @@ $js_metinleri = [
 
                         <div class="filtre-islemler">
                             <button type="submit" class="filtre-buton">
-                                <?= guvenli(ceviri("Filtreleri Uygula", "Apply Filters")) ?>
+                                <?= guvenli(ceviri(
+                                    "Filtreleri Uygula",
+                                    "Apply Filters"
+                                )) ?>
                             </button>
 
                             <a href="ilanlar.php" class="temizle">
-                                <?= guvenli(ceviri("Tümünü Temizle", "Clear All")) ?>
+                                <?= guvenli(ceviri(
+                                    "Tümünü Temizle",
+                                    "Clear All"
+                                )) ?>
                             </a>
                         </div>
                     </form>
                 </div>
-            </details>
+            </div>
         </aside>
 
         <section class="sonuclar" aria-labelledby="sonuc-baslik">
@@ -1572,7 +1682,10 @@ $js_metinleri = [
             <?php if ($etiketler): ?>
                 <nav
                     class="aktif-filtreler"
-                    aria-label="<?= guvenli(ceviri("Seçili filtreler", "Selected filters")) ?>"
+                    aria-label="<?= guvenli(ceviri(
+                        "Seçili filtreler",
+                        "Selected filters"
+                    )) ?>"
                 >
                     <?php foreach ($etiketler as [$alan, $deger, $yazi]): ?>
                         <a
@@ -1636,7 +1749,10 @@ $js_metinleri = [
                                         >
                                     <?php else: ?>
                                         <div class="foto-yok">
-                                            <?= guvenli(ceviri("Fotoğraf Yok", "No Photo")) ?>
+                                            <?= guvenli(ceviri(
+                                                "Fotoğraf Yok",
+                                                "No Photo"
+                                            )) ?>
                                         </div>
                                     <?php endif; ?>
                                 </a>
@@ -1692,6 +1808,7 @@ $js_metinleri = [
 
                                     <span>
                                         <strong class="favori-adet"><?= $favori_sayisi ?></strong>
+
                                         <?= guvenli(ceviri(
                                             "kişinin favorisinde",
                                             "people have saved this"
@@ -1709,7 +1826,10 @@ $js_metinleri = [
                                     href="ilan-detay.php?id=<?= $ilan_id ?>"
                                     class="detay-buton"
                                 >
-                                    <?= guvenli(ceviri("İlanı İncele", "View Listing")) ?> →
+                                    <?= guvenli(ceviri(
+                                        "İlanı İncele",
+                                        "View Listing"
+                                    )) ?> →
                                 </a>
                             </div>
                         </article>
@@ -1744,7 +1864,10 @@ $js_metinleri = [
             <?php if ($toplam_sayfa > 1): ?>
                 <nav
                     class="sayfalama"
-                    aria-label="<?= guvenli(ceviri("İlan sayfaları", "Listing pages")) ?>"
+                    aria-label="<?= guvenli(ceviri(
+                        "İlan sayfaları",
+                        "Listing pages"
+                    )) ?>"
                 >
                     <?php if ($sayfa > 1): ?>
                         <a href="<?= guvenli(
@@ -1762,7 +1885,9 @@ $js_metinleri = [
 
                     <?php for ($i = $ilk; $i <= $son; $i++): ?>
                         <a
-                            href="<?= guvenli(sayfa_linki($i, $sayfa_filtreleri)) ?>"
+                            href="<?= guvenli(
+                                sayfa_linki($i, $sayfa_filtreleri)
+                            ) ?>"
                             <?= $i === $sayfa ? 'aria-current="page"' : "" ?>
                         ><?= $i ?></a>
                     <?php endfor; ?>
@@ -1870,7 +1995,21 @@ document.querySelectorAll(".kart-favori-form").forEach(function (form) {
             buton.setAttribute("aria-label", metinler.favoride);
             buton.title = metinler.favoride;
 
-            /* Güncel favori sayısını sunucudan al. */
+            /*
+             * Favoriye göre sıralama seçiliyse listeyi yeniden sırala.
+             * Mevcut filtreler ve seçili sıralama korunur.
+             */
+            const seciliSiralama = document.getElementById("siralama").value;
+
+            if (
+                seciliSiralama === "favori_azalan"
+                || seciliSiralama === "favori_artan"
+            ) {
+                window.location.reload();
+                return;
+            }
+
+            /* Güncel favori sayısını sunucudan al */
             try {
                 const guncelCevap = await fetch(window.location.href, {
                     cache: "no-store"
