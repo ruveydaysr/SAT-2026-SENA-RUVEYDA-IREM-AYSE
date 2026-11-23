@@ -25,6 +25,36 @@ function id_post($alan)
         : "";
 }
 
+function id_fotograf_yukle(array $dosya): string
+{
+    if (($dosya["error"] ?? null) !== UPLOAD_ERR_OK
+        || !is_string($dosya["tmp_name"] ?? null)
+        || !is_uploaded_file($dosya["tmp_name"])) {
+        throw new RuntimeException("Fotoğraf yüklenemedi. Lütfen yeniden seçin.");
+    }
+
+    $kaynak = $dosya["tmp_name"];
+    $boyut = filesize($kaynak);
+    if ($boyut === false || $boyut > 5 * 1024 * 1024) {
+        throw new RuntimeException("Fotoğraf en fazla 5 MB olabilir.");
+    }
+
+    $uzantilar = [IMAGETYPE_JPEG => "jpg", IMAGETYPE_PNG => "png", IMAGETYPE_WEBP => "webp"];
+    $gorsel = @getimagesize($kaynak);
+    $uzanti = $uzantilar[$gorsel[2] ?? 0] ?? null;
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($kaynak);
+    if ($uzanti === null || $mime !== image_type_to_mime_type($gorsel[2])) {
+        throw new RuntimeException("Yalnızca JPG, PNG veya WebP fotoğraf yükleyebilirsiniz.");
+    }
+
+    $yol = "uploads/" . bin2hex(random_bytes(16)) . "." . $uzanti;
+    if (!move_uploaded_file($kaynak, __DIR__ . "/" . $yol)) {
+        throw new RuntimeException("Fotoğraf kaydedilemedi.");
+    }
+
+    return $yol;
+}
+
 $uye_id = (int) $_SESSION["uye_id"];
 $ilan_id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
@@ -145,6 +175,15 @@ $form = [
     "sehir" => (string) ($ilan["sehir"] ?? "")
 ];
 
+$mevcut_fotograf = (string) ($ilan["fotograf"] ?? "");
+if (preg_match('~^[a-f0-9]{32}\.(jpe?g|png|webp)$~i', $mevcut_fotograf)) {
+    $mevcut_fotograf = "uploads/" . $mevcut_fotograf;
+}
+$fotograf_var = preg_match(
+    '~^(uploads|images/hayvanlar)/[a-z0-9_-]+\.(jpe?g|png|webp)$~i',
+    $mevcut_fotograf
+) && is_file(__DIR__ . "/" . $mevcut_fotograf);
+
 $eski_sehir = $form["sehir"];
 $hata = "";
 
@@ -213,43 +252,71 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 . $kayitli_ek_aciklama;
         }
 
-        $guncelle = mysqli_prepare(
-            $baglanti,
-            "UPDATE ilanlar
-             SET ilan_basligi = ?,
-                 hayvan_adi = ?,
-                 tur = ?,
-                 yas = ?,
-                 cinsiyet = ?,
-                 sehir = ?,
-                 aciklama = ?
-             WHERE id = ? AND uye_id = ?"
-        );
-
-        mysqli_stmt_bind_param(
-            $guncelle,
-            "sssisssii",
-            $form["ilan_basligi"],
-            $form["hayvan_adi"],
-            $form["tur"],
-            $yas,
-            $form["cinsiyet"],
-            $form["sehir"],
-            $aciklama,
-            $ilan_id,
-            $uye_id
-        );
-
-        $kaydedildi = mysqli_stmt_execute($guncelle);
-
-        mysqli_stmt_close($guncelle);
-
-        if ($kaydedildi) {
-            header("Location: profil.php");
-            exit();
+        $yeni_fotograf = null;
+        $dosya = $_FILES["fotograf"] ?? ["error" => UPLOAD_ERR_NO_FILE];
+        if (($dosya["error"] ?? null) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $yeni_fotograf = id_fotograf_yukle($dosya);
+            } catch (RuntimeException $e) {
+                $hata = $e->getMessage();
+            }
         }
 
-        $hata = "İlan güncellenirken bir hata oluştu.";
+        if ($hata === "") {
+            $guncelle = null;
+            try {
+                $guncelle = mysqli_prepare(
+                    $baglanti,
+                    "UPDATE ilanlar
+                     SET ilan_basligi = ?,
+                         hayvan_adi = ?,
+                         tur = ?,
+                         yas = ?,
+                         cinsiyet = ?,
+                         sehir = ?,
+                         aciklama = ?,
+                         fotograf = COALESCE(?, fotograf)
+                     WHERE id = ? AND uye_id = ?"
+                );
+
+                $kaydedildi = false;
+                if ($guncelle) {
+                    mysqli_stmt_bind_param(
+                        $guncelle,
+                        "sssissssii",
+                        $form["ilan_basligi"],
+                        $form["hayvan_adi"],
+                        $form["tur"],
+                        $yas,
+                        $form["cinsiyet"],
+                        $form["sehir"],
+                        $aciklama,
+                        $yeni_fotograf,
+                        $ilan_id,
+                        $uye_id
+                    );
+
+                    $kaydedildi = mysqli_stmt_execute($guncelle)
+                        && ($yeni_fotograf === null || mysqli_stmt_affected_rows($guncelle) === 1);
+                }
+            } catch (mysqli_sql_exception $e) {
+                $kaydedildi = false;
+            } finally {
+                if ($guncelle instanceof mysqli_stmt) {
+                    mysqli_stmt_close($guncelle);
+                }
+            }
+
+            if ($kaydedildi) {
+                header("Location: profil.php");
+                exit();
+            }
+
+            if ($yeni_fotograf !== null) {
+                unlink(__DIR__ . "/" . $yeni_fotograf);
+            }
+            $hata = "İlan güncellenirken bir hata oluştu.";
+        }
     }
 }
 
@@ -433,6 +500,20 @@ $css_surumu = $css_dosyasi !== ""
             background: white;
             color: #284b32;
             font: normal 14px Arial, sans-serif;
+        }
+
+        .duzenle-fotograf {
+            display: block;
+            max-width: 100%;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #f5f0e6;
+        }
+
+        #fotograf-yardim {
+            display: block;
+            margin-top: 8px;
         }
 
         .duzenle-form textarea {
@@ -625,7 +706,7 @@ $css_surumu = $css_dosyasi !== ""
             </div>
         <?php endif; ?>
 
-        <form method="POST" class="duzenle-form">
+        <form method="POST" enctype="multipart/form-data" class="duzenle-form">
 
             <input
                 type="hidden"
@@ -776,6 +857,18 @@ $css_surumu = $css_dosyasi !== ""
                 rows="4"
                 placeholder="Hayvanınızın alışkanlıkları veya özel ihtiyaçları hakkında bilgi verebilirsiniz."
             ><?= id_guvenli($kayitli_ek_aciklama) ?></textarea>
+
+            <div class="duzenle-alan">
+                <label for="fotograf">İlan Fotoğrafı</label>
+                <?php if ($fotograf_var): ?>
+                    <img class="duzenle-fotograf" src="<?= id_guvenli($mevcut_fotograf) ?>"
+                         alt="Mevcut ilan fotoğrafı" width="180" height="140">
+                <?php endif; ?>
+                <input type="file" id="fotograf" name="fotograf"
+                       accept="image/jpeg,image/png,image/webp" aria-describedby="fotograf-yardim">
+                <small id="fotograf-yardim">JPG, PNG veya WebP. En fazla 5 MB.
+                    Yeni fotoğraf seçmezsen mevcut fotoğraf korunur.</small>
+            </div>
 
             <div class="duzenle-islemler">
                 <button
