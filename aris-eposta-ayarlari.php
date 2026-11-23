@@ -1,6 +1,6 @@
 <?php
 return [
     'gmail' => '36504125061@ogr.bozok.edu.tr',
-    'uygulama_sifresi' => 'cylh fzvc cicu sgcj',
+    'uygulama_sifresi' => 'cylhfzvccicusgcj',
     'admin_kullanici_adi' => 'Aris',
 ];
