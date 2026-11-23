@@ -3,6 +3,7 @@ session_start();
 
 require_once __DIR__ . "/admin-dil.php";
 require_once __DIR__ . "/../baglanti.php";
+require_once __DIR__ . "/../eposta-kodu.php";
 
 $hata = "";
 $kullanici_adi = "";
@@ -75,12 +76,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($dogru) {
-        session_regenerate_id(true);
-
-        $_SESSION["admin"] = $admin["kullanici_adi"];
-
-        header("Location: admin-genel-bakis.php");
-        exit();
+        $ayar = eposta_ayarlari();
+        if (($ayar["admin_kullanici_adi"] ?? null) === $admin["kullanici_adi"]
+            && eposta_kodu_baslat($admin["kullanici_adi"], $admin_dil === "en")) {
+            header("Location: ../eposta-dogrula.php");
+            exit();
+        }
+        $hata = $admin_dil === "en"
+            ? "The code could not be sent. Check your email settings and try again in a minute."
+            : "Kod gönderilemedi. E-posta ayarlarını kontrol edip bir dakika sonra tekrar dene.";
     } else {
         $hata = admin_t("Kullanıcı adı veya şifre yanlış.");
     }
