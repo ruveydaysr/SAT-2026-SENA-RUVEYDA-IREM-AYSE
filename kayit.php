@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . "/site-ust-ayar.php";
 
 require_once __DIR__ . "/baglanti.php";
+require_once __DIR__ . "/uye-bilgileri.php";
 
 /* Dil tercihi */
 $post_istegi = $_SERVER["REQUEST_METHOD"] === "POST";
@@ -49,7 +50,9 @@ function form_degeri($alan)
 $mesaj = "";
 $adsoyad = form_degeri("adsoyad");
 $email = form_degeri("email");
-$telefon = form_degeri("telefon");
+$telefon = $post_istegi ? form_degeri("telefon") : "0";
+$telefon_kodu = form_degeri("telefon_kodu");
+$kayit_telefonu = uye_telefon_secimini_duzenle($telefon, $telefon_kodu);
 
 if (
     !isset($_SESSION["kayit_token"])
@@ -88,15 +91,20 @@ if ($post_istegi && !$dil_degisti) {
             "Ad soyad veya e-posta adresi izin verilen uzunluğu aşıyor.",
             "Your full name or email address exceeds the allowed length."
         );
+    } elseif (!uye_adi_gecerli($adsoyad)) {
+        $mesaj = ceviri(
+            "Ad soyad alanına harflerle geçerli bir ad yazınız.",
+            "Enter a valid full name using letters."
+        );
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $mesaj = ceviri(
             "Lütfen geçerli bir e-posta adresi giriniz.",
             "Please enter a valid email address."
         );
-    } elseif (!preg_match('/\A05[0-9]{9}\z/', $telefon)) {
+    } elseif ($kayit_telefonu === null) {
         $mesaj = ceviri(
-            "Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır.",
-            "The phone number must start with 05 and contain 11 digits."
+            "Seçtiğiniz ülke için geçerli bir telefon numarası giriniz.",
+            "Enter a valid phone number for the selected country."
         );
     } else {
         $kontrol = null;
@@ -149,7 +157,7 @@ if ($post_istegi && !$dil_degisti) {
                             "ssss",
                             $adsoyad,
                             $email,
-                            $telefon,
+                            $kayit_telefonu,
                             $sifre_hash
                         );
 
@@ -393,10 +401,6 @@ if ($post_istegi && !$dil_degisti) {
             outline-offset: 2px;
         }
 
-        .kayit-kart #telefon {
-            margin-bottom: 8px;
-        }
-
         #telefon-aciklama {
             margin-bottom: 20px;
             color: #687361;
@@ -505,6 +509,7 @@ if ($post_istegi && !$dil_degisti) {
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
+<link rel="stylesheet" href="uye-telefon.css">
 </head>
 
 <body>
@@ -593,38 +598,7 @@ if ($post_istegi && !$dil_degisti) {
                 required
             >
 
-            <label for="telefon">
-                <?= guvenli(ceviri(
-                    "Telefon Numarası",
-                    "Phone Number"
-                )) ?>
-            </label>
-
-            <input
-                type="tel"
-                id="telefon"
-                name="telefon"
-                placeholder="05XXXXXXXXX"
-                inputmode="numeric"
-                autocomplete="tel-national"
-                minlength="11"
-                maxlength="11"
-                pattern="05[0-9]{9}"
-                title="<?= guvenli(ceviri(
-                    "Telefon numarası 05 ile başlamalı ve 11 rakamdan oluşmalıdır.",
-                    "The phone number must start with 05 and contain 11 digits."
-                )) ?>"
-                aria-describedby="telefon-aciklama"
-                value="<?= guvenli($telefon) ?>"
-                required
-            >
-
-            <small id="telefon-aciklama">
-                <?= guvenli(ceviri(
-                    "Başındaki 0 dahil, boşluksuz 11 rakam giriniz.",
-                    "Enter 11 digits without spaces, including the initial 0."
-                )) ?>
-            </small>
+            <?php require __DIR__ . "/uye-telefon-alani.php"; ?>
 
             <label for="sifre">
                 <?= guvenli(ceviri("Şifre", "Password")) ?>
@@ -667,5 +641,6 @@ if ($post_istegi && !$dil_degisti) {
 
 <?php require __DIR__ . "/site-alt.php"; ?>
 
+<script src="uye-formu.js?v=2" defer></script>
 </body>
 </html>

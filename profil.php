@@ -32,6 +32,8 @@ if ((int)($_SESSION["uye_id"] ?? 0) < 1) {
 }
 
 require_once __DIR__ . "/baglanti.php";
+require_once __DIR__ . "/uye-bilgileri.php";
+require_once __DIR__ . "/hesap-silme.php";
 
 $uye_id = (int)$_SESSION["uye_id"];
 
@@ -45,6 +47,45 @@ function ceviri($tr, $en)
     global $dil;
 
     return $dil === "en" ? $en : $tr;
+}
+
+function profil_fotografi_yukle(array $dosya): ?string
+{
+    $hata = $dosya["error"] ?? UPLOAD_ERR_NO_FILE;
+    if ($hata === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    $gecici = $dosya["tmp_name"] ?? "";
+    $uzantilar = [IMAGETYPE_JPEG => "jpg", IMAGETYPE_PNG => "png", IMAGETYPE_WEBP => "webp"];
+    $resim = $hata === UPLOAD_ERR_OK && is_uploaded_file($gecici)
+        && filesize($gecici) <= 2 * 1024 * 1024
+        ? @getimagesize($gecici)
+        : false;
+
+    if (!$resim || !isset($uzantilar[$resim[2]])) {
+        throw new InvalidArgumentException(ceviri(
+            "En fazla 2 MB boyutunda bir JPG, PNG veya WEBP fotoğrafı seçiniz.",
+            "Choose a JPG, PNG or WEBP photo up to 2 MB."
+        ));
+    }
+
+    $yol = "uploads/profil-" . bin2hex(random_bytes(16)) . "." . $uzantilar[$resim[2]];
+    if (!move_uploaded_file($gecici, __DIR__ . "/" . $yol)) {
+        throw new InvalidArgumentException(ceviri(
+            "Profil fotoğrafı kaydedilemedi.",
+            "The profile photo could not be saved."
+        ));
+    }
+
+    return $yol;
+}
+
+function profil_fotografi_sil(?string $yol): void
+{
+    if ($yol !== null && preg_match('~\Auploads/profil-[a-f0-9]{32}\.(jpg|png|webp)\z~', $yol)) {
+        @unlink(__DIR__ . "/" . $yol);
+    }
 }
 
 function post_degeri($alan)
@@ -195,7 +236,7 @@ function onay_metni($tr, $en)
 /* Kullanıcı bilgileri */
 $uyeler = veri_getir(
     $baglanti,
-    "SELECT id, ad_soyad, email, telefon, sifre
+    "SELECT *
      FROM uyeler WHERE id = ? LIMIT 1",
     "i",
     $uye_id
@@ -213,6 +254,8 @@ if (!$uyeler) {
 }
 
 $uye = $uyeler[0];
+$profil_foto_etkin = array_key_exists("profil_fotografi", $uye);
+$uye["profil_fotografi"] = $uye["profil_fotografi"] ?? null;
 
 if (
     !isset($_SESSION["profil_csrf"])
@@ -224,6 +267,7 @@ if (
 
 $bilgi_hata = "";
 $sifre_hata = "";
+$silme_hata = "";
 $basari = "";
 
 $basari_kodu = $_SESSION["profil_basari"] ?? "";
@@ -244,6 +288,7 @@ if ($basari_kodu === "bilgi_guncellendi") {
 $form_ad = $uye["ad_soyad"];
 $form_email = $uye["email"];
 $form_telefon = $uye["telefon"];
+$telefon_kodu = "";
 
 /* Bilgi ve şifre güncelleme */
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -254,6 +299,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $form_ad = trim(post_degeri("ad_soyad"));
         $form_email = trim(post_degeri("email"));
         $form_telefon = trim(post_degeri("telefon"));
+        $telefon_kodu = post_degeri("telefon_kodu");
     }
 
     if (!hash_equals($_SESSION["profil_csrf"], $token)) {
@@ -264,11 +310,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($islem === "sifre_degistir") {
             $sifre_hata = $mesaj;
+        } elseif ($islem === "hesap_sil") {
+            $silme_hata = $mesaj;
         } else {
             $bilgi_hata = $mesaj;
         }
+    } elseif ($islem === "hesap_sil") {
+        if (post_degeri("silme_onayi") !== "1") {
+            $silme_hata = ceviri("Lütfen silme işlemini onaylayınız.", "Please confirm account deletion.");
+        } elseif (!password_verify(post_degeri("silme_sifresi"), $uye["sifre"])) {
+            $silme_hata = ceviri("Mevcut şifreniz yanlış.", "Your current password is incorrect.");
+        } else {
+            try {
+                uye_hesabini_sil($baglanti, $uye_id, $uye["sifre"]);
+                profil_fotografi_sil($uye["profil_fotografi"]);
+                $_SESSION = ["dil" => $dil];
+                session_regenerate_id(true);
+                $_SESSION["hesap_silindi"] = true;
+                header("Location: giris.php", true, 303);
+                exit();
+            } catch (RuntimeException $hata) {
+                $silme_hata = ceviri(
+                    "Hesap silinemedi. Lütfen tekrar deneyiniz.",
+                    "Your account could not be deleted. Please try again."
+                );
+            }
+        }
     } elseif ($islem === "bilgi_guncelle") {
         $mevcut_sifre = post_degeri("bilgi_sifre");
+        $kayit_telefonu = uye_telefon_secimini_duzenle($form_telefon, $telefon_kodu)
+            ?? ($form_telefon === $uye["telefon"] ? $form_telefon : null);
 
         if (
             $form_ad === ""
@@ -280,15 +351,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "Lütfen tüm alanları doldurunuz.",
                 "Please complete all fields."
             );
+        } elseif ($form_ad !== $uye["ad_soyad"] && !uye_adi_gecerli($form_ad)) {
+            $bilgi_hata = ceviri(
+                "Ad soyad alanına harflerle geçerli bir ad yazınız.",
+                "Enter a valid full name using letters."
+            );
         } elseif (!filter_var($form_email, FILTER_VALIDATE_EMAIL)) {
             $bilgi_hata = ceviri(
                 "Geçerli bir e-posta adresi giriniz.",
                 "Please enter a valid email address."
             );
-        } elseif (!preg_match('/\A05[0-9]{9}\z/', $form_telefon)) {
+        } elseif ($kayit_telefonu === null) {
             $bilgi_hata = ceviri(
-                "Telefon numarası 05 ile başlamalı ve 11 haneli olmalıdır.",
-                "The phone number must start with 05 and contain 11 digits."
+                "Seçtiğiniz ülke için geçerli bir telefon numarası giriniz.",
+                "Enter a valid phone number for the selected country."
             );
         } elseif (!password_verify($mevcut_sifre, $uye["sifre"])) {
             $bilgi_hata = ceviri(
@@ -312,33 +388,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 );
             } else {
                 $sorgu = null;
+                $yeni_foto = null;
+                $kaydedildi = false;
+                $eski_foto = $uye["profil_fotografi"];
 
                 try {
-                    $sorgu = mysqli_prepare(
-                        $baglanti,
-                        "UPDATE uyeler
-                         SET ad_soyad = ?, email = ?, telefon = ?
-                         WHERE id = ?"
-                    );
+                    if ($profil_foto_etkin) {
+                        $yeni_foto = profil_fotografi_yukle($_FILES["profil_fotografi"] ?? []);
+                    }
 
-                    $kaydedildi = false;
+                    if ($yeni_foto === null) {
+                        $sorgu = mysqli_prepare(
+                            $baglanti,
+                            "UPDATE uyeler SET ad_soyad = ?, email = ?, telefon = ? WHERE id = ?"
+                        );
+                        if ($sorgu) {
+                            mysqli_stmt_bind_param($sorgu, "sssi", $form_ad, $form_email, $kayit_telefonu, $uye_id);
+                        }
+                    } else {
+                        $sorgu = mysqli_prepare(
+                            $baglanti,
+                            "UPDATE uyeler SET ad_soyad = ?, email = ?, telefon = ?, profil_fotografi = ?
+                             WHERE id = ? AND profil_fotografi <=> ?"
+                        );
+                        if ($sorgu) {
+                            mysqli_stmt_bind_param($sorgu, "ssssis", $form_ad, $form_email, $kayit_telefonu, $yeni_foto, $uye_id, $eski_foto);
+                        }
+                    }
 
                     if ($sorgu) {
-                        mysqli_stmt_bind_param(
-                            $sorgu,
-                            "sssi",
-                            $form_ad,
-                            $form_email,
-                            $form_telefon,
-                            $uye_id
-                        );
-
-                        $kaydedildi = mysqli_stmt_execute($sorgu);
+                        $kaydedildi = mysqli_stmt_execute($sorgu)
+                            && ($yeni_foto === null || mysqli_stmt_affected_rows($sorgu) === 1);
                         mysqli_stmt_close($sorgu);
                         $sorgu = null;
                     }
 
                     if ($kaydedildi) {
+                        if ($yeni_foto !== null) {
+                            profil_fotografi_sil($eski_foto);
+                        }
                         $_SESSION["uye_adsoyad"] = $form_ad;
                         $_SESSION["uye_email"] = $form_email;
                         $_SESSION["profil_basari"] = "bilgi_guncellendi";
@@ -356,7 +444,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "Bilgiler kaydedilemedi. Girdiğiniz bilgileri kontrol ediniz.",
                         "Your details could not be saved. Please check your information."
                     );
+                } catch (InvalidArgumentException $e) {
+                    $bilgi_hata = $e->getMessage();
                 } finally {
+                    if (!$kaydedildi) {
+                        profil_fotografi_sil($yeni_foto);
+                    }
                     if ($sorgu instanceof mysqli_stmt) {
                         mysqli_stmt_close($sorgu);
                     }
@@ -470,7 +563,7 @@ $profil_bolum = filtre_degeri("bolum");
 if (!in_array($profil_bolum, ["hesap", "sifre", "ilanlar", "basvurular", "favoriler"], true)) {
     $profil_bolum = "ilanlar";
 }
-if ($bilgi_hata !== "") { $profil_bolum = "hesap"; }
+if ($bilgi_hata !== "" || $silme_hata !== "") { $profil_bolum = "hesap"; }
 if ($sifre_hata !== "") { $profil_bolum = "sifre"; }
 
 /* İlanlar ve sayfalama */
@@ -1069,6 +1162,7 @@ $menu_kategorileri = [
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
 <link rel="stylesheet" href="profil-hesap.css?v=20261104-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
+<link rel="stylesheet" href="uye-telefon.css">
 </head>
 
 <body>
@@ -1085,7 +1179,11 @@ $menu_kategorileri = [
 <main class="hesap-duzen">
 <aside class="hesap-yan">
     <div class="hesap-kimlik">
-        <span class="hesap-avatar" aria-hidden="true"><?= guvenli(function_exists('mb_substr') ? mb_substr($uye['ad_soyad'], 0, 1, 'UTF-8') : substr($uye['ad_soyad'], 0, 1)) ?></span>
+        <?php if (!empty($uye["profil_fotografi"])): ?>
+            <img class="hesap-avatar" src="<?= guvenli($uye["profil_fotografi"]) ?>" alt="" width="44" height="44" style="object-fit:cover">
+        <?php else: ?>
+            <span class="hesap-avatar" aria-hidden="true"><?= guvenli(function_exists('mb_substr') ? mb_substr($uye['ad_soyad'], 0, 1, 'UTF-8') : substr($uye['ad_soyad'], 0, 1)) ?></span>
+        <?php endif; ?>
         <strong><?= guvenli($uye['ad_soyad']) ?></strong>
         <small><?= guvenli(ceviri('Hesabım', 'My Account')) ?></small>
     </div>
@@ -1098,7 +1196,7 @@ $menu_kategorileri = [
         ] as $anahtar => $etiket): ?>
             <a href="profil.php?bolum=<?= $anahtar ?>" <?= $profil_bolum === $anahtar ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri($etiket[0], $etiket[1])) ?></a>
         <?php endforeach; ?>
-        <a href="mesajlar.php"><?= guvenli(ceviri('Mesajlarım', 'My Messages')) ?></a>
+        <a href="mesajlar.php?gorunum=profil"><?= guvenli(ceviri('Mesajlarım', 'My Messages')) ?></a>
         <h2><?= guvenli(ceviri('Hesap Ayarlarım', 'Account Settings')) ?></h2>
         <a href="profil.php?bolum=hesap" <?= $profil_bolum === 'hesap' ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri('Kullanıcı Bilgilerim', 'My Details')) ?></a>
         <a href="profil.php?bolum=sifre" <?= $profil_bolum === 'sifre' ? 'aria-current="page"' : '' ?>><?= guvenli(ceviri('Şifremi Değiştir', 'Change Password')) ?></a>
@@ -1132,12 +1230,6 @@ $menu_kategorileri = [
             <a href="profil.php?bolum=sifre#sifre" class="buton acik">
                 <?= guvenli(ceviri("Şifremi Değiştir", "Change Password")) ?>
             </a>
-            <a href="mesajlar.php" class="buton acik">
-                <?= guvenli(ceviri("Mesajlarımı Gör", "View Messages")) ?>
-            </a>
-            <a href="ilan-ver.php" class="buton acik">
-                <?= guvenli(ceviri("Yeni İlan Ver", "Post a New Listing")) ?>
-            </a>
         </div>
     </section>
 <?php endif; ?>
@@ -1158,13 +1250,22 @@ $menu_kategorileri = [
             </div>
         <?php endif; ?>
 
-        <form action="profil.php?bolum=hesap#bilgilerim" method="POST" class="hesap-form">
+        <form action="profil.php?bolum=hesap#bilgilerim" method="POST" enctype="multipart/form-data" class="hesap-form">
             <input type="hidden" name="islem" value="bilgi_guncelle">
             <input
                 type="hidden"
                 name="csrf_token"
                 value="<?= guvenli($_SESSION["profil_csrf"]) ?>"
             >
+
+            <?php if ($profil_foto_etkin): ?>
+            <div class="form-grup">
+                <label for="profil-fotografi"><?= guvenli(ceviri("Profil Fotoğrafı", "Profile Photo")) ?></label>
+                <input type="file" id="profil-fotografi" name="profil_fotografi"
+                       accept="image/jpeg,image/png,image/webp" aria-describedby="profil-foto-notu">
+                <small class="alan-notu" id="profil-foto-notu"><?= guvenli(ceviri("JPG, PNG veya WEBP. En fazla 2 MB.", "JPG, PNG or WEBP. Up to 2 MB.")) ?></small>
+            </div>
+            <?php endif; ?>
 
             <div class="form-grup">
                 <label for="ad_soyad">
@@ -1195,29 +1296,7 @@ $menu_kategorileri = [
             </div>
 
             <div class="form-grup">
-                <label for="telefon">
-                    <?= guvenli(ceviri("Telefon Numarası", "Phone Number")) ?>
-                </label>
-                <input
-                    type="tel"
-                    id="telefon"
-                    name="telefon"
-                    value="<?= guvenli($form_telefon) ?>"
-                    placeholder="05XXXXXXXXX"
-                    pattern="05[0-9]{9}"
-                    minlength="11"
-                    maxlength="11"
-                    inputmode="numeric"
-                    autocomplete="tel"
-                    aria-describedby="telefon-notu"
-                    required
-                >
-                <small class="alan-notu" id="telefon-notu">
-                    <?= guvenli(ceviri(
-                        "05 ile başlayan 11 haneli numaranızı boşluksuz yazınız.",
-                        "Enter your 11-digit number starting with 05, without spaces."
-                    )) ?>
-                </small>
+                <?php $telefon = $form_telefon; require __DIR__ . "/uye-telefon-alani.php"; ?>
             </div>
 
             <div class="form-grup">
@@ -1237,6 +1316,33 @@ $menu_kategorileri = [
                 <button type="submit" class="buton">
                     <?= guvenli(ceviri("Bilgilerimi Kaydet", "Save My Details")) ?>
                 </button>
+            </div>
+        </form>
+    </section>
+    <section class="profil-bolum" id="hesabi-sil">
+        <h2><?= guvenli(ceviri("Hesabımı Sil", "Delete My Account")) ?></h2>
+        <p><?= guvenli(ceviri(
+            "Hesabınız, ilanlarınız, favorileriniz, başvurularınız ve ilan mesajlarınız kalıcı olarak silinir.",
+            "Your account, listings, favorites, applications and listing messages will be permanently deleted."
+        )) ?></p>
+        <?php if ($silme_hata !== ""): ?>
+            <p role="alert"><?= guvenli($silme_hata) ?></p>
+        <?php endif; ?>
+        <form action="profil.php?bolum=hesap#hesabi-sil" method="POST" class="hesap-form">
+            <input type="hidden" name="islem" value="hesap_sil">
+            <input type="hidden" name="csrf_token" value="<?= guvenli($_SESSION["profil_csrf"]) ?>">
+            <div class="form-grup">
+                <label for="silme-sifresi"><?= guvenli(ceviri("Mevcut Şifreniz", "Current Password")) ?></label>
+                <input type="password" id="silme-sifresi" name="silme_sifresi" autocomplete="current-password" required>
+            </div>
+            <p>
+                <label>
+                    <input type="checkbox" name="silme_onayi" value="1" required>
+                    <?= guvenli(ceviri("Hesabımın kalıcı olarak silinmesini onaylıyorum.", "I confirm permanent deletion of my account.")) ?>
+                </label>
+            </p>
+            <div class="form-islemler">
+                <button type="submit" class="buton sil"><?= guvenli(ceviri("Hesabımı Kalıcı Olarak Sil", "Permanently Delete My Account")) ?></button>
             </div>
         </form>
     </section>
@@ -1648,5 +1754,6 @@ if (basariKutusu) {
 }
 </script>
 
+<script src="uye-formu.js?v=2" defer></script>
 </body>
 </html>

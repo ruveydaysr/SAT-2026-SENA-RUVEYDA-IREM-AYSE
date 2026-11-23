@@ -1,5 +1,7 @@
 <?php
 session_start();
+$hesap_silindi = !empty($_SESSION["hesap_silindi"]);
+unset($_SESSION["hesap_silindi"]);
 require_once __DIR__ . "/site-ust-ayar.php";
 
 function guvenli($deger)
@@ -633,6 +635,12 @@ $menu_kategorileri = [
                 "Sign in to your Aris Pati Yuvası account."
             )) ?>
         </p>
+
+        <?php if ($hesap_silindi): ?>
+            <p class="giris-bilgi" role="status">
+                <?= guvenli(ceviri("Hesabınız silindi.", "Your account has been deleted.")) ?>
+            </p>
+        <?php endif; ?>
 
         <?php if ($hata !== ""): ?>
             <p class="giris-hata" role="alert">

@@ -75,24 +75,26 @@ function sohbet_fotografi($fotograf)
     return "";
 }
 
-function sohbet_adresi($ilan_id, $kisi)
+$profil_gorunumu = ($_GET["gorunum"] ?? null) === "profil";
+
+function sohbet_adresi($ilan_id, $kisi, $yeni_dil = null)
 {
-    if ($ilan_id && $ilan_id > 0 && $kisi && $kisi > 0) {
-        return "mesajlar.php?" . http_build_query([
-            "ilan_id" => (int)$ilan_id,
-            "kisi" => (int)$kisi
-        ]);
+    global $profil_gorunumu;
+
+    $parametreler = $profil_gorunumu ? ["gorunum" => "profil"] : [];
+    if ($yeni_dil !== null) {
+        $parametreler["lang"] = $yeni_dil;
     }
-    return "mesajlar.php";
-}
-function dil_linki($yeni_dil, $ilan_id, $kisi)
-{
-    $parametreler = ["lang" => $yeni_dil];
     if ($ilan_id && $ilan_id > 0 && $kisi && $kisi > 0) {
         $parametreler["ilan_id"] = (int)$ilan_id;
         $parametreler["kisi"] = (int)$kisi;
     }
-    return "mesajlar.php?" . http_build_query($parametreler);
+
+    return "mesajlar.php" . ($parametreler ? "?" . http_build_query($parametreler) : "");
+}
+function dil_linki($yeni_dil, $ilan_id, $kisi)
+{
+    return sohbet_adresi($ilan_id, $kisi, $yeni_dil);
 }
 $ben = (int)$_SESSION["uye_id"];
 $ilan_id = filter_input(INPUT_GET, "ilan_id", FILTER_VALIDATE_INT);
@@ -801,6 +803,9 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
 }
 
     </style>
+<?php if ($profil_gorunumu): ?>
+<link rel="stylesheet" href="profil-hesap.css?v=20261104-1">
+<?php endif; ?>
 </head>
 <body>
 <header class="ilan-ust" id="aris-ortak-ust">
@@ -945,7 +950,42 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
         </nav>
     </div>
 </header>
-<main>
+<main<?= $profil_gorunumu ? ' class="hesap-duzen"' : "" ?>>
+<?php if ($profil_gorunumu): ?>
+<?php
+$hesap_sonuc = sorgula($baglanti, "SELECT * FROM uyeler WHERE id = ? LIMIT 1", "i", $ben);
+$hesap_uye = mysqli_fetch_assoc($hesap_sonuc) ?? [
+    "ad_soyad" => $_SESSION["uye_adsoyad"] ?? ceviri("Üye", "Member")
+];
+?>
+<aside class="hesap-yan">
+    <div class="hesap-kimlik">
+        <?php if (!empty($hesap_uye["profil_fotografi"])): ?>
+            <img class="hesap-avatar" src="<?= guvenli($hesap_uye["profil_fotografi"]) ?>" alt="" width="44" height="44" style="object-fit:cover">
+        <?php else: ?>
+            <span class="hesap-avatar" aria-hidden="true"><?= guvenli(function_exists('mb_substr') ? mb_substr($hesap_uye['ad_soyad'], 0, 1, 'UTF-8') : substr($hesap_uye['ad_soyad'], 0, 1)) ?></span>
+        <?php endif; ?>
+        <strong><?= guvenli($hesap_uye['ad_soyad']) ?></strong>
+        <small><?= guvenli(ceviri('Hesabım', 'My Account')) ?></small>
+    </div>
+    <nav class="hesap-menu" aria-label="<?= guvenli(ceviri('Hesap menüsü', 'Account navigation')) ?>">
+        <h2><?= guvenli(ceviri('İlan ve Başvurularım', 'Listings and Applications')) ?></h2>
+        <?php foreach ([
+            'ilanlar' => ['İlanlarım', 'My Listings'],
+            'basvurular' => ['Sahiplenme Başvurularım', 'Adoption Applications'],
+            'favoriler' => ['Favorilerim', 'My Favourites']
+        ] as $anahtar => $etiket): ?>
+            <a href="profil.php?bolum=<?= $anahtar ?>"><?= guvenli(ceviri($etiket[0], $etiket[1])) ?></a>
+        <?php endforeach; ?>
+        <a href="mesajlar.php?gorunum=profil" aria-current="page"><?= guvenli(ceviri('Mesajlarım', 'My Messages')) ?></a>
+        <h2><?= guvenli(ceviri('Hesap Ayarlarım', 'Account Settings')) ?></h2>
+        <a href="profil.php?bolum=hesap"><?= guvenli(ceviri('Kullanıcı Bilgilerim', 'My Details')) ?></a>
+        <a href="profil.php?bolum=sifre"><?= guvenli(ceviri('Şifremi Değiştir', 'Change Password')) ?></a>
+    </nav>
+    <a class="hesap-yeni" href="ilan-ver.php">+ <?= guvenli(ceviri('Yeni İlan Ver', 'Post a New Listing')) ?></a>
+</aside>
+<div class="hesap-icerik">
+<?php endif; ?>
     <div class="sayfa-ust">
         <div>
             <h1><?= guvenli(ceviri("Mesajlarım", "My Messages")) ?></h1>
@@ -1052,6 +1092,9 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
         </section>
     </div>
     <p class="alt-not"><span id="yenile-durum" role="status"><?= guvenli(ceviri("Yeni mesajlar 8 saniyede bir kontrol edilir.", "New messages are checked every 8 seconds.")) ?></span> · <?= guvenli(ceviri("Seçili sohbette son 200 mesaj gösterilir.", "The latest 200 messages are shown.")) ?></p>
+<?php if ($profil_gorunumu): ?>
+</div>
+<?php endif; ?>
 </main>
 <footer>
     © <?= date("Y") ?> Aris Pati Yuvası ·

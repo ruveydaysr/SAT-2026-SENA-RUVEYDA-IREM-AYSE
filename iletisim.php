@@ -373,7 +373,7 @@ if ($post_istegi && !$dil_degisti) {
         }
 
         main {
-            width: min(650px, 92%);
+            width: min(1080px, 92%);
             margin: 36px auto;
         }
 
@@ -384,17 +384,124 @@ if ($post_istegi && !$dil_degisti) {
             background: #fffdf8;
         }
 
-        .iletisim h1 {
-            margin: 0 0 22px;
-            font-size: 28px;
-            text-align: center;
+        .iletisim-baslik {
+            margin: 0 0 26px;
+            font-size: clamp(26px, 5vw, 36px);
         }
 
+        .iletisim-yerlesim {
+            display: grid;
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .iletisim-kutular {
+            display: grid;
+            gap: 18px;
+        }
+
+        .iletisim-bilgi {
+            min-width: 0;
+            padding: 24px;
+            border: 1px solid #ded6c6;
+            border-top: 4px solid #426b46;
+            border-radius: 12px;
+            background: #fffdf8;
+        }
+
+        .iletisim-bilgi h2,
+        .iletisim h2 {
+            margin: 0 0 14px;
+            font-size: 21px;
+        }
+
+        .iletisim-bilgi p,
         .iletisim p {
-            margin: 0 0 18px;
-            color: #687361;
+            margin: 0 0 16px;
+            color: #53604e;
             font-size: 15px;
-            line-height: 1.8;
+            line-height: 1.65;
+        }
+
+        .iletisim-bilgi ul {
+            margin: 0;
+            padding-left: 18px;
+            line-height: 1.65;
+        }
+
+        .iletisim-bilgi li + li {
+            margin-top: 6px;
+        }
+
+        .iletisim-bilgileri {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 10px 14px;
+            margin: 0;
+        }
+
+        .iletisim-bilgileri dt {
+            font-weight: bold;
+        }
+
+        .iletisim-bilgileri dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .iletisim-saatler dl {
+            display: grid;
+            gap: 6px;
+            margin: 0 0 8px;
+        }
+
+        .iletisim-saatler dl div {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 4px 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #e6eddf;
+        }
+
+        .iletisim-saatler dd {
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .iletisim {
+            min-width: 0;
+            scroll-margin-top: 150px;
+        }
+
+        @media (max-width: 820px) {
+            .iletisim-yerlesim {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 12px;
+            }
+        }
+
+        .iletisim-harita {
+            margin-top: 24px;
+            padding: 20px;
+            border: 1px solid #ded6c6;
+            border-radius: 12px;
+            background: #fffdf8;
+        }
+
+        .iletisim-harita h2 {
+            margin: 0 0 14px;
+            font-size: 21px;
+        }
+
+        .iletisim-harita iframe {
+            display: block;
+            width: 100%;
+            height: clamp(250px, 45vw, 380px);
+            border: 0;
+            border-radius: 8px;
         }
 
         .iletisim-formu {
@@ -522,13 +629,11 @@ if ($post_istegi && !$dil_degisti) {
                 margin: 24px auto;
             }
 
-            .iletisim {
+            .iletisim,
+            .iletisim-bilgi {
                 padding: 24px 18px;
             }
 
-            .iletisim h1 {
-                font-size: 24px;
-            }
         }
     </style>
 <link rel="stylesheet" href="site-ust.css?v=20261102-1">
@@ -540,136 +645,173 @@ if ($post_istegi && !$dil_degisti) {
 <?php require __DIR__ . "/site-ust.php"; ?>
 
 <main>
-    <section class="iletisim">
-        <h1>
-            <?php echo iletisim_ceviri(
-                "Bir Mesajınız mı Var? 🐾",
-                "Have a Message for Us? 🐾"
-            ); ?>
-        </h1>
+    <?php
+    // Aris Pati Yuvası'nın iletişim bilgilerini buraya ekleyin.
+    $iletisim_eposta = "";
+    $iletisim_telefon = "";
+    ?>
+    <h1 class="iletisim-baslik"><?= iletisim_ceviri("İletişim", "Contact") ?></h1>
+    <div class="iletisim-yerlesim">
+        <section class="iletisim" id="mesaj-formu" aria-labelledby="iletisim-form-baslik">
+            <h2 id="iletisim-form-baslik"><?= iletisim_ceviri("Bize Mesaj Gönder", "Send Us a Message") ?></h2>
+            <p><?= iletisim_ceviri(
+                "Üye olmadan da formu doldurabilirsiniz. Yanıt için e-posta adresinizi yazın.",
+                "You can use this form without an account. Include your email address so we can reply."
+            ) ?></p>
 
-        <p>
-            <?php echo iletisim_ceviri(
-                "Aris Pati Yuvası olarak sizlerden haber almak bizi mutlu eder! Minik dostlarımızla ilgili merak ettikleriniz, önerileriniz veya bizimle paylaşmak istediğiniz düşünceleriniz varsa buradayız.",
-                "We love hearing from you at Aris Pati Yuvası! Whether you have questions about our animal friends, suggestions or thoughts you would like to share, we are here to listen."
-            ); ?>
-        </p>
-
-        <p>
-            <?php echo iletisim_ceviri(
-                "Üye olmadan da aşağıdaki formu doldurarak bize ulaşabilirsiniz. Her mesajınız bizim için değerli. 💚",
-                "You can contact us using the form below, even without an account. Every message matters to us. 💚"
-            ); ?>
-        </p>
-
-        <?php if ($dil_degisti && $post_istegi): ?>
-            <p class="bildirim basarili" role="status">
-                <?php echo iletisim_ceviri(
-                    "Dil değiştirildi. Form bilgileriniz korundu.",
-                    "Language changed. Your form details have been kept."
-                ); ?>
-            </p>
-        <?php endif; ?>
-
-        <?php if ($bildirim !== ""): ?>
-            <p
-                class="bildirim <?php echo $basarili ? "basarili" : "hata"; ?>"
-                role="<?php echo $basarili ? "status" : "alert"; ?>"
-            >
-                <?php echo iletisim_guvenli($bildirim); ?>
-            </p>
-        <?php endif; ?>
-
-        <form
-            action="iletisim.php"
-            method="POST"
-            class="iletisim-formu"
-            id="iletisim-form"
-        >
-            <input
-                type="hidden"
-                name="token"
-                value="<?php echo iletisim_guvenli(
-                    $_SESSION["iletisim_token"]
-                ); ?>"
-            >
-
-            <div class="form-grup">
-                <label for="ad">
+            <?php if ($dil_degisti && $post_istegi): ?>
+                <p class="bildirim basarili" role="status">
                     <?php echo iletisim_ceviri(
-                        "Adınız Soyadınız:",
-                        "Full Name:"
+                        "Dil değiştirildi. Form bilgileriniz korundu.",
+                        "Language changed. Your form details have been kept."
                     ); ?>
-                </label>
+                </p>
+            <?php endif; ?>
 
-                <input
-                    type="text"
-                    id="ad"
-                    name="ad"
-                    value="<?php echo iletisim_guvenli($ad); ?>"
-                    autocomplete="name"
-                    maxlength="100"
-                    aria-describedby="ad-aciklama"
-                    required
+            <?php if ($bildirim !== ""): ?>
+                <p
+                    class="bildirim <?php echo $basarili ? "basarili" : "hata"; ?>"
+                    role="<?php echo $basarili ? "status" : "alert"; ?>"
                 >
+                    <?php echo iletisim_guvenli($bildirim); ?>
+                </p>
+            <?php endif; ?>
 
-                <small id="ad-aciklama">
-                    <?php echo iletisim_ceviri(
-                        "Mesajınızda görünecek adınızı ve soyadınızı yazınız.",
-                        "Enter the full name that will appear with your message."
-                    ); ?>
-                </small>
-            </div>
-
-            <div class="form-grup">
-                <label for="eposta">
-                    <?php echo iletisim_ceviri(
-                        "E-posta Adresiniz:",
-                        "Email Address:"
-                    ); ?>
-                </label>
-
+            <form
+                action="iletisim.php"
+                method="POST"
+                class="iletisim-formu"
+                id="iletisim-form"
+            >
                 <input
-                    type="email"
-                    id="eposta"
-                    name="eposta"
-                    value="<?php echo iletisim_guvenli($eposta); ?>"
-                    autocomplete="email"
-                    maxlength="150"
-                    aria-describedby="eposta-aciklama"
-                    required
-                >
-
-                <small id="eposta-aciklama">
-                    <?php echo iletisim_ceviri(
-                        "Size ulaşılabilecek e-posta adresini yazınız.",
-                        "Enter an email address where we can reach you."
-                    ); ?>
-                </small>
-            </div>
-
-            <div class="form-grup">
-                <label for="mesaj">
-                    <?php echo iletisim_ceviri("Mesajınız:", "Your Message:"); ?>
-                </label>
-
-                <textarea
-                    id="mesaj"
-                    name="mesaj"
-                    rows="5"
-                    maxlength="5000"
-                    placeholder="<?php echo iletisim_ceviri(
-                        "Yöneticiye mesajınızı yazınız...",
-                        "Write your message to the administrator..."
+                    type="hidden"
+                    name="token"
+                    value="<?php echo iletisim_guvenli(
+                        $_SESSION["iletisim_token"]
                     ); ?>"
-                    required
-                ><?php echo iletisim_guvenli($mesaj); ?></textarea>
-            </div>
+                >
 
-            <button type="submit" class="btn-gonder">
-                <?php echo iletisim_ceviri("Mesajı Gönder", "Send Message"); ?>
-            </button>
-        </form>
+                <div class="form-grup">
+                    <label for="ad">
+                        <?php echo iletisim_ceviri(
+                            "Adınız Soyadınız:",
+                            "Full Name:"
+                        ); ?>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="ad"
+                        name="ad"
+                        value="<?php echo iletisim_guvenli($ad); ?>"
+                        autocomplete="name"
+                        maxlength="100"
+                        aria-describedby="ad-aciklama"
+                        required
+                    >
+
+                    <small id="ad-aciklama">
+                        <?php echo iletisim_ceviri(
+                            "Mesajınızda görünecek adınızı ve soyadınızı yazınız.",
+                            "Enter the full name that will appear with your message."
+                        ); ?>
+                    </small>
+                </div>
+
+                <div class="form-grup">
+                    <label for="eposta">
+                        <?php echo iletisim_ceviri(
+                            "E-posta Adresiniz:",
+                            "Email Address:"
+                        ); ?>
+                    </label>
+
+                    <input
+                        type="email"
+                        id="eposta"
+                        name="eposta"
+                        value="<?php echo iletisim_guvenli($eposta); ?>"
+                        autocomplete="email"
+                        maxlength="150"
+                        aria-describedby="eposta-aciklama"
+                        required
+                    >
+
+                    <small id="eposta-aciklama">
+                        <?php echo iletisim_ceviri(
+                            "Size ulaşılabilecek e-posta adresini yazınız.",
+                            "Enter an email address where we can reach you."
+                        ); ?>
+                    </small>
+                </div>
+
+                <div class="form-grup">
+                    <label for="mesaj">
+                        <?php echo iletisim_ceviri("Mesajınız:", "Your Message:"); ?>
+                    </label>
+
+                    <textarea
+                        id="mesaj"
+                        name="mesaj"
+                        rows="5"
+                        maxlength="5000"
+                        placeholder="<?php echo iletisim_ceviri(
+                            "Yöneticiye mesajınızı yazınız...",
+                            "Write your message to the administrator..."
+                        ); ?>"
+                        required
+                    ><?php echo iletisim_guvenli($mesaj); ?></textarea>
+                </div>
+
+                <button type="submit" class="btn-gonder">
+                    <?php echo iletisim_ceviri("Mesajı Gönder", "Send Message"); ?>
+                </button>
+            </form>
+        </section>
+
+        <div class="iletisim-kutular">
+            <section class="iletisim-bilgi" aria-labelledby="iletisim-baslik">
+                <h2 id="iletisim-baslik"><?= iletisim_ceviri("Bize Ulaşın", "Contact Us") ?></h2>
+                <dl class="iletisim-bilgileri">
+                    <dt><?= iletisim_ceviri("Konum", "Location") ?></dt>
+                    <dd>
+                        <a href="https://www.google.com/maps/search/?api=1&amp;query=Yozgat%20Bozok%20%C3%9Cniversitesi%20Sorgun%20Meslek%20Y%C3%BCksekokulu%2C%20Sorgun%2C%20Yozgat"
+                           target="_blank" rel="noopener noreferrer">
+                            Sorgun Meslek Yüksekokulu<br>
+                            Ahmet Efendi Mahallesi<br>
+                            3500. Cadde No: 4<br>
+                            66700 Sorgun / Yozgat
+                        </a>
+                    </dd>
+                    <dt><?= iletisim_ceviri("E-posta", "Email") ?></dt>
+                    <dd><?= iletisim_guvenli($iletisim_eposta ?: "—") ?></dd>
+                    <dt><?= iletisim_ceviri("Telefon", "Phone") ?></dt>
+                    <dd><?= iletisim_guvenli($iletisim_telefon ?: "—") ?></dd>
+                </dl>
+            </section>
+            <section class="iletisim-bilgi iletisim-saatler" aria-labelledby="iletisim-saatler-baslik">
+                <h2 id="iletisim-saatler-baslik"><?= iletisim_ceviri("Çalışma Saatleri", "Opening Hours") ?></h2>
+                <dl>
+                    <div><dt><?= iletisim_ceviri("Hafta içi", "Weekdays") ?></dt><dd>10.00–17.00</dd></div>
+                    <div><dt><?= iletisim_ceviri("Cumartesi", "Saturday") ?></dt><dd>10.00–15.00</dd></div>
+                    <div><dt><?= iletisim_ceviri("Pazar", "Sunday") ?></dt><dd>10.00–15.00</dd></div>
+                </dl>
+            </section>
+            <section class="iletisim-bilgi" aria-labelledby="iletisim-destek-baslik">
+                <h2 id="iletisim-destek-baslik"><?= iletisim_ceviri("Destek Konuları", "Support Topics") ?></h2>
+                <ul>
+                    <li><?= iletisim_ceviri("İlanlar ve başvurular", "Listings and applications") ?></li>
+                    <li><?= iletisim_ceviri("Hesap ve site kullanımı", "Accounts and website use") ?></li>
+                    <li><?= iletisim_ceviri("Öneriler ve geri bildirim", "Suggestions and feedback") ?></li>
+                </ul>
+            </section>
+        </div>
+    </div>
+    <section class="iletisim-harita" aria-labelledby="iletisim-harita-baslik">
+        <h2 id="iletisim-harita-baslik"><?= iletisim_ceviri("Sorgun MYO Konumu", "Sorgun Vocational School Location") ?></h2>
+        <iframe src="https://maps.google.com/maps?q=Yozgat%20Bozok%20%C3%9Cniversitesi%20Sorgun%20Meslek%20Y%C3%BCksekokulu%2C%20Sorgun%2C%20Yozgat&amp;z=16&amp;output=embed"
+                title="<?= iletisim_ceviri("Sorgun Meslek Yüksekokulu haritası", "Map of Sorgun Vocational School") ?>"
+                loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     </section>
 </main>
 

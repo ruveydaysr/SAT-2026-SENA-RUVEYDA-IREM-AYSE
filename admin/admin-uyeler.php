@@ -23,7 +23,7 @@ $arama = is_string($_GET["arama"] ?? null)
     ? trim($_GET["arama"])
     : "";
 
-$sql = "SELECT id, ad_soyad, email, telefon
+$sql = "SELECT id, ad_soyad, email, telefon, profil_fotografi
         FROM uyeler
         WHERE (? = ''
             OR LOCATE(?, ad_soyad) > 0
@@ -251,6 +251,13 @@ $uyeler = mysqli_stmt_get_result($stmt);
                             </td>
 
                             <td>
+                                <span aria-hidden="true" style="display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center;vertical-align:middle;overflow:hidden;border-radius:50%;background:#e6eddf;color:#284b32;font-weight:bold;margin-right:8px">
+                                    <?php if (!empty($uye["profil_fotografi"])): ?>
+                                        <img src="../<?= guvenli($uye["profil_fotografi"]) ?>" alt="" width="44" height="44" style="width:100%;height:100%;object-fit:cover">
+                                    <?php else: ?>
+                                        <?= guvenli(preg_match('/^./u', trim((string) $uye["ad_soyad"]), $harf) ? $harf[0] : "?") ?>
+                                    <?php endif; ?>
+                                </span>
                                 <?= guvenli($uye["ad_soyad"] ?? "") ?>
                             </td>
 

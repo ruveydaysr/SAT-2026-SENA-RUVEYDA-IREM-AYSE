@@ -336,7 +336,7 @@ $fotografli = filtre_degeri("fotografli") === "1";
 $filtre_hata = "";
 
 if (!isset($siralamalar[$siralama])) {
-    $siralama = "yeni";
+    $siralama = "favori_azalan";
 }
 
 if (!in_array($cinsiyet, ["Dişi", "Erkek"], true)) {
