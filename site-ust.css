@@ -121,3 +121,43 @@ html { scrollbar-gutter: stable; }
     #aris-site-header .aris-categories > summary { padding: 8px; font-size: 13px; }
     #aris-site-header .aris-category-list { right: auto; left: 0; }
 }
+
+#aris-site-header .aris-menu-toggle { display: none; }
+
+@media (max-width: 800px) {
+    #aris-site-header {
+        position: relative;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+        min-height: 0;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    #aris-site-header .aris-header-right {
+        flex: 1 0 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #aris-site-header .aris-menu-toggle:not([hidden]) {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 14px;
+        background: #f5f0e6;
+        color: #284b32;
+        border: 0;
+        border-radius: 8px;
+        font: bold 14px Arial, sans-serif;
+        cursor: pointer;
+    }
+
+    #aris-site-header .aris-navigation { flex-basis: 100%; }
+    #aris-site-header .aris-menu-toggle:not([hidden])[aria-expanded="false"] + .aris-navigation {
+        display: none;
+    }
+}

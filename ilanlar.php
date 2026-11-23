@@ -872,7 +872,27 @@ $js_metinleri = [
             gap: 24px;
         }
 
-        /* Filtreler sürekli açık */
+        .mobil-filtre-dugmesi { display: none; }
+
+        @media (max-width: 800px) {
+            .mobil-filtre-dugmesi:not([hidden]) {
+                display: block;
+                width: 100%;
+                min-height: 44px;
+                padding: 10px 16px;
+                border: 1px solid var(--cizgi);
+                border-radius: 9px;
+                background: var(--beyaz);
+                color: var(--koyu);
+                font: inherit;
+                font-weight: bold;
+                text-align: left;
+                cursor: pointer;
+            }
+
+            #ilan-filtreleri[data-kapali="true"] .filtre-panel { display: none; }
+        }
+
         .filtre-panel {
             overflow: hidden;
             border: 1px solid var(--cizgi);
@@ -1378,13 +1398,18 @@ $js_metinleri = [
             }
         }
 
+        .filtre-grup h3, .secenek, .filtre-icerik input,
+        .filtre-islemler button, .filtre-islemler a {
+            font-size: 14px;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .ilan-karti { transition: none; }
             .ilan-karti:hover { transform: none; }
         }
     </style>
 
-    <link rel="stylesheet" href="site-ust.css?v=20261102-1">
+    <link rel="stylesheet" href="site-ust.css?v=20261124-1">
     <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
@@ -1439,9 +1464,12 @@ $js_metinleri = [
 
     <div class="liste-duzeni">
 
-        <!-- Sürekli açık filtre bölümü -->
-        <aside aria-labelledby="filtre-baslik">
-            <div class="filtre-panel">
+        <aside id="ilan-filtreleri" aria-label="<?= guvenli(ceviri("Filtreler", "Filters")) ?>">
+            <button type="button" class="mobil-filtre-dugmesi" id="mobil-filtre"
+                    aria-controls="filtre-paneli" aria-expanded="false" hidden>
+                <?= guvenli(ceviri("Filtrele", "Filter listings")) ?>
+            </button>
+            <div class="filtre-panel" id="filtre-paneli">
                 <h2 class="filtre-baslik" id="filtre-baslik">
                     <?= guvenli(ceviri("Filtreler", "Filters")) ?>
                 </h2>
@@ -1931,6 +1959,17 @@ const metinler = <?= json_encode(
     $js_metinleri,
     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
 ) ?>;
+
+const filtreDugmesi = document.getElementById("mobil-filtre");
+const filtreAlani = document.getElementById("ilan-filtreleri");
+filtreAlani.dataset.kapali = "true";
+filtreDugmesi.hidden = false;
+
+filtreDugmesi.addEventListener("click", function () {
+    const acik = this.getAttribute("aria-expanded") === "true";
+    this.setAttribute("aria-expanded", String(!acik));
+    filtreAlani.dataset.kapali = String(acik);
+});
 
 /* Şehir seçenekleri içinde arama */
 const sehirArama = document.getElementById("sehir-ara");

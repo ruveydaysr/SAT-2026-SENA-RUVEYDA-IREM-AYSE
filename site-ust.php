@@ -80,7 +80,9 @@ function aris_ust_goster($db)
                        <?= $lang === $code ? 'aria-current="true"' : '' ?>><?= $label ?></a>
                 <?php endforeach; ?>
             </nav>
-            <nav class="aris-navigation" aria-label="<?= aris_ust_h(aris_ust_t('Ana menü', 'Main navigation')) ?>">
+            <button class="aris-menu-toggle" type="button" aria-expanded="false"
+                    aria-controls="aris-navigation" hidden><?= aris_ust_h(aris_ust_t('Menü', 'Menu')) ?></button>
+            <nav id="aris-navigation" class="aris-navigation" aria-label="<?= aris_ust_h(aris_ust_t('Ana menü', 'Main navigation')) ?>">
                 <?php foreach ($links as [$url, $tr, $en]): ?>
                     <?php if ($url === 'categories'): ?>
                         <details class="aris-categories">
@@ -122,6 +124,12 @@ function aris_ust_goster($db)
     <script>
     (() => {
         const header = document.getElementById('aris-site-header');
+        const menuDugmesi = header.querySelector('.aris-menu-toggle');
+        menuDugmesi.hidden = false;
+        menuDugmesi.addEventListener('click', () => {
+            const acik = menuDugmesi.getAttribute('aria-expanded') === 'true';
+            menuDugmesi.setAttribute('aria-expanded', String(!acik));
+        });
         const category = header.querySelector('.aris-categories');
         category.addEventListener('pointerenter', event => {
             if (event.pointerType === 'mouse') category.open = true;

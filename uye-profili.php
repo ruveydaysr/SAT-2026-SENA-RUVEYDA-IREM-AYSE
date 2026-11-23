@@ -34,7 +34,7 @@ if ($profil) {
 <html lang="<?= up_h($_SESSION['dil'] ?? 'tr') ?>">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= up_h($profil ? $profil['ad_soyad'] . ' | Aris Pati Yuvası' : up_t('Üye Bulunamadı', 'Member Not Found')) ?></title>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 <body class="up-sayfa">

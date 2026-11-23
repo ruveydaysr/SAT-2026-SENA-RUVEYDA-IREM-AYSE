@@ -605,7 +605,7 @@ $menu_kategorileri = [
             }
         }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 </head>
 
 <body class="giris-sayfasi">

@@ -602,7 +602,7 @@ $css_surumu = $css_dosyasi !== ""
     box-sizing: border-box;
 }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 

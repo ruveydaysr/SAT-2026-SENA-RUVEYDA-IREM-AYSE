@@ -774,8 +774,8 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
 .balon time { text-align:right; font-size:10px; }
 .gun { align-self:center; color:#687361; background:#e9eddf; border-radius:20px; padding:6px 12px; font-size:11px; margin:4px 0 8px; }
 .yaz { padding:15px 20px; background:#fffdf8; }
-.yaz label { font-size:12px; }
-.yaz textarea { min-height:64px; max-height:160px; font-size:14px; }
+.yaz label { font-size:14px; }
+.yaz textarea { min-height:64px; max-height:160px; font-size:16px; }
 .yaz-alt { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
 .yaz-alt small { color:#687361; font-size:11px; }
 .yaz button { margin:0; }
@@ -792,12 +792,28 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
     .sohbet-baslik { flex-wrap:wrap; padding:14px; }
     .balon { max-width:90%; }
 }
+.sohbetlere-don, .mesaj-menu-dugmesi { display:none; }
+@media (max-width:800px) {
+    .mesaj-menu-dugmesi:not([hidden]) {
+        display:inline-flex; align-items:center; min-height:44px; padding:0 14px;
+        border:0; border-radius:8px; background:#f5f0e6; color:#284b32;
+        font:bold 14px Arial, sans-serif; cursor:pointer;
+    }
+    .mesaj-menu-dugmesi:not([hidden])[aria-expanded="false"] + .ilan-menu { display:none; }
+}
+.sohbet-ozet small, .arama-kutu input { font-size:14px; }
+.balon { font-size:15px; }
 @media(max-width:650px) {
     main { width:calc(100% - 24px); margin:20px auto; }
     .sayfa-ust { align-items:flex-start; flex-direction:column; }
     .duzen { grid-template-columns:1fr; }
-    .liste { height:260px; border-right:0; border-bottom:1px solid #ded6c6; }
-    .sohbet { height:580px; }
+    .liste { height: min(480px, 65dvh); min-height: 260px; border:0; }
+    .duzen:not(.sohbet-acik) .sohbet, .sohbet-acik .liste { display:none; }
+    .sohbet { height: clamp(360px, 70dvh, 580px); }
+    .sohbetlere-don {
+        display:flex; align-items:center; min-height:44px; padding:0 14px;
+        color:#284b32; font-weight:bold; border-bottom:1px solid #ded6c6;
+    }
     .akis { padding:15px; }
     .yaz { padding:14px; }
 }
@@ -875,7 +891,10 @@ main { width: min(1180px, calc(100% - 40px)); margin: 30px auto 40px; }
                 >EN</a>
             <?php endif; ?>
         </nav>
+        <button class="mesaj-menu-dugmesi" type="button" aria-expanded="false"
+                aria-controls="mesaj-ana-menu" hidden><?= guvenli(ceviri("Menü", "Menu")) ?></button>
         <nav
+            id="mesaj-ana-menu"
             class="ilan-menu"
             aria-label="<?= guvenli(ceviri(
                 "Ana menü",
@@ -996,7 +1015,7 @@ $hesap_uye = mysqli_fetch_assoc($hesap_sonuc) ?? [
     <?php if ($hata !== ""): ?>
         <div class="hata" role="alert"><?= guvenli($hata) ?></div>
     <?php endif; ?>
-    <div class="duzen">
+    <div class="duzen<?= $sohbet ? ' sohbet-acik' : '' ?>">
         <aside class="liste" aria-label="<?= guvenli(ceviri("Sohbetler", "Conversations")) ?>">
             <h2 class="liste-baslik"><?= guvenli(ceviri("Sohbetler", "Conversations")) ?> <span id="sohbet-adet"><?= count($sohbetler) ?></span></h2>
             <div class="arama-kutu">
@@ -1039,6 +1058,9 @@ $hesap_uye = mysqli_fetch_assoc($hesap_sonuc) ?? [
         <section class="sohbet" aria-label="<?= guvenli(ceviri("Mesaj alanı", "Message area")) ?>">
             <?php if ($sohbet): ?>
                 <?php $foto = sohbet_fotografi($sohbet["fotograf"] ?? ""); ?>
+                <a class="sohbetlere-don" href="<?= guvenli(sohbet_adresi(null, null)) ?>">
+                    &larr; <?= guvenli(ceviri("Sohbetlere dön", "Back to conversations")) ?>
+                </a>
                 <div class="sohbet-baslik">
                     <span class="avatar" aria-hidden="true">
                         <?php if ($foto): ?><img src="<?= guvenli($foto) ?>" alt=""><?php else: ?><?= guvenli(mb_substr($sohbet["kisi_adi"], 0, 1, "UTF-8")) ?><?php endif; ?>
@@ -1104,6 +1126,13 @@ $hesap_uye = mysqli_fetch_assoc($hesap_sonuc) ?? [
     )) ?>
 </footer>
 <script>
+const menuDugmesi = document.querySelector(".mesaj-menu-dugmesi");
+menuDugmesi.hidden = false;
+menuDugmesi.addEventListener("click", function () {
+    const acik = this.getAttribute("aria-expanded") === "true";
+    this.setAttribute("aria-expanded", String(!acik));
+});
+
 const akis = document.getElementById("mesaj-akisi");
 const arama = document.getElementById("sohbet-ara");
 const form = document.getElementById("mesaj-form");

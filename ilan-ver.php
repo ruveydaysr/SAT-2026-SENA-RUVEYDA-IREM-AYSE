@@ -960,7 +960,7 @@ $dosya_yok_yazisi = ceviri("Dosya seçilmedi", "No file selected");
             .ozellik-listesi { grid-template-columns: minmax(0,1fr); }
         }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 

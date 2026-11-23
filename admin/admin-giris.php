@@ -310,12 +310,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <?php admin_ortak_logo(); ?>
     <div class="aris-header-right">
         <?php admin_ortak_diller(); ?>
-        <nav class="aris-navigation" aria-label="<?= admin_h(admin_t('Site menüsü')) ?>">
-            <a href="../index.php"><?= admin_h(admin_t('Ana Sayfa')) ?></a>
-            <a href="../ilanlar.php"><?= admin_h(admin_t('İlanlar')) ?></a>
-            <a href="../hakkimizda.php"><?= admin_h(admin_t('Hakkımızda')) ?></a>
-            <a href="../iletisim.php"><?= admin_h(admin_t('İletişim')) ?></a>
-        </nav>
     </div>
 </header>
 

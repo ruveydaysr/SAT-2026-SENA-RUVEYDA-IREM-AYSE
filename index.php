@@ -1351,7 +1351,7 @@ while ($harita_satir = mysqli_fetch_assoc($harita_sonuc)) {
 @media(max-width:700px) { .harita-baslik { flex-direction:column; align-items:flex-start; } .harita-kutu { padding:16px; } .harita-bolum { padding:36px 0; } }
 
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 <body>

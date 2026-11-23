@@ -1159,7 +1159,7 @@ $menu_kategorileri = [
             .profil-fotograf { width: 100%; height: 200px; }
         }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261102-1">
+<link rel="stylesheet" href="site-ust.css?v=20261124-1">
 <link rel="stylesheet" href="profil-hesap.css?v=20261104-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 <link rel="stylesheet" href="uye-telefon.css">
