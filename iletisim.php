@@ -636,7 +636,7 @@ if ($post_istegi && !$dil_degisti) {
 
         }
     </style>
-<link rel="stylesheet" href="site-ust.css?v=20261124-1">
+<link rel="stylesheet" href="site-ust.css?v=20261102-1">
 <link rel="stylesheet" href="site-alt.css?v=20261104-1">
 </head>
 
@@ -647,8 +647,8 @@ if ($post_istegi && !$dil_degisti) {
 <main>
     <?php
     // Aris Pati Yuvası'nın iletişim bilgilerini buraya ekleyin.
-    $iletisim_eposta = "";
-    $iletisim_telefon = "";
+    $iletisim_eposta = "36504125061@ogr.bozok.edu.tr";
+    $iletisim_telefon = "0555 888 77 99";
     ?>
     <h1 class="iletisim-baslik"><?= iletisim_ceviri("İletişim", "Contact") ?></h1>
     <div class="iletisim-yerlesim">
@@ -784,9 +784,9 @@ if ($post_istegi && !$dil_degisti) {
                         </a>
                     </dd>
                     <dt><?= iletisim_ceviri("E-posta", "Email") ?></dt>
-                    <dd><?= iletisim_guvenli($iletisim_eposta ?: "—") ?></dd>
+                    <dd><a href="mailto:<?= iletisim_guvenli($iletisim_eposta) ?>"><?= iletisim_guvenli($iletisim_eposta) ?></a></dd>
                     <dt><?= iletisim_ceviri("Telefon", "Phone") ?></dt>
-                    <dd><?= iletisim_guvenli($iletisim_telefon ?: "—") ?></dd>
+                    <dd><a href="tel:+905558887799"><?= iletisim_guvenli($iletisim_telefon) ?></a></dd>
                 </dl>
             </section>
             <section class="iletisim-bilgi iletisim-saatler" aria-labelledby="iletisim-saatler-baslik">
